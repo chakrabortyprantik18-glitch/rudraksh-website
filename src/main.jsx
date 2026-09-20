@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 
 import {
-  BrowserRouter,
+  HashRouter,
   Routes,
   Route,
   Navigate,
@@ -29,118 +29,38 @@ import AdminSettings from "./admin/AdminSettings.jsx";
 
 import "./index.css";
 
-ReactDOM.createRoot(
-  document.getElementById("root")
-).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
 
-        {/* =========================
-            PUBLIC WEBSITE
-           ========================= */}
+        {/* Public Website */}
+        <Route path="/" element={<App />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/projects" element={<ProjectsPage />} />
 
-        <Route
-          path="/"
-          element={<App />}
-        />
+        {/* Admin */}
+        <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/content" element={<AdminContent />} />
+        <Route path="/admin/members" element={<AdminMembers />} />
+        <Route path="/admin/projects" element={<AdminProjects />} />
+        <Route path="/admin/events" element={<AdminEvents />} />
+        <Route path="/admin/gallery" element={<AdminGallery />} />
+        <Route path="/admin/donations" element={<AdminDonations />} />
+        <Route path="/admin/memberships" element={<AdminMemberships />} />
+        <Route path="/admin/messages" element={<AdminMessages />} />
+        <Route path="/admin/faqs" element={<AdminFAQs />} />
+        <Route path="/admin/social-links" element={<AdminSocialLinks />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
 
-        <Route
-          path="/about"
-          element={<AboutPage />}
-        />
-
-        <Route
-          path="/projects"
-          element={<ProjectsPage />}
-        />
-
-
-        {/* =========================
-            ADMIN
-           ========================= */}
-
-        <Route
-          path="/admin"
-          element={<AdminLogin />}
-        />
-
-        <Route
-          path="/admin/dashboard"
-          element={<AdminDashboard />}
-        />
-
-        <Route
-          path="/admin/content"
-          element={<AdminContent />}
-        />
-
-        <Route
-          path="/admin/members"
-          element={<AdminMembers />}
-        />
-
-        <Route
-          path="/admin/projects"
-          element={<AdminProjects />}
-        />
-
-        <Route
-          path="/admin/events"
-          element={<AdminEvents />}
-        />
-
-        <Route
-          path="/admin/gallery"
-          element={<AdminGallery />}
-        />
-
-        <Route
-          path="/admin/donations"
-          element={<AdminDonations />}
-        />
-
-        <Route
-          path="/admin/memberships"
-          element={<AdminMemberships />}
-        />
-
-        <Route
-          path="/admin/messages"
-          element={<AdminMessages />}
-        />
-
-        <Route
-          path="/admin/faqs"
-          element={<AdminFAQs />}
-        />
-
-        <Route
-          path="/admin/social-links"
-          element={<AdminSocialLinks />}
-        />
-
-        <Route
-          path="/admin/settings"
-          element={<AdminSettings />}
-        />
-
-
-        {/* =========================
-            FALLBACK
-           ========================= */}
-
+        {/* Unknown routes */}
         <Route
           path="*"
-          element={
-            <Navigate
-              to="/"
-              replace
-            />
-          }
+          element={<Navigate to="/" replace />}
         />
 
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   </React.StrictMode>
 );
