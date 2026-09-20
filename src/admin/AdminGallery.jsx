@@ -20,8 +20,7 @@ import "./AdminGallery.css";
 import ImageCropper from "./ImageCropper.jsx";
 import { BACKEND_URL } from "../config/api";
 
-const API_URL =
-  `${BACKEND_URL}/api/gallery`;
+const API_URL = `${BACKEND_URL}/api/gallery`;
 
 const emptyForm = {
   title: "",
@@ -121,8 +120,7 @@ function AdminGallery() {
     const token = getToken();
 
     if (!token) {
-      window.location.href =
-        "/admin";
+      window.location.hash = "/admin";
 
       return;
     }
@@ -463,8 +461,7 @@ function AdminGallery() {
     const token = getToken();
 
     if (!token) {
-      window.location.href =
-        "/admin";
+      window.location.hash = "/admin";
 
       return;
     }
@@ -675,8 +672,7 @@ function AdminGallery() {
           "rudraksh_admin"
         );
 
-        window.location.href =
-          "/admin";
+        window.location.hash = "/admin";
 
         return;
       }
@@ -751,8 +747,7 @@ function AdminGallery() {
     const token = getToken();
 
     if (!token) {
-      window.location.href =
-        "/admin";
+      window.location.hash = "/admin";
 
       return;
     }
@@ -789,8 +784,7 @@ function AdminGallery() {
           "rudraksh_admin"
         );
 
-        window.location.href =
-          "/admin";
+        window.location.hash = "/admin";
 
         return;
       }
@@ -838,8 +832,7 @@ function AdminGallery() {
       const token = getToken();
 
       if (!token) {
-        window.location.href =
-          "/admin";
+        window.location.hash = "/admin";
 
         return;
       }
