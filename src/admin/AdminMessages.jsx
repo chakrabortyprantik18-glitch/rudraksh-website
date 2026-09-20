@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import "./AdminMessages.css";
+import { BACKEND_URL } from "../config/api";
 
-const API_URL = "http://localhost:5000/api/contact";
+const API_URL = `${BACKEND_URL}/api/contact`;
 
 function AdminMessages() {
   const [messages, setMessages] = useState([]);

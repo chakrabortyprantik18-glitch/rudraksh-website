@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import "./ChatBot.css";
+import { BACKEND_URL } from "../../config/api";
 
-const API_URL = "http://localhost:5000";
+const API_URL = BACKEND_URL;
 
 const questions = [
   {

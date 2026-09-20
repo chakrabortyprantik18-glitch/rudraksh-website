@@ -25,6 +25,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import "./AdminDashboard.css";
 import "./AdminDashboardStats.css";
+import { BACKEND_URL } from "../config/api";
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -103,7 +104,7 @@ function AdminDashboard() {
       setStatsError("");
 
       const response = await fetch(
-        "http://localhost:5000/api/admin/dashboard",
+        `${BACKEND_URL}/api/admin/dashboard`,
         {
           method: "GET",
           headers: {

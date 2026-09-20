@@ -3,6 +3,7 @@ import { useGSAP } from "@gsap/react";
 
 import { gsap } from "../../services/gsap";
 import "./Membership.css";
+import { BACKEND_URL } from "../../config/api";
 
 const benefits = [
   {
@@ -294,7 +295,7 @@ function Membership() {
       }
 
       const response = await fetch(
-        "http://localhost:5000/api/membership",
+        `${BACKEND_URL}/api/membership`,
         {
           method: "POST",
           body: payload,

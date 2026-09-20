@@ -18,12 +18,10 @@ import {
 
 import "./AdminGallery.css";
 import ImageCropper from "./ImageCropper.jsx";
+import { BACKEND_URL } from "../config/api";
 
 const API_URL =
-  "http://localhost:5000/api/gallery";
-
-const BACKEND_URL =
-  "http://localhost:5000";
+  `${BACKEND_URL}/api/gallery`;
 
 const emptyForm = {
   title: "",

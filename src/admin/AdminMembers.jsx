@@ -17,9 +17,9 @@ import {
 
 import "./AdminMembers.css";
 import ImageCropper from "./ImageCropper";
+import { BACKEND_URL } from "../config/api";
 
-const API_URL = "http://localhost:5000/api/members";
-const BACKEND_URL = "http://localhost:5000";
+const API_URL = `${BACKEND_URL}/api/members`;
 
 const emptyForm = {
   name: "",

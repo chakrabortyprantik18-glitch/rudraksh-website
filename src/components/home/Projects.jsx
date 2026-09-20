@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import "./Projects.css";
+import { BACKEND_URL } from "../../config/api";
 
-const API_URL = "http://localhost:5000";
+const API_URL = BACKEND_URL;
 
 function Projects() {
   const [projects, setProjects] = useState([]);

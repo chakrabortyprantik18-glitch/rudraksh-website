@@ -19,8 +19,9 @@ import {
   RefreshCw,
 } from "lucide-react";
 import "./AdminSettings.css";
+import { BACKEND_URL } from "../config/api";
 
-const API = "http://localhost:5000";
+const API = BACKEND_URL;
 
 function getToken() {
   return localStorage.getItem("rudraksh_admin_token");

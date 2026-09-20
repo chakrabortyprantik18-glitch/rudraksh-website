@@ -22,10 +22,11 @@ import {
 
 import "./AdminContent.css";
 
-const API_URL = "http://localhost:5000/api/settings";
-const ADMIN_API_URL = "http://localhost:5000/api/admin";
-
-const BACKEND_URL = "http://localhost:5000";
+import {
+  API_URL,
+  ADMIN_API_URL,
+  BACKEND_URL,
+} from "../config/api";
 
 const initialContent = {
   hero: {

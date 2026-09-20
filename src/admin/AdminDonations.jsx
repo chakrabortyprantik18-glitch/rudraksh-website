@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import "./AdminDonations.css";
+import { BACKEND_URL } from "../config/api";
 
-const API_URL = "http://localhost:5000/api/donations";
+const API_URL = `${BACKEND_URL}/api/donations`;
 
 function AdminDonations() {
   const [donations, setDonations] = useState([]);

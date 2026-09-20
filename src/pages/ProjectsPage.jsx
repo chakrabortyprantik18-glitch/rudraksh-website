@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 
 import { gsap } from "../services/gsap";
+import { BACKEND_URL } from "../config/api";
 
-const API_URL = "http://localhost:5000/api/projects";
-const BACKEND_URL = "http://localhost:5000";
+const API_URL = `${BACKEND_URL}/api/projects`;
+
 
 function ProjectsPage() {
   const pageRef = useRef(null);

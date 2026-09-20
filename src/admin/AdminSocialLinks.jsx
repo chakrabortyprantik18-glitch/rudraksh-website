@@ -13,9 +13,10 @@ import {
 } from "lucide-react";
 
 import "./AdminSocialLinks.css";
+import { BACKEND_URL } from "../config/api";
 
 const API_URL =
-  "http://localhost:5000/api/social-links";
+  `${BACKEND_URL}/api/social-links`;
 
 function AdminSocialLinks() {
   const [socialLinks, setSocialLinks] = useState([]);

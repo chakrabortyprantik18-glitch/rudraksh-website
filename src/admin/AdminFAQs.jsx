@@ -12,8 +12,9 @@ import {
 } from "lucide-react";
 
 import "./AdminFAQs.css";
+import { BACKEND_URL } from "../config/api";
 
-const API_URL = "http://localhost:5000/api/faqs";
+const API_URL = `${BACKEND_URL}/api/faqs`;
 
 function AdminFAQs() {
   const [faqs, setFaqs] = useState([]);

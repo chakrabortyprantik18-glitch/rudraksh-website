@@ -3,8 +3,9 @@ import { useGSAP } from "@gsap/react";
 
 import { gsap } from "../../services/gsap";
 import "./Contact.css";
+import { BACKEND_URL } from "../../config/api";
 
-const API_URL = "http://localhost:5000/api/contact";
+const API_URL = `${BACKEND_URL}/api/contact`;
 
 function Contact() {
   const sectionRef = useRef(null);

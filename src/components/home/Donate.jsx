@@ -3,10 +3,11 @@ import { useGSAP } from "@gsap/react";
 
 import { gsap } from "../../services/gsap";
 import "./Donate.css";
+import { BACKEND_URL } from "../../config/api";
 
 const donationAmounts = [500, 1000, 2500, 5000];
 
-const API_URL = "http://localhost:5000/api/donations";
+const API_URL = `${BACKEND_URL}/api/donations`;
 
 function Donate() {
   const sectionRef = useRef(null);

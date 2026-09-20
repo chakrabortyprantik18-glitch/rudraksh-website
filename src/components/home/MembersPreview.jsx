@@ -3,9 +3,10 @@ import { useGSAP } from "@gsap/react";
 
 import { gsap } from "../../services/gsap";
 import "./MembersPreview.css";
+import { BACKEND_URL } from "../../config/api";
 
-const API_URL = "http://localhost:5000/api/members";
-const BACKEND_URL = "http://localhost:5000";
+const API_URL = `${BACKEND_URL}/api/members`;
+
 
 function MembersPreview() {
   const sectionRef = useRef(null);
