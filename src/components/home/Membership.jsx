@@ -295,7 +295,7 @@ function Membership() {
       }
 
       const response = await fetch(
-        `${BACKEND_URL}/api/membership`,
+        `${BACKEND_URL}/api/memberships`,
         {
           method: "POST",
           body: payload,
