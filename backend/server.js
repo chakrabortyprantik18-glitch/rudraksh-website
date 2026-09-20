@@ -61,27 +61,30 @@ app.use(
 );
 
 /* =========================================================
-   PUBLIC UPLOADS
+   STATIC UPLOADED FILES
 ========================================================= */
 
 /*
-  All uploaded images are stored inside:
+  Uploaded files are stored inside:
 
   backend/uploads/
 
-  This makes URLs such as:
+  Examples:
 
-  /uploads/gallery/example.jpg
-  /uploads/events/example.jpg
-  /uploads/projects/example.jpg
-  /uploads/members/example.jpg
+  backend/uploads/gallery/
+  backend/uploads/members/
+  backend/uploads/projects/
 
-  publicly accessible to the website.
+  This makes them available through:
+
+  https://api.rudrakshsocialculturalorganization.online/uploads/...
 */
 
 app.use(
   "/uploads",
-  express.static(path.join(__dirname, "uploads"))
+  express.static(
+    path.join(__dirname, "uploads")
+  )
 );
 
 /* =========================================================
@@ -106,18 +109,65 @@ app.get("/api/health", (req, res) => {
    EXISTING API ROUTES
 ========================================================= */
 
-app.use("/api/admin", adminRoutes);
-app.use("/api/members", memberRoutes);
-app.use("/api/projects", projectRoutes);
-app.use("/api/events", eventRoutes);
-app.use("/api/gallery", galleryRoutes);
-app.use("/api/memberships", membershipRoutes);
-app.use("/api/contact", contactRoutes);
-app.use("/api/faqs", faqRoutes);
-app.use("/api/social-links", socialLinksRoutes);
-app.use("/api/donations", donationRoutes);
-app.use("/api/settings", settingsRoutes);
-app.use("/api/admin/security", adminSecurityRoutes);
+app.use(
+  "/api/admin",
+  adminRoutes
+);
+
+app.use(
+  "/api/members",
+  memberRoutes
+);
+
+app.use(
+  "/api/projects",
+  projectRoutes
+);
+
+app.use(
+  "/api/events",
+  eventRoutes
+);
+
+app.use(
+  "/api/gallery",
+  galleryRoutes
+);
+
+app.use(
+  "/api/memberships",
+  membershipRoutes
+);
+
+app.use(
+  "/api/contact",
+  contactRoutes
+);
+
+app.use(
+  "/api/faqs",
+  faqRoutes
+);
+
+app.use(
+  "/api/social-links",
+  socialLinksRoutes
+);
+
+app.use(
+  "/api/donations",
+  donationRoutes
+);
+
+app.use(
+  "/api/settings",
+  settingsRoutes
+);
+
+app.use(
+  "/api/admin/security",
+  adminSecurityRoutes
+);
 
 /* =========================================================
    AI CHAT
@@ -136,26 +186,33 @@ app.post("/api/chat", async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "A valid message is required.",
+        message:
+          "A valid message is required.",
       });
     }
 
-    /* =====================================================
-       LOAD LIVE DATA FROM MYSQL
-    ===================================================== */
+    /*
+      -------------------------------------------------------
+      LOAD LIVE DATA FROM MYSQL
+      -------------------------------------------------------
+    */
 
     const liveContext =
       await getAIWebsiteContext();
 
-    /* =====================================================
-       GOOGLE GEMINI
-    ===================================================== */
+    /*
+      -------------------------------------------------------
+      GOOGLE GEMINI
+      -------------------------------------------------------
+    */
 
     const {
       GoogleGenAI,
     } = await import("@google/genai");
 
-    if (!process.env.GEMINI_API_KEY) {
+    if (
+      !process.env.GEMINI_API_KEY
+    ) {
       return res.status(500).json({
         success: false,
         message:
@@ -168,9 +225,11 @@ app.post("/api/chat", async (req, res) => {
         process.env.GEMINI_API_KEY,
     });
 
-    /* =====================================================
-       SYSTEM INSTRUCTION
-    ===================================================== */
+    /*
+      -------------------------------------------------------
+      SYSTEM INSTRUCTION
+      -------------------------------------------------------
+    */
 
     const systemInstruction = `
 You are the official AI assistant for Rudraksh Social & Cultural Organization.
@@ -225,9 +284,11 @@ ${JSON.stringify(
 )}
 `;
 
-    /* =====================================================
-       CONVERSATION HISTORY
-    ===================================================== */
+    /*
+      -------------------------------------------------------
+      CONVERSATION HISTORY
+      -------------------------------------------------------
+    */
 
     const safeHistory =
       Array.isArray(history)
@@ -245,12 +306,15 @@ ${JSON.stringify(
 
     const contents = [];
 
-    for (const item of safeHistory) {
+    for (
+      const item of safeHistory
+    ) {
       contents.push({
         role:
           item.role === "assistant"
             ? "model"
             : "user",
+
         parts: [
           {
             text: item.content,
@@ -261,6 +325,7 @@ ${JSON.stringify(
 
     contents.push({
       role: "user",
+
       parts: [
         {
           text: message.trim(),
@@ -268,9 +333,11 @@ ${JSON.stringify(
       ],
     });
 
-    /* =====================================================
-       GEMINI MODEL RETRY SYSTEM
-    ===================================================== */
+    /*
+      -------------------------------------------------------
+      GEMINI MODEL RETRY SYSTEM
+      -------------------------------------------------------
+    */
 
     const models = [
       "gemini-3.5-flash",
@@ -279,7 +346,9 @@ ${JSON.stringify(
 
     let lastError = null;
 
-    for (const model of models) {
+    for (
+      const model of models
+    ) {
       for (
         let attempt = 1;
         attempt <= 3;
@@ -291,14 +360,18 @@ ${JSON.stringify(
           );
 
           const response =
-            await ai.models.generateContent({
-              model,
-              contents,
-              config: {
-                systemInstruction,
-                temperature: 0.3,
-              },
-            });
+            await ai.models.generateContent(
+              {
+                model,
+
+                contents,
+
+                config: {
+                  systemInstruction,
+                  temperature: 0.3,
+                },
+              }
+            );
 
           const reply =
             response?.text ||
@@ -325,6 +398,12 @@ ${JSON.stringify(
             error?.message ||
               error
           );
+
+          /*
+            Retry temporary errors:
+            429 = rate limit
+            503 = temporary unavailable
+          */
 
           if (
             status === 429 ||
@@ -359,8 +438,10 @@ ${JSON.stringify(
 
     return res.status(503).json({
       success: false,
+
       message:
         "The AI assistant is temporarily unavailable. Please try again shortly.",
+
       error:
         process.env.NODE_ENV ===
         "development"
@@ -375,6 +456,7 @@ ${JSON.stringify(
 
     return res.status(500).json({
       success: false,
+
       message:
         "Something went wrong while processing your message.",
     });
@@ -420,34 +502,34 @@ async function startServer() {
   try {
     await testDatabaseConnection();
 
-    app.listen(PORT, () => {
-      console.log("");
-      console.log(
-        "======================================"
-      );
-      console.log(
-        "🚀 RUDRAKSH BACKEND SERVER"
-      );
-      console.log(
-        "======================================"
-      );
-      console.log(
-        `🌐 Server: http://localhost:${PORT}`
-      );
-      console.log(
-        `🤖 AI:    /api/chat`
-      );
-      console.log(
-        `🖼️ Uploads: /uploads`
-      );
-      console.log(
-        `🗄️ DB:    MySQL`
-      );
-      console.log(
-        "======================================"
-      );
-      console.log("");
-    });
+    app.listen(
+      PORT,
+      () => {
+        console.log("");
+        console.log(
+          "======================================"
+        );
+        console.log(
+          "🚀 RUDRAKSH BACKEND SERVER"
+        );
+        console.log(
+          "======================================"
+        );
+        console.log(
+          `🌐 Server: http://localhost:${PORT}`
+        );
+        console.log(
+          `🤖 AI:    /api/chat`
+        );
+        console.log(
+          `🗄️ DB:    MySQL`
+        );
+        console.log(
+          "======================================"
+        );
+        console.log("");
+      }
+    );
   } catch (error) {
     console.error(
       "❌ SERVER STARTUP ERROR:",
