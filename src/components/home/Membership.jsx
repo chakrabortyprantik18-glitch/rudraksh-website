@@ -3,7 +3,11 @@ import { useGSAP } from "@gsap/react";
 
 import { gsap } from "../../services/gsap";
 import "./Membership.css";
+
 import { BACKEND_URL } from "../../config/api";
+import {
+  useWebsiteContent,
+} from "../../hooks/useWebsiteContent";
 
 const benefits = [
   {
@@ -37,8 +41,15 @@ const initialForm = {
 function Membership() {
   const sectionRef = useRef(null);
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const {
+    content,
+  } = useWebsiteContent("membership");
+
+  const [formOpen, setFormOpen] =
+    useState(false);
+
+  const [submitted, setSubmitted] =
+    useState(false);
 
   const [formData, setFormData] =
     useState(initialForm);
@@ -46,41 +57,72 @@ function Membership() {
   const [submitting, setSubmitting] =
     useState(false);
 
-  const [message, setMessage] = useState({
-    type: "",
-    text: "",
-  });
+  const [message, setMessage] =
+    useState({
+      type: "",
+      text: "",
+    });
+
+  /*
+   * ============================================================
+   * CMS CONTENT
+   * ============================================================
+   */
+
+  const eyebrow =
+    content?.eyebrow ||
+    "BECOME A MEMBER";
+
+  const title =
+    content?.title ||
+    "Don't just watch change happen. Be part of it.";
+
+  const description =
+    content?.description ||
+    "Rudraksh is a community of people who believe that meaningful change begins when we come together. Become a member and be part of the journey.";
+
+  const buttonText =
+    content?.buttonText ||
+    "Join Rudraksh";
+
+  /*
+   * ============================================================
+   * GSAP
+   * ============================================================
+   */
 
   useGSAP(
     () => {
-      const section = sectionRef.current;
+      const section =
+        sectionRef.current;
 
       if (!section) {
         return;
       }
+
+      const animatedElements = [
+        ".membership-label",
+        ".membership-title",
+        ".membership-description",
+        ".membership-button",
+        ".membership-benefits",
+        ".membership-benefit",
+      ];
+
+      gsap.set(animatedElements, {
+        opacity: 1,
+        y: 0,
+        x: 0,
+      });
 
       const prefersReducedMotion =
         window.matchMedia(
           "(prefers-reduced-motion: reduce)"
         ).matches;
 
-      if (prefersReducedMotion) {
-        gsap.set(
-          [
-            ".membership-label",
-            ".membership-title",
-            ".membership-description",
-            ".membership-button",
-            ".membership-benefits",
-            ".membership-benefit",
-          ],
-          {
-            opacity: 1,
-            y: 0,
-            x: 0,
-          }
-        );
-
+      if (
+        prefersReducedMotion
+      ) {
         return;
       }
 
@@ -145,24 +187,50 @@ function Membership() {
     }
   );
 
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
+  /*
+   * ============================================================
+   * INPUT
+   * ============================================================
+   */
 
-    setFormData((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
+  const handleInputChange = (
+    event
+  ) => {
+    const {
+      name,
+      value,
+    } = event.target;
+
+    setFormData(
+      (previous) => ({
+        ...previous,
+        [name]: value,
+      })
+    );
   };
 
-  const handlePhotoChange = (event) => {
+  /*
+   * ============================================================
+   * PHOTO
+   * ============================================================
+   */
+
+  const handlePhotoChange = (
+    event
+  ) => {
     const file =
-      event.target.files?.[0] || null;
+      event.target.files?.[0] ||
+      null;
 
     if (!file) {
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
+    if (
+      !file.type.startsWith(
+        "image/"
+      )
+    ) {
       setMessage({
         type: "error",
         text: "Please select a valid image file.",
@@ -172,7 +240,10 @@ function Membership() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (
+      file.size >
+      5 * 1024 * 1024
+    ) {
       setMessage({
         type: "error",
         text: "Photo must be smaller than 5 MB.",
@@ -187,11 +258,19 @@ function Membership() {
       text: "",
     });
 
-    setFormData((previous) => ({
-      ...previous,
-      photo: file,
-    }));
+    setFormData(
+      (previous) => ({
+        ...previous,
+        photo: file,
+      })
+    );
   };
+
+  /*
+   * ============================================================
+   * OPEN FORM
+   * ============================================================
+   */
 
   const openForm = () => {
     setMessage({
@@ -200,9 +279,22 @@ function Membership() {
     });
 
     setSubmitted(false);
-    setFormData(initialForm);
+
+    setFormData({
+      ...initialForm,
+    });
+
     setFormOpen(true);
+
+    document.body.style.overflow =
+      "hidden";
   };
+
+  /*
+   * ============================================================
+   * CLOSE FORM
+   * ============================================================
+   */
 
   const closeForm = () => {
     if (submitting) {
@@ -210,141 +302,165 @@ function Membership() {
     }
 
     setFormOpen(false);
-
     setSubmitted(false);
 
     setMessage({
       type: "",
       text: "",
     });
+
+    document.body.style.overflow =
+      "";
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  /*
+   * ============================================================
+   * SUBMIT MEMBERSHIP
+   * ============================================================
+   */
 
-    if (submitting) {
-      return;
-    }
+  const handleSubmit =
+    async (event) => {
+      event.preventDefault();
 
-    if (!formData.full_name.trim()) {
+      if (submitting) {
+        return;
+      }
+
+      if (
+        !formData.full_name.trim()
+      ) {
+        setMessage({
+          type: "error",
+          text: "Please enter your full name.",
+        });
+
+        return;
+      }
+
+      if (
+        !formData.phone.trim()
+      ) {
+        setMessage({
+          type: "error",
+          text: "Please enter your phone number.",
+        });
+
+        return;
+      }
+
+      setSubmitting(true);
+
       setMessage({
-        type: "error",
-        text: "Please enter your full name.",
+        type: "",
+        text: "",
       });
-      return;
-    }
 
-    if (!formData.phone.trim()) {
-      setMessage({
-        type: "error",
-        text: "Please enter your phone number.",
-      });
-      return;
-    }
+      try {
+        const payload =
+          new FormData();
 
-    setSubmitting(true);
-
-    setMessage({
-      type: "",
-      text: "",
-    });
-
-    try {
-      const payload = new FormData();
-
-      payload.append(
-        "full_name",
-        formData.full_name.trim()
-      );
-
-      payload.append(
-        "email",
-        formData.email.trim()
-      );
-
-      payload.append(
-        "phone",
-        formData.phone.trim()
-      );
-
-      payload.append(
-        "address",
-        formData.address.trim()
-      );
-
-      payload.append(
-        "date_of_birth",
-        formData.date_of_birth
-      );
-
-      payload.append(
-        "occupation",
-        formData.occupation.trim()
-      );
-
-      payload.append(
-        "reason",
-        formData.reason.trim()
-      );
-
-      if (formData.photo) {
         payload.append(
-          "photo",
-          formData.photo
+          "full_name",
+          formData.full_name.trim()
         );
-      }
 
-      const response = await fetch(
-        `${BACKEND_URL}/api/memberships`,
-        {
-          method: "POST",
-          body: payload,
+        payload.append(
+          "email",
+          formData.email.trim()
+        );
+
+        payload.append(
+          "phone",
+          formData.phone.trim()
+        );
+
+        payload.append(
+          "address",
+          formData.address.trim()
+        );
+
+        payload.append(
+          "date_of_birth",
+          formData.date_of_birth
+        );
+
+        payload.append(
+          "occupation",
+          formData.occupation.trim()
+        );
+
+        payload.append(
+          "reason",
+          formData.reason.trim()
+        );
+
+        if (formData.photo) {
+          payload.append(
+            "photo",
+            formData.photo
+          );
         }
-      );
 
-      const data =
-        await response.json();
+        const response =
+          await fetch(
+            `${BACKEND_URL}/api/memberships`,
+            {
+              method: "POST",
+              body: payload,
+            }
+          );
 
-      if (!response.ok || !data.success) {
-        throw new Error(
-          data.message ||
-            "Unable to submit membership application."
+        const data =
+          await response.json();
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+          throw new Error(
+            data.message ||
+              "Unable to submit membership application."
+          );
+        }
+
+        /*
+         * SUCCESS
+         */
+
+        setFormData({
+          ...initialForm,
+        });
+
+        setSubmitted(true);
+
+        setMessage({
+          type: "success",
+          text:
+            "Your membership application has been sent successfully.",
+        });
+      } catch (error) {
+        console.error(
+          "Membership submission error:",
+          error
         );
+
+        setMessage({
+          type: "error",
+          text:
+            error.message ||
+            "Something went wrong. Please try again.",
+        });
+      } finally {
+        setSubmitting(false);
       }
+    };
 
-      /*
-       * SUCCESS
-       *
-       * Instead of resetting the form and leaving
-       * the user on the same form, we switch to a
-       * dedicated success screen.
-       */
-
-      setFormData(initialForm);
-
-      setSubmitted(true);
-
-      setMessage({
-        type: "success",
-        text:
-          "Your membership application has been sent successfully.",
-      });
-    } catch (error) {
-      console.error(
-        "Membership submission error:",
-        error
-      );
-
-      setMessage({
-        type: "error",
-        text:
-          error.message ||
-          "Something went wrong. Please try again.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  /*
+   * ============================================================
+   * RENDER
+   * ============================================================
+   */
 
   return (
     <>
@@ -358,25 +474,24 @@ function Membership() {
         <div className="membership-glow membership-glow-two" />
 
         <div className="membership-container">
+
+          {/* ==================================================
+              MAIN CONTENT
+          ================================================== */}
+
           <div className="membership-main">
+
             <div className="membership-label">
               <span />
-              BECOME A MEMBER
+              {eyebrow}
             </div>
 
             <h2 className="membership-title">
-              Don't just watch
-              <br />
-              <em>change happen.</em>
-              <br />
-              Be part of it.
+              {title}
             </h2>
 
             <p className="membership-description">
-              Rudraksh is a community of people
-              who believe that meaningful change
-              begins when we come together. Become
-              a member and be part of the journey.
+              {description}
             </p>
 
             <button
@@ -384,43 +499,76 @@ function Membership() {
               className="membership-button"
               onClick={openForm}
             >
-              <span>Join Rudraksh</span>
-              <strong>↗</strong>
+              <span>
+                {buttonText}
+              </span>
+
+              <strong>
+                ↗
+              </strong>
             </button>
+
           </div>
+
+          {/* ==================================================
+              BENEFITS
+          ================================================== */}
 
           <div className="membership-benefits">
-            {benefits.map((benefit) => (
-              <div
-                key={benefit.number}
-                className="membership-benefit"
-              >
-                <span className="membership-benefit-number">
-                  {benefit.number}
-                </span>
 
-                <div className="membership-benefit-content">
-                  <h3>
-                    {benefit.title}
-                  </h3>
+            {benefits.map(
+              (benefit) => (
+                <div
+                  key={
+                    benefit.number
+                  }
+                  className="membership-benefit"
+                >
+                  <span className="membership-benefit-number">
+                    {
+                      benefit.number
+                    }
+                  </span>
 
-                  <p>
-                    {benefit.text}
-                  </p>
+                  <div className="membership-benefit-content">
+
+                    <h3>
+                      {
+                        benefit.title
+                      }
+                    </h3>
+
+                    <p>
+                      {
+                        benefit.text
+                      }
+                    </p>
+
+                  </div>
+
+                  <span className="membership-benefit-line" />
                 </div>
+              )
+            )}
 
-                <span className="membership-benefit-line" />
-              </div>
-            ))}
           </div>
+
         </div>
 
+        {/* ==================================================
+            FOOTER TEXT
+        ================================================== */}
+
         <div className="membership-bottom-text">
-          <span>RUDRAKSH</span>
+          <span>
+            RUDRAKSH
+          </span>
+
           <span>
             SOCIAL & CULTURAL ORGANIZATION
           </span>
         </div>
+
       </section>
 
       {/* =====================================================
@@ -430,7 +578,9 @@ function Membership() {
       {formOpen && (
         <div
           className="membership-modal-overlay"
-          onMouseDown={(event) => {
+          onMouseDown={(
+            event
+          ) => {
             if (
               event.target ===
               event.currentTarget
@@ -445,6 +595,11 @@ function Membership() {
             aria-modal="true"
             aria-labelledby="membership-form-title"
           >
+
+            {/* =================================================
+                CLOSE
+            ================================================= */}
+
             <button
               type="button"
               className="membership-modal-close"
@@ -461,6 +616,7 @@ function Membership() {
 
             {submitted ? (
               <div className="membership-success">
+
                 <div className="membership-success-icon">
                   ✓
                 </div>
@@ -471,7 +627,10 @@ function Membership() {
 
                 <h2>
                   Thank you for joining
-                  <em> Rudraksh.</em>
+                  <em>
+                    {" "}
+                    Rudraksh.
+                  </em>
                 </h2>
 
                 <p>
@@ -490,22 +649,32 @@ function Membership() {
                   onClick={closeForm}
                 >
                   CLOSE
-                  <span>↗</span>
+
+                  <span>
+                    ↗
+                  </span>
                 </button>
+
               </div>
             ) : (
               <>
+
                 {/* =============================================
                     FORM HEADER
                 ============================================= */}
 
                 <div className="membership-modal-header">
+
                   <span>
                     RUDRAKSH MEMBERSHIP
                   </span>
 
                   <h2 id="membership-form-title">
-                    Become a <em>member.</em>
+                    Become a
+                    <em>
+                      {" "}
+                      member.
+                    </em>
                   </h2>
 
                   <p>
@@ -513,6 +682,7 @@ function Membership() {
                     and submit your membership
                     application.
                   </p>
+
                 </div>
 
                 {/* =============================================
@@ -521,10 +691,17 @@ function Membership() {
 
                 <form
                   className="membership-form"
-                  onSubmit={handleSubmit}
+                  onSubmit={
+                    handleSubmit
+                  }
                 >
+
                   <div className="membership-form-grid">
+
+                    {/* FULL NAME */}
+
                     <div className="membership-field">
+
                       <label htmlFor="membership-full-name">
                         Full Name *
                       </label>
@@ -542,9 +719,13 @@ function Membership() {
                         }
                         required
                       />
+
                     </div>
 
+                    {/* PHONE */}
+
                     <div className="membership-field">
+
                       <label htmlFor="membership-phone">
                         Phone Number *
                       </label>
@@ -562,9 +743,13 @@ function Membership() {
                         }
                         required
                       />
+
                     </div>
 
+                    {/* EMAIL */}
+
                     <div className="membership-field">
+
                       <label htmlFor="membership-email">
                         Email
                       </label>
@@ -581,9 +766,13 @@ function Membership() {
                           handleInputChange
                         }
                       />
+
                     </div>
 
+                    {/* DOB */}
+
                     <div className="membership-field">
+
                       <label htmlFor="membership-dob">
                         Date of Birth
                       </label>
@@ -599,9 +788,13 @@ function Membership() {
                           handleInputChange
                         }
                       />
+
                     </div>
 
+                    {/* OCCUPATION */}
+
                     <div className="membership-field">
+
                       <label htmlFor="membership-occupation">
                         Occupation
                       </label>
@@ -618,9 +811,13 @@ function Membership() {
                           handleInputChange
                         }
                       />
+
                     </div>
 
+                    {/* PHOTO */}
+
                     <div className="membership-field">
+
                       <label htmlFor="membership-photo">
                         Photo
                       </label>
@@ -639,10 +836,15 @@ function Membership() {
                         JPG, PNG, WEBP or GIF ·
                         Maximum 5 MB
                       </small>
+
                     </div>
+
                   </div>
 
+                  {/* ADDRESS */}
+
                   <div className="membership-field">
+
                     <label htmlFor="membership-address">
                       Address
                     </label>
@@ -659,9 +861,13 @@ function Membership() {
                         handleInputChange
                       }
                     />
+
                   </div>
 
+                  {/* REASON */}
+
                   <div className="membership-field">
+
                     <label htmlFor="membership-reason">
                       Why do you want to join?
                     </label>
@@ -678,15 +884,22 @@ function Membership() {
                         handleInputChange
                       }
                     />
+
                   </div>
+
+                  {/* MESSAGE */}
 
                   {message.text && (
                     <div
                       className={`membership-form-message ${message.type}`}
                     >
-                      {message.text}
+                      {
+                        message.text
+                      }
                     </div>
                   )}
+
+                  {/* SUBMIT */}
 
                   <button
                     type="submit"
@@ -703,9 +916,12 @@ function Membership() {
                         : "↗"}
                     </span>
                   </button>
+
                 </form>
+
               </>
             )}
+
           </div>
         </div>
       )}

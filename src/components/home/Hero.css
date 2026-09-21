@@ -7,10 +7,8 @@
   min-height: 100svh;
   width: 100%;
   overflow: hidden;
-
   display: flex;
   align-items: center;
-
   background: #111;
   color: #fff;
 }
@@ -29,10 +27,8 @@
 .hero-background {
   width: 100%;
   height: 100%;
-
   object-fit: cover;
   object-position: center;
-
   transform: scale(1.02);
   will-change: transform;
 }
@@ -45,7 +41,6 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-
   background:
     linear-gradient(
       90deg,
@@ -60,7 +55,6 @@
   position: absolute;
   inset: 0;
   z-index: 2;
-
   background:
     linear-gradient(
       180deg,
@@ -78,13 +72,10 @@
 .hero-content {
   position: relative;
   z-index: 5;
-
   width: min(1250px, 90%);
   margin: 0 auto;
-
   padding-top: 90px;
   padding-bottom: 80px;
-
   will-change: transform;
 }
 
@@ -96,13 +87,10 @@
   display: flex;
   align-items: center;
   gap: 11px;
-
   margin-bottom: 24px;
-
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.22em;
-
   color: rgba(255, 255, 255, 0.82);
 }
 
@@ -118,14 +106,11 @@
 
 .hero-title {
   max-width: 850px;
-
   margin: 0 0 28px;
-
   font-size: clamp(52px, 6.7vw, 100px);
   line-height: 0.96;
   letter-spacing: -0.055em;
   font-weight: 700;
-
   color: #fff;
 }
 
@@ -139,14 +124,18 @@
 
 .hero-description {
   max-width: 610px;
-
   margin: 0 0 35px;
-
   font-size: clamp(15px, 1.25vw, 18px);
   line-height: 1.7;
   font-weight: 400;
-
   color: rgba(255, 255, 255, 0.82);
+}
+
+.hero-description strong {
+  color: #e87917;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 10px rgba(232, 121, 23, 0.18);
 }
 
 /* =========================================
@@ -161,22 +150,16 @@
 
 .hero-button {
   min-height: 54px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 22px;
-
   padding: 0 25px;
-
   border: 1px solid transparent;
-
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.03em;
-
   text-decoration: none;
-
   transition:
     transform 0.3s ease,
     background 0.3s ease,
@@ -192,7 +175,6 @@
 .hero-button-primary strong {
   font-size: 20px;
   font-weight: 400;
-
   transition: transform 0.3s ease;
 }
 
@@ -207,10 +189,8 @@
 
 .hero-button-secondary {
   border-color: rgba(255, 255, 255, 0.55);
-
   background: rgba(255, 255, 255, 0.04);
   color: #fff;
-
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -219,7 +199,6 @@
   background: #fff;
   border-color: #fff;
   color: #151515;
-
   transform: translateY(-3px);
 }
 
@@ -229,12 +208,9 @@
 
 .hero-community-note {
   position: absolute;
-
   right: 5%;
   bottom: 125px;
-
   z-index: 5;
-
   display: flex;
   align-items: flex-start;
   gap: 14px;
@@ -242,12 +218,9 @@
 
 .hero-community-line {
   display: block;
-
   width: 35px;
   height: 1px;
-
   margin-top: 8px;
-
   background: #e87917;
 }
 
@@ -255,12 +228,10 @@
   display: flex;
   flex-direction: column;
   gap: 3px;
-
   font-size: 10px;
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: 0.2em;
-
   color: rgba(255, 255, 255, 0.78);
 }
 
@@ -270,28 +241,19 @@
 
 .hero-slider-control {
   position: absolute;
-
   top: 50%;
-
   z-index: 6;
-
   width: 48px;
   height: 48px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   border: 1px solid rgba(255, 255, 255, 0.3);
-
   background: rgba(0, 0, 0, 0.12);
   color: #fff;
-
   cursor: pointer;
-
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-
   transition:
     background 0.3s ease,
     border-color 0.3s ease,
@@ -330,32 +292,23 @@
 
 .hero-dots {
   position: absolute;
-
   left: 50%;
   bottom: 38px;
-
   z-index: 6;
-
   display: flex;
   align-items: center;
   gap: 8px;
-
   transform: translateX(-50%);
 }
 
 .hero-dots button {
   width: 7px;
   height: 7px;
-
   padding: 0;
-
   border: 0;
   border-radius: 50%;
-
   background: rgba(255, 255, 255, 0.45);
-
   cursor: pointer;
-
   transition:
     width 0.3s ease,
     border-radius 0.3s ease,
@@ -364,9 +317,7 @@
 
 .hero-dots button.active {
   width: 28px;
-
   border-radius: 10px;
-
   background: #e87917;
 }
 
@@ -376,18 +327,13 @@
 
 .hero-scroll-indicator {
   position: absolute;
-
   left: 5%;
   bottom: 38px;
-
   z-index: 6;
-
   display: flex;
   align-items: center;
   gap: 12px;
-
   color: rgba(255, 255, 255, 0.62);
-
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -395,29 +341,21 @@
 
 .hero-scroll-indicator i {
   position: relative;
-
   display: block;
-
   width: 40px;
   height: 1px;
-
   background: rgba(255, 255, 255, 0.5);
 }
 
 .hero-scroll-indicator i::after {
   content: "";
-
   position: absolute;
-
   right: 0;
   top: 50%;
-
   width: 6px;
   height: 6px;
-
   border-top: 1px solid #fff;
   border-right: 1px solid #fff;
-
   transform: translateY(-50%) rotate(45deg);
 }
 
@@ -471,23 +409,19 @@
 
   .hero-content {
     width: 88%;
-
     padding-top: 115px;
     padding-bottom: 120px;
   }
 
   .hero-eyebrow {
     gap: 7px;
-
     margin-bottom: 18px;
-
     font-size: 8px;
     letter-spacing: 0.14em;
   }
 
   .hero-title {
     margin-bottom: 22px;
-
     font-size: clamp(43px, 13vw, 66px);
     line-height: 0.98;
     letter-spacing: -0.055em;
@@ -495,17 +429,18 @@
 
   .hero-description {
     max-width: 500px;
-
     margin-bottom: 27px;
-
     font-size: 14px;
     line-height: 1.65;
+  }
+
+  .hero-description strong {
+    font-weight: 800;
   }
 
   .hero-actions {
     align-items: stretch;
     flex-direction: column;
-
     width: min(100%, 300px);
   }
 
@@ -525,7 +460,6 @@
   .hero-scroll-indicator {
     left: 6%;
     bottom: 30px;
-
     font-size: 8px;
   }
 

@@ -1,58 +1,127 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useGSAP } from "@gsap/react";
 
 import { gsap } from "../../services/gsap";
 import "./MembersPreview.css";
+
 import { BACKEND_URL } from "../../config/api";
 
-const API_URL = `${BACKEND_URL}/api/members`;
-
+const API_URL =
+  `${BACKEND_URL}/api/members?limit=5`;
 
 function MembersPreview() {
   const sectionRef = useRef(null);
 
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [members, setMembers] =
+    useState([]);
+
+  const [totalMembers, setTotalMembers] =
+    useState(0);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  /*
+   * ============================================================
+   * LOAD ONLY 5 MEMBERS FOR HOMEPAGE
+   * ============================================================
+   */
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadMembers = async () => {
       try {
         setLoading(true);
         setError("");
 
-        const response = await fetch(API_URL);
-        const data = await response.json();
+        const response =
+          await fetch(API_URL);
 
-        if (!response.ok || !data.success) {
+        const data =
+          await response.json();
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
           throw new Error(
-            data.message || "Unable to load members."
+            data.message ||
+              "Unable to load members."
           );
         }
 
-        setMembers(data.members || []);
+        if (cancelled) {
+          return;
+        }
+
+        const previewMembers =
+          Array.isArray(data.members)
+            ? data.members.slice(0, 5)
+            : [];
+
+        setMembers(
+          previewMembers
+        );
+
+        setTotalMembers(
+          Number(
+            data.total ??
+              data.count ??
+              data.members?.length ??
+              0
+          )
+        );
       } catch (err) {
-        console.error("PUBLIC MEMBERS LOAD ERROR:", err);
-        setError("Unable to load members right now.");
+        if (cancelled) {
+          return;
+        }
+
+        console.error(
+          "PUBLIC MEMBERS LOAD ERROR:",
+          err
+        );
+
+        setError(
+          "Unable to load members right now."
+        );
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     loadMembers();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  /*
+   * ============================================================
+   * GSAP
+   * ============================================================
+   */
 
   useGSAP(
     () => {
-      const section = sectionRef.current;
+      const section =
+        sectionRef.current;
 
       if (!section) {
         return;
       }
 
-      const elements = section.querySelectorAll(
-        ".members-heading, .members-intro, .member-card, .members-bottom, .members-empty-state"
-      );
+      const elements =
+        section.querySelectorAll(
+          ".members-heading, .members-intro, .member-card, .members-bottom, .members-empty-state"
+        );
 
       gsap.set(elements, {
         opacity: 1,
@@ -60,17 +129,23 @@ function MembersPreview() {
         x: 0,
       });
 
-      const prefersReducedMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
+      const prefersReducedMotion =
+        window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches;
 
-      if (prefersReducedMotion) {
+      if (
+        prefersReducedMotion
+      ) {
         return;
       }
 
-      const rect = section.getBoundingClientRect();
+      const rect =
+        section.getBoundingClientRect();
+
       const visible =
-        rect.top < window.innerHeight &&
+        rect.top <
+          window.innerHeight &&
         rect.bottom > 0;
 
       if (visible) {
@@ -108,30 +183,60 @@ function MembersPreview() {
     },
     {
       scope: sectionRef,
-      dependencies: [members.length, loading],
+      dependencies: [
+        members.length,
+        loading,
+      ],
     }
   );
 
-  const getImageUrl = (image) => {
+  /*
+   * ============================================================
+   * IMAGE URL
+   * ============================================================
+   */
+
+  const getImageUrl = (
+    image
+  ) => {
     if (!image) {
       return "";
     }
 
     if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
+      image.startsWith(
+        "http://"
+      ) ||
+      image.startsWith(
+        "https://"
+      ) ||
+      image.startsWith("data:")
     ) {
       return image;
     }
 
-    if (image.startsWith("/uploads/")) {
+    if (
+      image.startsWith(
+        "/uploads/"
+      )
+    ) {
       return `${BACKEND_URL}${image}`;
     }
 
-    return image;
+    if (
+      image.startsWith("/")
+    ) {
+      return `${BACKEND_URL}${image}`;
+    }
+
+    return `${BACKEND_URL}/${image}`;
   };
 
-  const visibleMembers = members.slice(0, 6);
+  /*
+   * ============================================================
+   * RENDER
+   * ============================================================
+   */
 
   return (
     <section
@@ -140,8 +245,15 @@ function MembersPreview() {
       className="members-preview"
     >
       <div className="members-container">
+
+        {/* =========================
+            HEADER
+        ========================== */}
+
         <div className="members-header">
+
           <div className="members-heading">
+
             <div className="section-eyebrow">
               <span />
               THE PEOPLE
@@ -150,135 +262,191 @@ function MembersPreview() {
             <h2>
               People make
               <br />
-              <em>the difference.</em>
+              <em>
+                the difference.
+              </em>
             </h2>
+
           </div>
 
           <div className="members-intro">
             <p>
-              Active members published through the Admin
-              Panel will appear here.
+              Meet some of the people
+              who are part of the
+              Rudraksh community.
             </p>
           </div>
+
         </div>
 
+        {/* =========================
+            MEMBER GRID
+        ========================== */}
+
         <div className="members-grid">
+
+          {/* LOADING */}
+
           {loading && (
             <div className="members-empty-state">
               Loading members...
             </div>
           )}
 
-          {!loading && error && (
-            <div className="members-empty-state">
-              {error}
-            </div>
-          )}
+          {/* ERROR */}
+
+          {!loading &&
+            error && (
+              <div className="members-empty-state">
+                {error}
+              </div>
+            )}
+
+          {/* EMPTY */}
 
           {!loading &&
             !error &&
             members.length === 0 && (
               <div className="members-empty-state">
-                <strong>No members published yet.</strong>
+
+                <strong>
+                  No members published yet.
+                </strong>
+
                 <span>
-                  Add active members from the Admin Panel
-                  to populate this section.
+                  Add active members from
+                  the Admin Panel to
+                  populate this section.
                 </span>
+
               </div>
             )}
 
+          {/* MEMBERS */}
+
           {!loading &&
             !error &&
-            visibleMembers.map((member, index) => (
-              <article
-                key={member.id}
-                className="member-card"
-              >
-                <div className="member-image-wrap">
-                  {member.photo_url ? (
-                    <img
-                      src={getImageUrl(member.photo_url)}
-                      alt={member.name}
-                      className="member-image"
-                    />
-                  ) : (
-                    <div className="member-image member-image-empty">
-                      <span>No photo</span>
-                    </div>
-                  )}
+            members.map(
+              (member, index) => (
+                <article
+                  key={member.id}
+                  className="member-card"
+                >
+                  <div className="member-image-wrap">
 
-                  <div className="member-image-overlay" />
+                    {member.photo_url ? (
+                      <img
+                        src={getImageUrl(
+                          member.photo_url
+                        )}
+                        alt={
+                          member.name ||
+                          "Rudraksh member"
+                        }
+                        className="member-image"
+                        loading={
+                          index === 0
+                            ? "eager"
+                            : "lazy"
+                        }
+                      />
+                    ) : (
+                      <div className="member-image member-image-empty">
+                        <span>
+                          No photo
+                        </span>
+                      </div>
+                    )}
 
-                  <span className="member-index">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                </div>
+                    <div className="member-image-overlay" />
 
-                <div className="member-content">
-                  <div>
-                    <h3>{member.name}</h3>
+                    <span className="member-index">
+                      {String(
+                        index + 1
+                      ).padStart(
+                        2,
+                        "0"
+                      )}
+                    </span>
 
-                    <p>
-                      {member.position ||
-                        "Rudraksh Member"}
-                    </p>
                   </div>
 
-                  <span className="member-arrow">
-                    ↗
-                  </span>
-                </div>
-              </article>
-            ))}
+                  <div className="member-content">
+
+                    <div>
+                      <h3>
+                        {member.name}
+                      </h3>
+
+                      <p>
+                        {member.position ||
+                          "Rudraksh Member"}
+                      </p>
+                    </div>
+
+                    <span className="member-arrow">
+                      ↗
+                    </span>
+
+                  </div>
+                </article>
+              )
+            )}
+
         </div>
 
+        {/* =========================
+            BOTTOM
+        ========================== */}
+
         {!loading &&
-          !error &&
-          members.length > 0 && (
+          !error && (
             <div className="members-bottom">
+
               <div className="members-count">
-                <strong>{members.length}</strong>
+
+                <strong>
+                  {totalMembers}
+                </strong>
 
                 <span>
-                  active people currently connected
+                  active people currently
+                  connected
                   <br />
                   with Rudraksh
                 </span>
+
               </div>
 
-              <a
-                href="#membership"
-                className="members-join"
-              >
-                Become Part of Rudraksh
-                <span>→</span>
-              </a>
+              <div className="members-bottom-actions">
+
+                <Link
+                  to="/members"
+                  className="members-view-all"
+                >
+                  View All Members
+
+                  <span>
+                    ↗
+                  </span>
+                </Link>
+
+                <Link
+                  to="/#membership"
+                  className="members-join"
+                >
+                  Become Part of Rudraksh
+
+                  <span>
+                    →
+                  </span>
+                </Link>
+
+              </div>
+
             </div>
           )}
 
-        {members.length === 0 &&
-          !loading &&
-          !error && (
-            <div className="members-bottom">
-              <div className="members-count">
-                <strong>0</strong>
-
-                <span>
-                  active members currently published
-                  <br />
-                  on the website
-                </span>
-              </div>
-
-              <a
-                href="#membership"
-                className="members-join"
-              >
-                Become Part of Rudraksh
-                <span>→</span>
-              </a>
-            </div>
-          )}
       </div>
     </section>
   );

@@ -1,11 +1,69 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 
 import { gsap } from "../../services/gsap";
+import {
+  useWebsiteContent,
+  getContentImageUrl,
+} from "../../hooks/useWebsiteContent";
+
+import { BACKEND_URL } from "../../config/api";
+
 import "./About.css";
 
 function About() {
   const sectionRef = useRef(null);
+
+  const { content } = useWebsiteContent("about");
+
+  const [memberCount, setMemberCount] = useState(0);
+
+  /*
+   * ============================================================
+   * LOAD MEMBER COUNT
+   * ============================================================
+   */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadMemberCount = async () => {
+      try {
+        const response = await fetch(
+          `${BACKEND_URL}/api/members?limit=1`
+        );
+
+        const data = await response.json();
+
+        if (cancelled) {
+          return;
+        }
+
+        if (response.ok && data?.success) {
+          setMemberCount(
+            Number(data.total || data.count || 0)
+          );
+        }
+      } catch (error) {
+        console.error(
+          "ABOUT MEMBER COUNT ERROR:",
+          error
+        );
+      }
+    };
+
+    loadMemberCount();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /*
+   * ============================================================
+   * GSAP ANIMATION
+   * ============================================================
+   */
 
   useGSAP(
     () => {
@@ -24,12 +82,6 @@ function About() {
         ".about-info-card",
       ];
 
-      /*
-       * IMPORTANT:
-       * Make everything visible first.
-       * GSAP should enhance the section, not be responsible
-       * for making the content exist.
-       */
       gsap.set(animatedElements, {
         opacity: 1,
         x: 0,
@@ -37,29 +89,23 @@ function About() {
         scale: 1,
       });
 
-      const prefersReducedMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
+      const prefersReducedMotion =
+        window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches;
 
       if (prefersReducedMotion) {
         return;
       }
 
-      /*
-       * Check whether About is already visible.
-       * This prevents blank content when navigating directly
-       * to #about from the Navbar.
-       */
-      const rect = section.getBoundingClientRect();
+      const rect =
+        section.getBoundingClientRect();
 
       const isVisible =
         rect.top < window.innerHeight &&
         rect.bottom > 0;
 
       if (!isVisible) {
-        /*
-         * Normal scroll animation.
-         */
         gsap
           .timeline({
             scrollTrigger: {
@@ -127,9 +173,6 @@ function About() {
           );
       }
 
-      /*
-       * Subtle image parallax.
-       */
       gsap.to(".about-image", {
         yPercent: -5,
         ease: "none",
@@ -145,6 +188,28 @@ function About() {
       scope: sectionRef,
     }
   );
+
+  /*
+   * ============================================================
+   * CONTENT FALLBACKS
+   * ============================================================
+   */
+
+  const eyebrow =
+    content?.eyebrow ||
+    "ABOUT RUDRAKSH";
+
+  const title =
+    content?.title ||
+    "Creating change, together.";
+
+  const description =
+    content?.description ||
+    "Rudraksh Social & Cultural Organization is a community-focused organization working to create meaningful positive change through compassion, education, cultural activities and collective action.";
+
+  const image =
+    getContentImageUrl(content?.image) ||
+    "/images/rudraksh-logo.png";
 
   return (
     <section
@@ -162,21 +227,16 @@ function About() {
 
           <div className="about-label">
             <span className="about-label-line" />
-            ABOUT RUDRAKSH
+
+            {eyebrow}
           </div>
 
           <h2 className="about-title">
-            Creating change,
-            <br />
-            <span>together.</span>
+            {title}
           </h2>
 
           <p className="about-copy">
-            Rudraksh Social & Cultural Organization is a
-            community-focused organization working to create
-            meaningful positive change through compassion,
-            education, cultural activities and collective
-            action.
+            {description}
           </p>
 
           <p className="about-copy about-copy-secondary">
@@ -187,21 +247,25 @@ function About() {
           </p>
 
           <div className="about-actions">
+
             <a
-              href="#membership"
+              href="/#membership"
               className="about-button about-button-primary"
             >
               Become a Member
+
               <span>→</span>
             </a>
 
             <a
-              href="#projects"
+              href="/#projects"
               className="about-button about-button-link"
             >
               Explore Our Work
+
               <span>↗</span>
             </a>
+
           </div>
         </div>
 
@@ -214,11 +278,17 @@ function About() {
           <div className="about-image-card">
 
             <div className="about-image-wrap">
+
               <img
-                src="/images/rudraksh-logo.png"
+                src={image}
                 alt="Rudraksh Social & Cultural Organization"
                 className="about-image"
+                onError={(event) => {
+                  event.currentTarget.src =
+                    "/images/rudraksh-logo.png";
+                }}
               />
+
             </div>
 
             <div className="about-image-caption">
@@ -229,26 +299,34 @@ function About() {
 
           </div>
 
-          {/* INFO CARD */}
+          {/* =========================
+              INFO CARD
+          ========================== */}
 
           <div className="about-info-card">
 
             <div className="about-info-number">
-              34
+              {memberCount}
             </div>
 
             <div className="about-info-text">
-              <strong>Members</strong>
+
+              <strong>
+                Members
+              </strong>
 
               <span>
                 Working together for meaningful
                 community initiatives.
               </span>
+
             </div>
 
           </div>
 
-          {/* DECORATION */}
+          {/* =========================
+              DECORATION
+          ========================== */}
 
           <div className="about-decor">
             <span />

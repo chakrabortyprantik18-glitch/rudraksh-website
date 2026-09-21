@@ -3,34 +3,100 @@ import { useGSAP } from "@gsap/react";
 
 import { gsap } from "../../services/gsap";
 import "./Contact.css";
+
 import { BACKEND_URL } from "../../config/api";
+import {
+  useWebsiteContent,
+} from "../../hooks/useWebsiteContent";
 
 const API_URL = `${BACKEND_URL}/api/contact`;
 
 function Contact() {
   const sectionRef = useRef(null);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    subject: "",
-    message: "",
-  });
+  const {
+    content,
+  } = useWebsiteContent("contact");
 
-  const [submitting, setSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState({
-    type: "",
-    message: "",
-  });
+  const [formData, setFormData] =
+    useState({
+      name: "",
+      email: "",
+      phone: "",
+      subject: "",
+      message: "",
+    });
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
+  const [submitting, setSubmitting] =
+    useState(false);
 
-    setFormData((current) => ({
-      ...current,
-      [name]: value,
-    }));
+  const [submitStatus, setSubmitStatus] =
+    useState({
+      type: "",
+      message: "",
+    });
+
+  /*
+   * ============================================================
+   * CMS CONTENT
+   * ============================================================
+   */
+
+  const title =
+    content?.title ||
+    "Let's create something meaningful.";
+
+  const description =
+    content?.description ||
+    "Have a question, want to volunteer, become a member or work with us? We'd love to hear from you.";
+
+  const email =
+    content?.email ||
+    "rudrakshsocialculturalorganiza@gmail.com";
+
+  const phone =
+    content?.phone ||
+    "+91 93657 16039";
+
+  const address =
+    content?.address ||
+    "Nilambazar, Sribhumi, Assam, India";
+
+  const mapUrl =
+    content?.mapUrl ||
+    "https://www.google.com/maps/search/?api=1&query=Nilambazar%2C%20Sribhumi%2C%20Assam%2C%20India";
+
+  const whatsappNumber =
+    String(phone).replace(
+      /\D/g,
+      ""
+    );
+
+  const whatsappUrl =
+    whatsappNumber
+      ? `https://wa.me/${whatsappNumber}`
+      : "https://wa.me/919365716039";
+
+  /*
+   * ============================================================
+   * FORM INPUT
+   * ============================================================
+   */
+
+  const handleChange = (
+    event
+  ) => {
+    const {
+      name,
+      value,
+    } = event.target;
+
+    setFormData(
+      (current) => ({
+        ...current,
+        [name]: value,
+      })
+    );
 
     if (submitStatus.message) {
       setSubmitStatus({
@@ -40,85 +106,153 @@ function Contact() {
     }
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  /*
+   * ============================================================
+   * SUBMIT
+   * ============================================================
+   */
 
-    if (submitting) {
-      return;
-    }
+  const handleSubmit =
+    async (event) => {
+      event.preventDefault();
 
-    setSubmitting(true);
-
-    setSubmitStatus({
-      type: "",
-      message: "",
-    });
-
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          phone: formData.phone.trim(),
-          subject: formData.subject.trim(),
-          message: formData.message.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Unable to send your message."
-        );
+      if (submitting) {
+        return;
       }
 
-      setSubmitStatus({
-        type: "success",
-        message:
-          "Message sent successfully. We'll get back to you soon.",
-      });
+      const cleanName =
+        formData.name.trim();
 
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        subject: "",
+      const cleanEmail =
+        formData.email.trim();
+
+      const cleanPhone =
+        formData.phone.trim();
+
+      const cleanSubject =
+        formData.subject.trim();
+
+      const cleanMessage =
+        formData.message.trim();
+
+      if (!cleanName) {
+        setSubmitStatus({
+          type: "error",
+          message:
+            "Please enter your name.",
+        });
+
+        return;
+      }
+
+      if (!cleanEmail) {
+        setSubmitStatus({
+          type: "error",
+          message:
+            "Please enter your email address.",
+        });
+
+        return;
+      }
+
+      if (!cleanMessage) {
+        setSubmitStatus({
+          type: "error",
+          message:
+            "Please enter your message.",
+        });
+
+        return;
+      }
+
+      setSubmitting(true);
+
+      setSubmitStatus({
+        type: "",
         message: "",
       });
-    } catch (error) {
-      console.error(
-        "CONTACT FORM ERROR:",
-        error
-      );
 
-      setSubmitStatus({
-        type: "error",
-        message:
-          error.message ||
-          "Something went wrong. Please try again.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+      try {
+        const response =
+          await fetch(API_URL, {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              name: cleanName,
+              email: cleanEmail,
+              phone: cleanPhone,
+              subject: cleanSubject,
+              message: cleanMessage,
+            }),
+          });
+
+        const data =
+          await response.json();
+
+        if (
+          !response.ok ||
+          !data.success
+        ) {
+          throw new Error(
+            data.message ||
+              "Unable to send your message."
+          );
+        }
+
+        setSubmitStatus({
+          type: "success",
+          message:
+            "Message sent successfully. We'll get back to you soon.",
+        });
+
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          subject: "",
+          message: "",
+        });
+      } catch (error) {
+        console.error(
+          "CONTACT FORM ERROR:",
+          error
+        );
+
+        setSubmitStatus({
+          type: "error",
+          message:
+            error.message ||
+            "Something went wrong. Please try again.",
+        });
+      } finally {
+        setSubmitting(false);
+      }
+    };
+
+  /*
+   * ============================================================
+   * GSAP
+   * ============================================================
+   */
 
   useGSAP(
     () => {
-      const section = sectionRef.current;
+      const section =
+        sectionRef.current;
 
       if (!section) {
         return;
       }
 
-      const elements = section.querySelectorAll(
-        ".contact-eyebrow, .contact-title, .contact-description, .contact-details, .contact-form-card"
-      );
+      const elements =
+        section.querySelectorAll(
+          ".contact-eyebrow, .contact-title, .contact-description, .contact-details, .contact-form-card"
+        );
 
       gsap.set(elements, {
         opacity: 1,
@@ -131,14 +265,18 @@ function Contact() {
           "(prefers-reduced-motion: reduce)"
         ).matches;
 
-      if (prefersReducedMotion) {
+      if (
+        prefersReducedMotion
+      ) {
         return;
       }
 
-      const rect = section.getBoundingClientRect();
+      const rect =
+        section.getBoundingClientRect();
 
       const isVisible =
-        rect.top < window.innerHeight &&
+        rect.top <
+          window.innerHeight &&
         rect.bottom > 0;
 
       if (isVisible) {
@@ -205,6 +343,12 @@ function Contact() {
     }
   );
 
+  /*
+   * ============================================================
+   * RENDER
+   * ============================================================
+   */
+
   return (
     <section
       ref={sectionRef}
@@ -212,7 +356,9 @@ function Contact() {
       className="contact-section"
     >
       {/* Decorative elements */}
+
       <div className="contact-orb contact-orb-one" />
+
       <div className="contact-orb contact-orb-two" />
 
       <div className="contact-container">
@@ -229,15 +375,11 @@ function Contact() {
           </div>
 
           <h2 className="contact-title">
-            Let's create
-            <br />
-            <em>something meaningful.</em>
+            {title}
           </h2>
 
           <p className="contact-description">
-            Have a question, want to volunteer, become a
-            member or work with us? We'd love to hear from
-            you.
+            {description}
           </p>
 
           {/* =========================
@@ -249,7 +391,7 @@ function Contact() {
             {/* EMAIL */}
 
             <a
-              href="mailto:rudrakshsocialculturalorganiza@gmail.com"
+              href={`mailto:${email}`}
               className="contact-detail"
             >
               <span className="contact-detail-number">
@@ -257,10 +399,12 @@ function Contact() {
               </span>
 
               <div>
-                <small>EMAIL</small>
+                <small>
+                  EMAIL
+                </small>
 
                 <strong>
-                  rudrakshsocialculturalorganiza@gmail.com
+                  {email}
                 </strong>
               </div>
             </a>
@@ -268,7 +412,10 @@ function Contact() {
             {/* PHONE */}
 
             <a
-              href="tel:+919365716039"
+              href={`tel:${phone.replace(
+                /[^\d+]/g,
+                ""
+              )}`}
               className="contact-detail"
             >
               <span className="contact-detail-number">
@@ -276,10 +423,12 @@ function Contact() {
               </span>
 
               <div>
-                <small>PHONE</small>
+                <small>
+                  PHONE
+                </small>
 
                 <strong>
-                  +91 93657 16039
+                  {phone}
                 </strong>
               </div>
             </a>
@@ -292,10 +441,12 @@ function Contact() {
               </span>
 
               <div>
-                <small>LOCATION</small>
+                <small>
+                  LOCATION
+                </small>
 
                 <strong>
-                  Nilambazar, Sribhumi, Assam, India
+                  {address}
                 </strong>
               </div>
             </div>
@@ -307,7 +458,7 @@ function Contact() {
           ========================== */}
 
           <a
-            href="https://wa.me/919365716039"
+            href={whatsappUrl}
             target="_blank"
             rel="noreferrer"
             className="contact-whatsapp"
@@ -330,20 +481,25 @@ function Contact() {
         <div className="contact-form-card">
 
           <div className="contact-form-header">
-            <span>01</span>
+            <span>
+              01
+            </span>
 
             <p>
               SEND US A MESSAGE
             </p>
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form
+            onSubmit={handleSubmit}
+          >
 
             {/* NAME + EMAIL */}
 
             <div className="contact-form-row">
 
               <div className="contact-field">
+
                 <label htmlFor="name">
                   YOUR NAME
                 </label>
@@ -353,14 +509,20 @@ function Contact() {
                   name="name"
                   type="text"
                   placeholder="Enter your name"
-                  value={formData.name}
-                  onChange={handleChange}
+                  value={
+                    formData.name
+                  }
+                  onChange={
+                    handleChange
+                  }
                   maxLength={150}
                   required
                 />
+
               </div>
 
               <div className="contact-field">
+
                 <label htmlFor="email">
                   EMAIL ADDRESS
                 </label>
@@ -370,11 +532,16 @@ function Contact() {
                   name="email"
                   type="email"
                   placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
+                  value={
+                    formData.email
+                  }
+                  onChange={
+                    handleChange
+                  }
                   maxLength={255}
                   required
                 />
+
               </div>
 
             </div>
@@ -382,6 +549,7 @@ function Contact() {
             {/* PHONE */}
 
             <div className="contact-field">
+
               <label htmlFor="phone">
                 PHONE NUMBER
               </label>
@@ -391,15 +559,21 @@ function Contact() {
                 name="phone"
                 type="tel"
                 placeholder="+91 XXXXX XXXXX"
-                value={formData.phone}
-                onChange={handleChange}
+                value={
+                  formData.phone
+                }
+                onChange={
+                  handleChange
+                }
                 maxLength={30}
               />
+
             </div>
 
             {/* SUBJECT */}
 
             <div className="contact-field">
+
               <label htmlFor="subject">
                 SUBJECT
               </label>
@@ -409,15 +583,21 @@ function Contact() {
                 name="subject"
                 type="text"
                 placeholder="What would you like to talk about?"
-                value={formData.subject}
-                onChange={handleChange}
+                value={
+                  formData.subject
+                }
+                onChange={
+                  handleChange
+                }
                 maxLength={255}
               />
+
             </div>
 
             {/* MESSAGE */}
 
             <div className="contact-field">
+
               <label htmlFor="message">
                 YOUR MESSAGE
               </label>
@@ -427,10 +607,16 @@ function Contact() {
                 name="message"
                 rows="5"
                 placeholder="Tell us how we can help..."
-                value={formData.message}
-                onChange={handleChange}
+                value={
+                  formData.message
+                }
+                onChange={
+                  handleChange
+                }
+                maxLength={5000}
                 required
               />
+
             </div>
 
             {/* STATUS */}
@@ -438,17 +624,21 @@ function Contact() {
             {submitStatus.message && (
               <div
                 className={`contact-submit-status ${
-                  submitStatus.type === "success"
+                  submitStatus.type ===
+                  "success"
                     ? "contact-submit-success"
                     : "contact-submit-error"
                 }`}
               >
-                {submitStatus.type === "success"
+                {submitStatus.type ===
+                "success"
                   ? "✓"
                   : "!"}
 
                 <span>
-                  {submitStatus.message}
+                  {
+                    submitStatus.message
+                  }
                 </span>
               </div>
             )}
@@ -467,17 +657,21 @@ function Contact() {
               </span>
 
               <strong>
-                {submitting ? "..." : "↗"}
+                {submitting
+                  ? "..."
+                  : "↗"}
               </strong>
             </button>
 
           </form>
 
           <div className="contact-form-note">
-            We usually respond as soon as possible.
+            We usually respond as soon
+            as possible.
           </div>
 
         </div>
+
       </div>
 
       {/* =========================
@@ -489,19 +683,19 @@ function Contact() {
         <div className="contact-location-inner">
 
           <div>
+
             <span className="contact-location-label">
               FIND US
             </span>
 
             <h3>
-              Nilambazar,
-              <br />
-              <em>Sribhumi, Assam.</em>
+              {address}
             </h3>
+
           </div>
 
           <a
-            href="https://www.google.com/maps/search/?api=1&query=Nilambazar%2C%20Sribhumi%2C%20Assam%2C%20India"
+            href={mapUrl}
             target="_blank"
             rel="noreferrer"
             className="contact-map-button"
@@ -522,6 +716,7 @@ function Contact() {
       ========================== */}
 
       <div className="contact-bottom">
+
         <span>
           RUDRAKSH
         </span>
@@ -529,6 +724,7 @@ function Contact() {
         <span>
           SOCIAL · CULTURAL · COMMUNITY
         </span>
+
       </div>
 
     </section>

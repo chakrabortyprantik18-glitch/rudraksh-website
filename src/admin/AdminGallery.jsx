@@ -35,58 +35,43 @@ const emptyForm = {
 function AdminGallery() {
   const fileInputRef = useRef(null);
 
-  const [gallery, setGallery] =
-    useState([]);
+  const [gallery, setGallery] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const [saving, setSaving] =
-    useState(false);
+  const [search, setSearch] = useState("");
 
-  const [error, setError] =
-    useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
 
-  const [success, setSuccess] =
-    useState("");
+  const [form, setForm] = useState({
+    ...emptyForm,
+  });
 
-  const [search, setSearch] =
-    useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
 
-  const [modalOpen, setModalOpen] =
-    useState(false);
-
-  const [editingItem, setEditingItem] =
-    useState(null);
-
-  const [form, setForm] =
-    useState({
-      ...emptyForm,
-    });
-
-  const [selectedFile, setSelectedFile] =
-    useState(null);
-
-  const [previewUrl, setPreviewUrl] =
-    useState("");
-
-  const [cropperOpen, setCropperOpen] =
-    useState(false);
-
-  const [cropSourceFile, setCropSourceFile] =
-    useState(null);
-
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropSourceFile, setCropSourceFile] = useState(null);
 
   /* =========================================================
      TOKEN
   ========================================================= */
 
   const getToken = () => {
-    return localStorage.getItem(
-      "rudraksh_admin_token"
-    );
+    return localStorage.getItem("rudraksh_admin_token");
   };
 
+  /* =========================================================
+     ADMIN REDIRECT
+  ========================================================= */
+
+  const redirectToAdmin = () => {
+    window.location.href = "/admin";
+  };
 
   /* =========================================================
      IMAGE URL
@@ -99,7 +84,8 @@ function AdminGallery() {
 
     if (
       imageUrl.startsWith("http://") ||
-      imageUrl.startsWith("https://")
+      imageUrl.startsWith("https://") ||
+      imageUrl.startsWith("data:")
     ) {
       return imageUrl;
     }
@@ -111,7 +97,6 @@ function AdminGallery() {
     return `${BACKEND_URL}/${imageUrl}`;
   };
 
-
   /* =========================================================
      LOAD GALLERY
   ========================================================= */
@@ -120,8 +105,7 @@ function AdminGallery() {
     const token = getToken();
 
     if (!token) {
-      window.location.hash = "/admin";
-
+      redirectToAdmin();
       return;
     }
 
@@ -129,30 +113,33 @@ function AdminGallery() {
       setLoading(true);
       setError("");
 
-      const response =
-        await fetch(API_URL);
+      const response = await fetch(
+        `${API_URL}?t=${Date.now()}`,
+        {
+          method: "GET",
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Cache-Control": "no-cache",
+          },
+        }
+      );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
-      if (
-        !response.ok ||
-        !data.success
-      ) {
+      if (!response.ok || !data.success) {
         throw new Error(
-          data.message ||
-            "Unable to load gallery."
+          data.message || "Unable to load gallery."
         );
       }
 
       setGallery(
-        data.gallery || []
+        Array.isArray(data.gallery)
+          ? data.gallery
+          : []
       );
     } catch (err) {
-      console.error(
-        "LOAD GALLERY ERROR:",
-        err
-      );
+      console.error("LOAD GALLERY ERROR:", err);
 
       setError(
         err.message ||
@@ -163,76 +150,61 @@ function AdminGallery() {
     }
   };
 
-
   useEffect(() => {
     loadGallery();
   }, []);
-
 
   /* =========================================================
      SEARCH
   ========================================================= */
 
-  const filteredGallery =
-    useMemo(() => {
-      const query =
-        search
-          .trim()
-          .toLowerCase();
+  const filteredGallery = useMemo(() => {
+    const query = search.trim().toLowerCase();
 
-      if (!query) {
-        return gallery;
-      }
+    if (!query) {
+      return gallery;
+    }
 
-      return gallery.filter(
-        (item) => {
-          return (
-            item.title
-              ?.toLowerCase()
-              .includes(query) ||
-
-            item.category
-              ?.toLowerCase()
-              .includes(query) ||
-
-            item.description
-              ?.toLowerCase()
-              .includes(query)
-          );
-        }
+    return gallery.filter((item) => {
+      return (
+        item.title
+          ?.toLowerCase()
+          .includes(query) ||
+        item.category
+          ?.toLowerCase()
+          .includes(query) ||
+        item.description
+          ?.toLowerCase()
+          .includes(query)
       );
-    }, [gallery, search]);
-
+    });
+  }, [gallery, search]);
 
   /* =========================================================
      RESET FILE
   ========================================================= */
 
-  const resetFileSelection =
-    () => {
-      setSelectedFile(null);
-      setPreviewUrl("");
-      setCropSourceFile(null);
-      setCropperOpen(false);
+  const resetFileSelection = () => {
+    if (previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
 
-      if (
-        fileInputRef.current
-      ) {
-        fileInputRef.current.value =
-          "";
-      }
-    };
+    setSelectedFile(null);
+    setPreviewUrl("");
+    setCropSourceFile(null);
+    setCropperOpen(false);
 
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   /* =========================================================
      FILE SELECTED
   ========================================================= */
 
-  const handleFileChange = (
-    event
-  ) => {
-    const file =
-      event.target.files?.[0];
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
 
     setError("");
 
@@ -247,55 +219,33 @@ function AdminGallery() {
       "image/gif",
     ];
 
-    if (
-      !allowedTypes.includes(
-        file.type
-      )
-    ) {
+    if (!allowedTypes.includes(file.type)) {
       setError(
         "Only JPG, PNG, WEBP and GIF images are allowed."
       );
 
       event.target.value = "";
-
       return;
     }
 
-    if (
-      file.size >
-      5 * 1024 * 1024
-    ) {
+    if (file.size > 5 * 1024 * 1024) {
       setError(
         "Image must be smaller than 5 MB."
       );
 
       event.target.value = "";
-
       return;
     }
 
-    /*
-      IMPORTANT:
-
-      Do NOT reset the input here.
-
-      The selected File object is passed
-      directly into the cropper.
-    */
-
     setCropSourceFile(file);
-
     setCropperOpen(true);
   };
-
 
   /* =========================================================
      CROP APPLIED
   ========================================================= */
 
-  const handleCropApply = (
-    croppedImage
-  ) => {
+  const handleCropApply = (croppedImage) => {
     if (
       !croppedImage ||
       !croppedImage.file
@@ -307,61 +257,43 @@ function AdminGallery() {
       return;
     }
 
-    setSelectedFile(
-      croppedImage.file
-    );
+    if (previewUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
 
-    setPreviewUrl(
-      croppedImage.preview || ""
-    );
+    setSelectedFile(croppedImage.file);
+    setPreviewUrl(croppedImage.preview || "");
 
     setCropSourceFile(null);
-
     setCropperOpen(false);
-
     setError("");
   };
-
 
   /* =========================================================
      CROP CANCEL
   ========================================================= */
 
-  const handleCropCancel =
-    () => {
-      setCropperOpen(false);
+  const handleCropCancel = () => {
+    setCropperOpen(false);
+    setCropSourceFile(null);
 
-      setCropSourceFile(null);
-
-      if (
-        fileInputRef.current
-      ) {
-        fileInputRef.current.value =
-          "";
-      }
-    };
-
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   /* =========================================================
      FORM INPUT
   ========================================================= */
 
-  const handleInputChange = (
-    event
-  ) => {
-    const {
-      name,
-      value,
-    } = event.target;
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
 
-    setForm(
-      (previous) => ({
-        ...previous,
-        [name]: value,
-      })
-    );
+    setForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
   };
-
 
   /* =========================================================
      ADD MODAL
@@ -378,53 +310,32 @@ function AdminGallery() {
 
     setError("");
     setSuccess("");
-
     setModalOpen(true);
   };
-
 
   /* =========================================================
      EDIT MODAL
   ========================================================= */
 
-  const openEditModal = (
-    item
-  ) => {
+  const openEditModal = (item) => {
     setEditingItem(item);
 
     setForm({
-      title:
-        item.title || "",
-
-      description:
-        item.description || "",
-
-      category:
-        item.category || "",
-
-      event_id:
-        item.event_id ?? "",
-
-      project_id:
-        item.project_id ?? "",
-
-      is_published:
-        Boolean(
-          item.is_published
-        ),
-
-      display_order:
-        item.display_order ?? 0,
+      title: item.title || "",
+      description: item.description || "",
+      category: item.category || "",
+      event_id: item.event_id ?? "",
+      project_id: item.project_id ?? "",
+      is_published: Boolean(item.is_published),
+      display_order: item.display_order ?? 0,
     });
 
     resetFileSelection();
 
     setError("");
     setSuccess("");
-
     setModalOpen(true);
   };
-
 
   /* =========================================================
      CLOSE MODAL
@@ -436,7 +347,6 @@ function AdminGallery() {
     }
 
     setModalOpen(false);
-
     setEditingItem(null);
 
     setForm({
@@ -448,31 +358,24 @@ function AdminGallery() {
     setError("");
   };
 
-
   /* =========================================================
      SAVE
   ========================================================= */
 
-  const handleSubmit = async (
-    event
-  ) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const token = getToken();
 
     if (!token) {
-      window.location.hash = "/admin";
-
+      redirectToAdmin();
       return;
     }
 
     setError("");
     setSuccess("");
 
-    if (
-      !editingItem &&
-      !selectedFile
-    ) {
+    if (!editingItem && !selectedFile) {
       setError(
         "Please select an image before uploading."
       );
@@ -491,63 +394,43 @@ function AdminGallery() {
 
       if (editingItem) {
         const payload = {
-          title:
-            form.title.trim() ||
-            null,
+          title: form.title.trim() || null,
 
           description:
-            form.description.trim() ||
-            null,
+            form.description.trim() || null,
 
           category:
-            form.category.trim() ||
-            null,
+            form.category.trim() || null,
 
-          event_id:
-            form.event_id
-              ? Number(
-                  form.event_id
-                )
-              : null,
+          event_id: form.event_id
+            ? Number(form.event_id)
+            : null,
 
-          project_id:
-            form.project_id
-              ? Number(
-                  form.project_id
-                )
-              : null,
+          project_id: form.project_id
+            ? Number(form.project_id)
+            : null,
 
           display_order:
-            Number(
-              form.display_order
-            ) || 0,
+            Number(form.display_order) || 0,
 
           is_published:
-            Boolean(
-              form.is_published
-            ),
+            Boolean(form.is_published),
         };
 
-        response =
-          await fetch(
-            `${API_URL}/${editingItem.id}`,
-            {
-              method: "PUT",
+        response = await fetch(
+          `${API_URL}/${editingItem.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type":
+                "application/json",
 
-              headers: {
-                "Content-Type":
-                  "application/json",
-
-                Authorization:
-                  `Bearer ${token}`,
-              },
-
-              body:
-                JSON.stringify(
-                  payload
-                ),
-            }
-          );
+              Authorization:
+                `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+          }
+        );
       }
 
       /* =====================================================
@@ -555,19 +438,7 @@ function AdminGallery() {
       ===================================================== */
 
       else {
-        const formData =
-          new FormData();
-
-        /*
-          THIS IS IMPORTANT.
-
-          Gallery backend expects:
-
-          upload.single("image")
-
-          Therefore the field MUST
-          be called "image".
-        */
+        const formData = new FormData();
 
         formData.append(
           "image",
@@ -603,37 +474,31 @@ function AdminGallery() {
         formData.append(
           "display_order",
           String(
-            Number(
-              form.display_order
-            ) || 0
+            Number(form.display_order) || 0
           )
         );
 
         formData.append(
           "is_published",
           String(
-            Boolean(
-              form.is_published
-            )
+            Boolean(form.is_published)
           )
         );
 
-        response =
-          await fetch(
-            API_URL,
-            {
-              method: "POST",
+        response = await fetch(
+          `${API_URL}?t=${Date.now()}`,
+          {
+            method: "POST",
 
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
 
-              body: formData,
-            }
-          );
+            body: formData,
+          }
+        );
       }
-
 
       /* =====================================================
          RESPONSE
@@ -645,20 +510,15 @@ function AdminGallery() {
       let data;
 
       try {
-        data =
-          JSON.parse(
-            responseText
-          );
+        data = JSON.parse(responseText);
       } catch {
         data = {
           success: false,
-
           message:
             responseText ||
             "Invalid server response.",
         };
       }
-
 
       if (
         response.status === 401 ||
@@ -672,11 +532,9 @@ function AdminGallery() {
           "rudraksh_admin"
         );
 
-        window.location.hash = "/admin";
-
+        redirectToAdmin();
         return;
       }
-
 
       if (
         !response.ok ||
@@ -688,16 +546,13 @@ function AdminGallery() {
         );
       }
 
-
       setSuccess(
         editingItem
           ? "Gallery image updated successfully."
           : "Gallery image uploaded successfully."
       );
 
-
       setModalOpen(false);
-
       setEditingItem(null);
 
       setForm({
@@ -711,7 +566,6 @@ function AdminGallery() {
       setTimeout(() => {
         setSuccess("");
       }, 3000);
-
     } catch (err) {
       console.error(
         "GALLERY SAVE ERROR:",
@@ -727,18 +581,14 @@ function AdminGallery() {
     }
   };
 
-
   /* =========================================================
      DELETE
   ========================================================= */
 
-  const handleDelete = async (
-    item
-  ) => {
-    const confirmed =
-      window.confirm(
-        "Delete this gallery image permanently?"
-      );
+  const handleDelete = async (item) => {
+    const confirmed = window.confirm(
+      "Delete this gallery image permanently?"
+    );
 
     if (!confirmed) {
       return;
@@ -747,8 +597,7 @@ function AdminGallery() {
     const token = getToken();
 
     if (!token) {
-      window.location.hash = "/admin";
-
+      redirectToAdmin();
       return;
     }
 
@@ -756,18 +605,16 @@ function AdminGallery() {
       setError("");
       setSuccess("");
 
-      const response =
-        await fetch(
-          `${API_URL}/${item.id}`,
-          {
-            method: "DELETE",
-
-            headers: {
-              Authorization:
-                `Bearer ${token}`,
-            },
-          }
-        );
+      const response = await fetch(
+        `${API_URL}/${item.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization:
+              `Bearer ${token}`,
+          },
+        }
+      );
 
       const data =
         await response.json();
@@ -784,8 +631,7 @@ function AdminGallery() {
           "rudraksh_admin"
         );
 
-        window.location.hash = "/admin";
-
+        redirectToAdmin();
         return;
       }
 
@@ -808,7 +654,6 @@ function AdminGallery() {
       setTimeout(() => {
         setSuccess("");
       }, 3000);
-
     } catch (err) {
       console.error(
         "DELETE GALLERY ERROR:",
@@ -822,132 +667,116 @@ function AdminGallery() {
     }
   };
 
-
   /* =========================================================
      PUBLISH
   ========================================================= */
 
-  const togglePublished =
-    async (item) => {
-      const token = getToken();
+  const togglePublished = async (item) => {
+    const token = getToken();
 
-      if (!token) {
-        window.location.hash = "/admin";
+    if (!token) {
+      redirectToAdmin();
+      return;
+    }
 
+    try {
+      setError("");
+      setSuccess("");
+
+      const response = await fetch(
+        `${API_URL}/${item.id}`,
+        {
+          method: "PUT",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              `Bearer ${token}`,
+          },
+
+          body: JSON.stringify({
+            title:
+              item.title || null,
+
+            description:
+              item.description || null,
+
+            category:
+              item.category || null,
+
+            event_id:
+              item.event_id || null,
+
+            project_id:
+              item.project_id || null,
+
+            display_order:
+              Number(
+                item.display_order
+              ) || 0,
+
+            is_published:
+              !Boolean(
+                item.is_published
+              ),
+          }),
+        }
+      );
+
+      const data =
+        await response.json();
+
+      if (
+        response.status === 401 ||
+        response.status === 403
+      ) {
+        localStorage.removeItem(
+          "rudraksh_admin_token"
+        );
+
+        localStorage.removeItem(
+          "rudraksh_admin"
+        );
+
+        redirectToAdmin();
         return;
       }
 
-      try {
-        setError("");
-        setSuccess("");
-
-        const response =
-          await fetch(
-            `${API_URL}/${item.id}`,
-            {
-              method: "PUT",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-
-                Authorization:
-                  `Bearer ${token}`,
-              },
-
-              body:
-                JSON.stringify({
-                  title:
-                    item.title ||
-                    null,
-
-                  description:
-                    item.description ||
-                    null,
-
-                  category:
-                    item.category ||
-                    null,
-
-                  event_id:
-                    item.event_id ||
-                    null,
-
-                  project_id:
-                    item.project_id ||
-                    null,
-
-                  display_order:
-                    Number(
-                      item.display_order
-                    ) || 0,
-
-                  is_published:
-                    !Boolean(
-                      item.is_published
-                    ),
-                }),
-            }
-          );
-
-        const data =
-          await response.json();
-
-        if (
-          response.status ===
-            401 ||
-          response.status ===
-            403
-        ) {
-          localStorage.removeItem(
-            "rudraksh_admin_token"
-          );
-
-          localStorage.removeItem(
-            "rudraksh_admin"
-          );
-
-          window.location.href =
-            "/admin";
-
-          return;
-        }
-
-        if (
-          !response.ok ||
-          !data.success
-        ) {
-          throw new Error(
-            data.message ||
-              "Unable to update image."
-          );
-        }
-
-        await loadGallery();
-
-        setSuccess(
-          item.is_published
-            ? "Gallery image unpublished."
-            : "Gallery image published."
-        );
-
-        setTimeout(() => {
-          setSuccess("");
-        }, 2500);
-
-      } catch (err) {
-        console.error(
-          "PUBLISH GALLERY ERROR:",
-          err
-        );
-
-        setError(
-          err.message ||
-            "Unable to update gallery image."
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+        throw new Error(
+          data.message ||
+            "Unable to update image."
         );
       }
-    };
 
+      await loadGallery();
+
+      setSuccess(
+        item.is_published
+          ? "Gallery image unpublished."
+          : "Gallery image published."
+      );
+
+      setTimeout(() => {
+        setSuccess("");
+      }, 2500);
+    } catch (err) {
+      console.error(
+        "PUBLISH GALLERY ERROR:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Unable to update gallery image."
+      );
+    }
+  };
 
   /* =========================================================
      RENDER
@@ -955,15 +784,8 @@ function AdminGallery() {
 
   return (
     <div className="admin-gallery-page">
-
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
-
       <div className="admin-gallery-header">
-
         <div>
-
           <p className="admin-gallery-kicker">
             GALLERY MANAGEMENT
           </p>
@@ -977,35 +799,23 @@ function AdminGallery() {
             displayed on the Rudraksh
             website.
           </span>
-
         </div>
 
         <button
           type="button"
           className="admin-gallery-add-button"
-          onClick={
-            openAddModal
-          }
+          onClick={openAddModal}
         >
           <Plus size={17} />
           Add Photo
         </button>
-
       </div>
-
-
-      {/* =====================================================
-          ALERTS
-      ===================================================== */}
 
       {error && (
         <div className="admin-gallery-alert error">
-
           <AlertCircle size={17} />
 
-          <span>
-            {error}
-          </span>
+          <span>{error}</span>
 
           <button
             type="button"
@@ -1015,32 +825,18 @@ function AdminGallery() {
           >
             <X size={15} />
           </button>
-
         </div>
       )}
-
 
       {success && (
         <div className="admin-gallery-alert success">
-
           <Check size={17} />
-
-          <span>
-            {success}
-          </span>
-
+          <span>{success}</span>
         </div>
       )}
 
-
-      {/* =====================================================
-          TOOLBAR
-      ===================================================== */}
-
       <div className="admin-gallery-toolbar">
-
         <div className="admin-gallery-search">
-
           <Search size={16} />
 
           <input
@@ -1053,16 +849,12 @@ function AdminGallery() {
               )
             }
           />
-
         </div>
-
 
         <button
           type="button"
           className="admin-gallery-refresh"
-          onClick={
-            loadGallery
-          }
+          onClick={loadGallery}
           disabled={loading}
         >
           <RefreshCw
@@ -1077,32 +869,20 @@ function AdminGallery() {
           Refresh
         </button>
 
-
         <div className="admin-gallery-count">
-
           <Images size={15} />
 
           <span>
             {filteredGallery.length} photo
-            {filteredGallery.length !==
-            1
+            {filteredGallery.length !== 1
               ? "s"
               : ""}
           </span>
-
         </div>
-
       </div>
 
-
-      {/* =====================================================
-          CONTENT
-      ===================================================== */}
-
       {loading ? (
-
         <div className="admin-gallery-loading">
-
           <RefreshCw
             size={25}
             className="admin-gallery-spin"
@@ -1111,14 +891,9 @@ function AdminGallery() {
           <span>
             Loading gallery...
           </span>
-
         </div>
-
-      ) : filteredGallery.length ===
-        0 ? (
-
+      ) : filteredGallery.length === 0 ? (
         <div className="admin-gallery-empty">
-
           <div className="admin-gallery-empty-icon">
             <Images size={28} />
           </div>
@@ -1138,34 +913,24 @@ function AdminGallery() {
           {!search && (
             <button
               type="button"
-              onClick={
-                openAddModal
-              }
+              onClick={openAddModal}
               className="admin-gallery-add-button"
             >
               <Plus size={17} />
               Add First Photo
             </button>
           )}
-
         </div>
-
       ) : (
-
         <div className="admin-gallery-grid">
-
           {filteredGallery.map(
             (item) => (
-
               <div
                 className="admin-gallery-card"
                 key={item.id}
               >
-
                 <div className="admin-gallery-image-wrap">
-
                   {item.image_url ? (
-
                     <img
                       src={getImageUrl(
                         item.image_url
@@ -1176,26 +941,16 @@ function AdminGallery() {
                       }
                       className="admin-gallery-image"
                     />
-
                   ) : (
-
                     <div className="admin-gallery-image-placeholder">
-                      <Images
-                        size={28}
-                      />
+                      <Images size={28} />
                     </div>
-
                   )}
-
                 </div>
 
-
                 <div className="admin-gallery-card-content">
-
                   <div className="admin-gallery-card-top">
-
                     <div>
-
                       <h3>
                         {item.title ||
                           "Untitled Photo"}
@@ -1203,28 +958,19 @@ function AdminGallery() {
 
                       {item.category && (
                         <span className="admin-gallery-category">
-                          {
-                            item.category
-                          }
+                          {item.category}
                         </span>
                       )}
-
                     </div>
-
                   </div>
-
 
                   {item.description && (
                     <p>
-                      {
-                        item.description
-                      }
+                      {item.description}
                     </p>
                   )}
 
-
                   <div className="admin-gallery-card-bottom">
-
                     <button
                       type="button"
                       className={`admin-gallery-published ${
@@ -1238,28 +984,20 @@ function AdminGallery() {
                         )
                       }
                     >
-
                       {item.is_published ? (
                         <>
-                          <Eye
-                            size={12}
-                          />
+                          <Eye size={12} />
                           Published
                         </>
                       ) : (
                         <>
-                          <EyeOff
-                            size={12}
-                          />
+                          <EyeOff size={12} />
                           Hidden
                         </>
                       )}
-
                     </button>
 
-
                     <div className="admin-gallery-actions">
-
                       <button
                         type="button"
                         className="admin-gallery-edit"
@@ -1270,11 +1008,8 @@ function AdminGallery() {
                         }
                         title="Edit photo"
                       >
-                        <Pencil
-                          size={15}
-                        />
+                        <Pencil size={15} />
                       </button>
-
 
                       <button
                         type="button"
@@ -1286,53 +1021,32 @@ function AdminGallery() {
                         }
                         title="Delete photo"
                       >
-                        <Trash2
-                          size={15}
-                        />
+                        <Trash2 size={15} />
                       </button>
-
                     </div>
-
                   </div>
-
                 </div>
-
               </div>
-
             )
           )}
-
         </div>
-
       )}
 
-
-      {/* =====================================================
-          GALLERY MODAL
-      ===================================================== */}
-
       {modalOpen && (
-
         <div
           className="admin-gallery-modal-overlay"
           onMouseDown={(event) => {
-
             if (
               event.target ===
               event.currentTarget
             ) {
               closeModal();
             }
-
           }}
         >
-
           <div className="admin-gallery-modal">
-
             <div className="admin-gallery-modal-header">
-
               <div>
-
                 <p>
                   {editingItem
                     ? "EDIT PHOTO"
@@ -1344,41 +1058,24 @@ function AdminGallery() {
                     ? "Edit Gallery Photo"
                     : "Upload Gallery Photo"}
                 </h2>
-
               </div>
-
 
               <button
                 type="button"
-                onClick={
-                  closeModal
-                }
+                onClick={closeModal}
                 disabled={saving}
               >
                 <X size={19} />
               </button>
-
             </div>
 
-
             <form
-              onSubmit={
-                handleSubmit
-              }
+              onSubmit={handleSubmit}
               className="admin-gallery-form"
             >
-
-              {/* =================================================
-                  IMAGE SELECT
-              ================================================= */}
-
               {!editingItem && (
-
                 <div className="admin-gallery-upload-box">
-
-                  <FileImage
-                    size={32}
-                  />
+                  <FileImage size={32} />
 
                   <strong>
                     Select a photo
@@ -1389,42 +1086,20 @@ function AdminGallery() {
                     · Maximum 5 MB
                   </span>
 
-
-                  {/* 
-                    IMPORTANT FIX:
-
-                    Instead of:
-
-                    ref.current.click()
-
-                    we use a real label connected
-                    to the file input.
-                  */}
-
                   <label
                     htmlFor="gallery-image-file"
                     className="admin-gallery-select-button"
                   >
-
-                    <Upload
-                      size={15}
-                    />
-
+                    <Upload size={15} />
                     Choose Image
-
                   </label>
-
 
                   <input
                     id="gallery-image-file"
-                    ref={
-                      fileInputRef
-                    }
+                    ref={fileInputRef}
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/gif"
-                    onChange={
-                      handleFileChange
-                    }
+                    onChange={handleFileChange}
                     style={{
                       position:
                         "absolute",
@@ -1436,42 +1111,24 @@ function AdminGallery() {
                     }}
                   />
 
-
                   {selectedFile && (
-
                     <div className="admin-gallery-selected-file">
-
-                      <Check
-                        size={14}
-                      />
+                      <Check size={14} />
 
                       <span>
                         {
                           selectedFile.name
                         }
                       </span>
-
                     </div>
-
                   )}
-
                 </div>
-
               )}
 
-
-              {/* =================================================
-                  NEW IMAGE PREVIEW
-              ================================================= */}
-
               {previewUrl && (
-
                 <div className="admin-gallery-preview">
-
                   <img
-                    src={
-                      previewUrl
-                    }
+                    src={previewUrl}
                     alt="Selected preview"
                   />
 
@@ -1484,88 +1141,53 @@ function AdminGallery() {
                     <X size={14} />
                     Remove
                   </button>
-
                 </div>
-
               )}
-
-
-              {/* =================================================
-                  EXISTING IMAGE
-              ================================================= */}
 
               {editingItem &&
                 !previewUrl &&
                 editingItem.image_url && (
-
                   <div className="admin-gallery-preview">
-
                     <img
                       src={getImageUrl(
                         editingItem.image_url
                       )}
                       alt="Current gallery"
                     />
-
                   </div>
-
                 )}
 
-
-              {/* =================================================
-                  TITLE
-              ================================================= */}
-
               <div className="admin-gallery-form-group">
-
                 <label>
                   Photo Title
                 </label>
 
                 <input
                   name="title"
-                  value={
-                    form.title
-                  }
+                  value={form.title}
                   onChange={
                     handleInputChange
                   }
                   placeholder="Example: Blood Donation Camp"
                 />
-
               </div>
 
-
-              {/* =================================================
-                  CATEGORY
-              ================================================= */}
-
               <div className="admin-gallery-form-group">
-
                 <label>
                   Category
                 </label>
 
                 <input
                   name="category"
-                  value={
-                    form.category
-                  }
+                  value={form.category}
                   onChange={
                     handleInputChange
                   }
                   placeholder="Example: Events"
                 />
-
               </div>
 
-
-              {/* =================================================
-                  DESCRIPTION
-              ================================================= */}
-
               <div className="admin-gallery-form-group">
-
                 <label>
                   Description
                 </label>
@@ -1581,18 +1203,10 @@ function AdminGallery() {
                   placeholder="Describe this photo..."
                   rows="4"
                 />
-
               </div>
 
-
-              {/* =================================================
-                  EVENT + PROJECT
-              ================================================= */}
-
               <div className="admin-gallery-form-row">
-
                 <div className="admin-gallery-form-group">
-
                   <label>
                     Event ID
                   </label>
@@ -1609,12 +1223,9 @@ function AdminGallery() {
                     min="1"
                     placeholder="Optional"
                   />
-
                 </div>
 
-
                 <div className="admin-gallery-form-group">
-
                   <label>
                     Project ID
                   </label>
@@ -1631,18 +1242,10 @@ function AdminGallery() {
                     min="1"
                     placeholder="Optional"
                   />
-
                 </div>
-
               </div>
 
-
-              {/* =================================================
-                  DISPLAY ORDER
-              ================================================= */}
-
               <div className="admin-gallery-form-group">
-
                 <label>
                   Display Order
                 </label>
@@ -1658,35 +1261,21 @@ function AdminGallery() {
                   }
                   min="0"
                 />
-
               </div>
 
-
-              {/* =================================================
-                  PUBLISH
-              ================================================= */}
-
               <div className="admin-gallery-options">
-
                 <label>
-
                   <input
                     type="checkbox"
                     checked={Boolean(
                       form.is_published
                     )}
-                    onChange={(
-                      event
-                    ) =>
+                    onChange={(event) =>
                       setForm(
-                        (
-                          previous
-                        ) => ({
+                        (previous) => ({
                           ...previous,
-
                           is_published:
-                            event
-                              .target
+                            event.target
                               .checked,
                         })
                       )
@@ -1696,38 +1285,25 @@ function AdminGallery() {
                   <span>
                     Publish on website
                   </span>
-
                 </label>
-
               </div>
 
-
-              {/* =================================================
-                  ACTIONS
-              ================================================= */}
-
               <div className="admin-gallery-form-actions">
-
                 <button
                   type="button"
                   className="admin-gallery-form-cancel"
-                  onClick={
-                    closeModal
-                  }
+                  onClick={closeModal}
                   disabled={saving}
                 >
                   Cancel
                 </button>
-
 
                 <button
                   type="submit"
                   className="admin-gallery-form-save"
                   disabled={saving}
                 >
-
                   {saving ? (
-
                     <>
                       <RefreshCw
                         size={15}
@@ -1738,59 +1314,31 @@ function AdminGallery() {
                         ? "Updating..."
                         : "Uploading..."}
                     </>
-
                   ) : (
-
                     <>
-                      <Check
-                        size={15}
-                      />
+                      <Check size={15} />
 
                       {editingItem
                         ? "Update Photo"
                         : "Upload Photo"}
                     </>
-
                   )}
-
                 </button>
-
               </div>
-
             </form>
-
           </div>
-
         </div>
-
       )}
-
-
-      {/* =====================================================
-          CROPPER
-      ===================================================== */}
 
       {cropperOpen &&
         cropSourceFile && (
-
           <ImageCropper
-            file={
-              cropSourceFile
-            }
-
+            file={cropSourceFile}
             initialRatio="4:3"
-
-            onApply={
-              handleCropApply
-            }
-
-            onCancel={
-              handleCropCancel
-            }
+            onApply={handleCropApply}
+            onCancel={handleCropCancel}
           />
-
         )}
-
     </div>
   );
 }

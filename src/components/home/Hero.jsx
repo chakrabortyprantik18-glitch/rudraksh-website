@@ -1,24 +1,88 @@
 import { useRef } from "react";
+import { Link } from "react-router-dom";
 import { useGSAP } from "@gsap/react";
 
 import { gsap } from "../../services/gsap";
+import {
+  useWebsiteContent,
+  getContentImageUrl,
+} from "../../hooks/useWebsiteContent";
+
 import heroBackground from "../../assets/hero-background.jpg";
 import "./Hero.css";
 
 function Hero() {
   const heroRef = useRef(null);
 
+  const { content } = useWebsiteContent("hero");
+
+  const eyebrow =
+    content?.eyebrow ||
+    "RUDRAKSH SOCIAL & CULTURAL ORGANIZATION";
+
+  const title =
+    content?.title ||
+    "Building Communities. Creating Change.";
+
+  const description =
+    content?.description ||
+    "Working together to create positive social and cultural impact in our community.";
+
+  const buttonText =
+    content?.buttonText ||
+    "Explore Our Work";
+
+  const heroImage =
+    getContentImageUrl(content?.image) ||
+    heroBackground;
+
+  const organizationName =
+    "Rudraksh Social & Cultural Organization";
+
+  /* =========================================================
+     HIGHLIGHT ORGANIZATION NAME
+  ========================================================= */
+
+  const renderHighlightedDescription = () => {
+    const parts = description.split(
+      /(Rudraksh Social & Cultural Organization)/gi
+    );
+
+    return parts.map((part, index) => {
+      const isOrganizationName =
+        part.toLowerCase() ===
+        organizationName.toLowerCase();
+
+      if (isOrganizationName) {
+        return (
+          <strong key={index}>
+            {part}
+          </strong>
+        );
+      }
+
+      return (
+        <span key={index}>
+          {part}
+        </span>
+      );
+    });
+  };
+
+  /* =========================================================
+     GSAP
+  ========================================================= */
+
   useGSAP(
     () => {
       const section = heroRef.current;
 
-      if (!section) {
-        return;
-      }
+      if (!section) return;
 
-      const prefersReducedMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
+      const prefersReducedMotion =
+        window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches;
 
       const intro = gsap.timeline({
         defaults: {
@@ -36,6 +100,7 @@ function Hero() {
             ".hero-community-note",
             ".hero-slider-control",
             ".hero-dots",
+            ".hero-scroll-indicator",
           ],
           {
             opacity: 1,
@@ -117,7 +182,20 @@ function Hero() {
             duration: 0.5,
           },
           "-=0.3"
+        )
+        .from(
+          ".hero-scroll-indicator",
+          {
+            y: 15,
+            opacity: 0,
+            duration: 0.5,
+          },
+          "-=0.25"
         );
+
+      /* =====================================================
+         PARALLAX
+      ===================================================== */
 
       gsap.to(".hero-background", {
         yPercent: 8,
@@ -152,17 +230,24 @@ function Hero() {
       ref={heroRef}
       className="hero"
     >
+      {/* =====================================================
+          BACKGROUND
+      ===================================================== */}
+
       <div className="hero-media">
         <img
-          src={heroBackground}
+          src={heroImage}
           alt="Rudraksh community members standing together"
           className="hero-background"
         />
       </div>
 
       <div className="hero-overlay" />
-
       <div className="hero-overlay-soft" />
+
+      {/* =====================================================
+          PREVIOUS
+      ===================================================== */}
 
       <button
         type="button"
@@ -172,6 +257,10 @@ function Hero() {
         <span>←</span>
       </button>
 
+      {/* =====================================================
+          NEXT
+      ===================================================== */}
+
       <button
         type="button"
         className="hero-slider-control hero-slider-next"
@@ -180,45 +269,44 @@ function Hero() {
         <span>→</span>
       </button>
 
+      {/* =====================================================
+          MAIN CONTENT
+      ===================================================== */}
+
       <div className="hero-content">
         <div className="hero-eyebrow">
-          <span>PEOPLE</span>
-          <i>•</i>
-          <span>PURPOSE</span>
-          <i>•</i>
-          <span>POSITIVE CHANGE</span>
+          <span>{eyebrow}</span>
         </div>
 
         <h1 className="hero-title">
-          Together for a
-          <br />
-          <span>Brighter Tomorrow</span>
+          {title}
         </h1>
 
         <p className="hero-description">
-          Rudraksh Social & Cultural Organization works
-          towards building a more inclusive, compassionate
-          and empowered society through education, community
-          support and cultural initiatives.
+          {renderHighlightedDescription()}
         </p>
 
         <div className="hero-actions">
-          <a
-            href="#projects"
+          <Link
+            to="/projects"
             className="hero-button hero-button-primary"
           >
-            <span>Our Projects</span>
+            <span>{buttonText}</span>
             <strong>→</strong>
-          </a>
+          </Link>
 
           <a
-            href="#donate"
+            href="/#donate"
             className="hero-button hero-button-secondary"
           >
             Support Our Work
           </a>
         </div>
       </div>
+
+      {/* =====================================================
+          COMMUNITY NOTE
+      ===================================================== */}
 
       <div className="hero-community-note">
         <span className="hero-community-line" />
@@ -229,6 +317,10 @@ function Hero() {
           <span>HAPPIER LIVES</span>
         </div>
       </div>
+
+      {/* =====================================================
+          DOTS
+      ===================================================== */}
 
       <div className="hero-dots">
         <button
@@ -247,6 +339,10 @@ function Hero() {
           aria-label="Slide 3"
         />
       </div>
+
+      {/* =====================================================
+          SCROLL INDICATOR
+      ===================================================== */}
 
       <div className="hero-scroll-indicator">
         <span>SCROLL TO EXPLORE</span>

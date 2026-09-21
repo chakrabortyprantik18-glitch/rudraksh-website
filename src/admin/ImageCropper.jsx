@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -8,6 +9,9 @@ import {
 import {
   Check,
   RotateCcw,
+  RotateCw,
+  ZoomIn,
+  ZoomOut,
   X,
 } from "lucide-react";
 
@@ -28,29 +32,49 @@ const CROP_RATIOS = [
   },
 ];
 
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 4;
+const ZOOM_STEP = 0.1;
+const MAX_OUTPUT_SIZE = 2400;
+
 function ImageCropper({
   file,
   initialRatio = "16:9",
   onApply,
   onCancel,
 }) {
+  const previewRef = useRef(null);
   const canvasRef = useRef(null);
   const imageRef = useRef(null);
 
-  const [imageUrl, setImageUrl] =
-    useState("");
+  const dragRef = useRef({
+    active: false,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    startOffsetX: 0,
+    startOffsetY: 0,
+  });
 
-  const [imageLoaded, setImageLoaded] =
-    useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const [selectedRatio, setSelectedRatio] =
     useState(initialRatio);
 
-  const [processing, setProcessing] =
-    useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
 
-  const [error, setError] =
-    useState("");
+  const [offsetX, setOffsetX] = useState(0);
+  const [offsetY, setOffsetY] = useState(0);
+
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState("");
+
+  const [previewSize, setPreviewSize] = useState({
+    width: 0,
+    height: 0,
+  });
 
   const currentRatio = useMemo(() => {
     return (
@@ -75,8 +99,12 @@ function ImageCropper({
     setImageLoaded(false);
     setError("");
 
-    const url =
-      URL.createObjectURL(file);
+    setZoom(1);
+    setRotation(0);
+    setOffsetX(0);
+    setOffsetY(0);
+
+    const url = URL.createObjectURL(file);
 
     setImageUrl(url);
 
@@ -86,55 +114,338 @@ function ImageCropper({
   }, [file]);
 
   /* =========================================================
-     CALCULATE CENTER CROP
+     OBSERVE PREVIEW SIZE
   ========================================================= */
 
-  const calculateCrop = (
-    imageWidth,
-    imageHeight,
-    ratio
-  ) => {
-    const imageRatio =
-      imageWidth / imageHeight;
+  useEffect(() => {
+    const element = previewRef.current;
 
-    let cropWidth;
-    let cropHeight;
-
-    if (imageRatio > ratio) {
-      cropHeight =
-        imageHeight;
-
-      cropWidth =
-        cropHeight * ratio;
-    } else {
-      cropWidth =
-        imageWidth;
-
-      cropHeight =
-        cropWidth / ratio;
+    if (!element) {
+      return;
     }
 
-    const cropX =
-      (imageWidth - cropWidth) /
-      2;
+    const updateSize = () => {
+      const rect =
+        element.getBoundingClientRect();
 
-    const cropY =
-      (imageHeight - cropHeight) /
-      2;
-
-    return {
-      cropX,
-      cropY,
-      cropWidth,
-      cropHeight,
+      setPreviewSize({
+        width: rect.width,
+        height: rect.height,
+      });
     };
-  };
+
+    updateSize();
+
+    const observer =
+      new ResizeObserver(updateSize);
+
+    observer.observe(element);
+
+    window.addEventListener(
+      "resize",
+      updateSize
+    );
+
+    return () => {
+      observer.disconnect();
+
+      window.removeEventListener(
+        "resize",
+        updateSize
+      );
+    };
+  }, []);
 
   /* =========================================================
-     DRAW PREVIEW
+     CROP FRAME
   ========================================================= */
 
-  const drawPreview = () => {
+  const getCropRect = useCallback(() => {
+    const width = previewSize.width;
+    const height = previewSize.height;
+
+    if (!width || !height) {
+      return {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+      };
+    }
+
+    const padding = Math.min(
+      width,
+      height
+    ) * 0.04;
+
+    const availableWidth =
+      Math.max(
+        20,
+        width - padding * 2
+      );
+
+    const availableHeight =
+      Math.max(
+        20,
+        height - padding * 2
+      );
+
+    let cropWidth =
+      availableWidth;
+
+    let cropHeight =
+      cropWidth /
+      currentRatio.value;
+
+    if (
+      cropHeight >
+      availableHeight
+    ) {
+      cropHeight =
+        availableHeight;
+
+      cropWidth =
+        cropHeight *
+        currentRatio.value;
+    }
+
+    return {
+      x:
+        (width - cropWidth) /
+        2,
+
+      y:
+        (height - cropHeight) /
+        2,
+
+      width: cropWidth,
+      height: cropHeight,
+    };
+  }, [
+    previewSize,
+    currentRatio.value,
+  ]);
+
+  /* =========================================================
+     CALCULATE BASE SCALE
+     Ensures rotated image covers the crop area.
+  ========================================================= */
+
+  const getBaseScale = useCallback(
+    (
+      imageWidth,
+      imageHeight,
+      cropWidth,
+      cropHeight,
+      angle
+    ) => {
+      const radians =
+        (angle * Math.PI) / 180;
+
+      const cos =
+        Math.abs(
+          Math.cos(radians)
+        );
+
+      const sin =
+        Math.abs(
+          Math.sin(radians)
+        );
+
+      /*
+        Determine the scale needed so every crop
+        corner remains inside the source image.
+      */
+
+      const halfCropWidth =
+        cropWidth / 2;
+
+      const halfCropHeight =
+        cropHeight / 2;
+
+      const corners = [
+        {
+          x: halfCropWidth,
+          y: halfCropHeight,
+        },
+        {
+          x: -halfCropWidth,
+          y: halfCropHeight,
+        },
+        {
+          x: halfCropWidth,
+          y: -halfCropHeight,
+        },
+        {
+          x: -halfCropWidth,
+          y: -halfCropHeight,
+        },
+      ];
+
+      let requiredScale = 0;
+
+      corners.forEach(
+        (corner) => {
+          const rotatedX =
+            Math.abs(
+              corner.x * cos +
+                corner.y * sin
+            );
+
+          const rotatedY =
+            Math.abs(
+              corner.x * sin +
+                corner.y * cos
+            );
+
+          const scaleX =
+            rotatedX /
+            (imageWidth / 2);
+
+          const scaleY =
+            rotatedY /
+            (imageHeight / 2);
+
+          requiredScale =
+            Math.max(
+              requiredScale,
+              scaleX,
+              scaleY
+            );
+        }
+      );
+
+      return Math.max(
+        requiredScale,
+        0.01
+      );
+    },
+    []
+  );
+
+  /* =========================================================
+     CLAMP OFFSET
+  ========================================================= */
+
+  const clampOffset = useCallback(
+    (
+      nextX,
+      nextY,
+      currentZoom = zoom,
+      currentRotation = rotation
+    ) => {
+      const image =
+        imageRef.current;
+
+      const crop =
+        getCropRect();
+
+      if (
+        !image ||
+        !crop.width ||
+        !crop.height
+      ) {
+        return {
+          x: nextX,
+          y: nextY,
+        };
+      }
+
+      const imageWidth =
+        image.naturalWidth;
+
+      const imageHeight =
+        image.naturalHeight;
+
+      const baseScale =
+        getBaseScale(
+          imageWidth,
+          imageHeight,
+          crop.width,
+          crop.height,
+          currentRotation
+        );
+
+      const renderScale =
+        baseScale *
+        currentZoom;
+
+      const radians =
+        (currentRotation *
+          Math.PI) /
+        180;
+
+      const cos =
+        Math.abs(
+          Math.cos(radians)
+        );
+
+      const sin =
+        Math.abs(
+          Math.sin(radians)
+        );
+
+      const rotatedWidth =
+        imageWidth *
+        renderScale *
+        cos +
+        imageHeight *
+        renderScale *
+        sin;
+
+      const rotatedHeight =
+        imageWidth *
+        renderScale *
+        sin +
+        imageHeight *
+        renderScale *
+        cos;
+
+      const maxX = Math.max(
+        0,
+        (rotatedWidth -
+          crop.width) /
+          2
+      );
+
+      const maxY = Math.max(
+        0,
+        (rotatedHeight -
+          crop.height) /
+          2
+      );
+
+      return {
+        x: Math.max(
+          -maxX,
+          Math.min(
+            maxX,
+            nextX
+          )
+        ),
+
+        y: Math.max(
+          -maxY,
+          Math.min(
+            maxY,
+            nextY
+          )
+        ),
+      };
+    },
+    [
+      getCropRect,
+      getBaseScale,
+      zoom,
+      rotation,
+    ]
+  );
+
+  /* =========================================================
+     DRAW CANVAS
+  ========================================================= */
+
+  const drawCanvas = useCallback(() => {
     const canvas =
       canvasRef.current;
 
@@ -144,77 +455,47 @@ function ImageCropper({
     if (
       !canvas ||
       !image ||
-      !imageLoaded
+      !imageLoaded ||
+      !previewSize.width ||
+      !previewSize.height
     ) {
       return;
     }
 
-    const imageWidth =
-      image.naturalWidth;
+    const displayWidth =
+      previewSize.width;
 
-    const imageHeight =
-      image.naturalHeight;
+    const displayHeight =
+      previewSize.height;
 
-    if (
-      !imageWidth ||
-      !imageHeight
-    ) {
-      return;
-    }
+    const dpr =
+      Math.min(
+        window.devicePixelRatio ||
+          1,
+        2
+      );
 
-    const {
-      cropX,
-      cropY,
-      cropWidth,
-      cropHeight,
-    } = calculateCrop(
-      imageWidth,
-      imageHeight,
-      currentRatio.value
-    );
+    canvas.width =
+      Math.max(
+        1,
+        Math.round(
+          displayWidth * dpr
+        )
+      );
 
-    const maxWidth = 900;
-    const maxHeight = 520;
+    canvas.height =
+      Math.max(
+        1,
+        Math.round(
+          displayHeight * dpr
+        )
+      );
 
-    let previewWidth =
-      cropWidth;
+    canvas.style.width =
+      `${displayWidth}px`;
 
-    let previewHeight =
-      cropHeight;
-
-    if (
-      previewWidth >
-      maxWidth
-    ) {
-      const scale =
-        maxWidth /
-        previewWidth;
-
-      previewWidth *= scale;
-      previewHeight *= scale;
-    }
-
-    if (
-      previewHeight >
-      maxHeight
-    ) {
-      const scale =
-        maxHeight /
-        previewHeight;
-
-      previewWidth *= scale;
-      previewHeight *= scale;
-    }
-
-    canvas.width = Math.max(
-      1,
-      Math.round(previewWidth)
-    );
-
-    canvas.height = Math.max(
-      1,
-      Math.round(previewHeight)
-    );
+    canvas.style.height =
+      `${displayHeight}px`;
 
     const context =
       canvas.getContext("2d");
@@ -223,11 +504,77 @@ function ImageCropper({
       return;
     }
 
+    context.setTransform(
+      dpr,
+      0,
+      0,
+      dpr,
+      0,
+      0
+    );
+
     context.clearRect(
       0,
       0,
-      canvas.width,
-      canvas.height
+      displayWidth,
+      displayHeight
+    );
+
+    context.fillStyle =
+      "#0d0d0d";
+
+    context.fillRect(
+      0,
+      0,
+      displayWidth,
+      displayHeight
+    );
+
+    const crop =
+      getCropRect();
+
+    if (
+      !crop.width ||
+      !crop.height
+    ) {
+      return;
+    }
+
+    const baseScale =
+      getBaseScale(
+        image.naturalWidth,
+        image.naturalHeight,
+        crop.width,
+        crop.height,
+        rotation
+      );
+
+    const renderScale =
+      baseScale * zoom;
+
+    const centerX =
+      displayWidth / 2 +
+      offsetX;
+
+    const centerY =
+      displayHeight / 2 +
+      offsetY;
+
+    context.save();
+
+    context.translate(
+      centerX,
+      centerY
+    );
+
+    context.rotate(
+      (rotation * Math.PI) /
+        180
+    );
+
+    context.scale(
+      renderScale,
+      renderScale
     );
 
     context.imageSmoothingEnabled =
@@ -238,33 +585,236 @@ function ImageCropper({
 
     context.drawImage(
       image,
-      cropX,
-      cropY,
-      cropWidth,
-      cropHeight,
-      0,
-      0,
-      canvas.width,
-      canvas.height
+      -image.naturalWidth / 2,
+      -image.naturalHeight / 2,
+      image.naturalWidth,
+      image.naturalHeight
     );
-  };
+
+    context.restore();
+
+    /* =======================================================
+       DARKEN OUTSIDE CROP
+    ======================================================= */
+
+    context.fillStyle =
+      "rgba(0, 0, 0, 0.62)";
+
+    context.fillRect(
+      0,
+      0,
+      displayWidth,
+      crop.y
+    );
+
+    context.fillRect(
+      0,
+      crop.y + crop.height,
+      displayWidth,
+      displayHeight -
+        crop.y -
+        crop.height
+    );
+
+    context.fillRect(
+      0,
+      crop.y,
+      crop.x,
+      crop.height
+    );
+
+    context.fillRect(
+      crop.x + crop.width,
+      crop.y,
+      displayWidth -
+        crop.x -
+        crop.width,
+      crop.height
+    );
+
+    /* =======================================================
+       CROP BORDER
+    ======================================================= */
+
+    context.strokeStyle =
+      "#ffffff";
+
+    context.lineWidth = 2;
+
+    context.strokeRect(
+      crop.x,
+      crop.y,
+      crop.width,
+      crop.height
+    );
+
+    /* =======================================================
+       GRID
+    ======================================================= */
+
+    context.strokeStyle =
+      "rgba(255,255,255,0.23)";
+
+    context.lineWidth = 1;
+
+    const thirdWidth =
+      crop.width / 3;
+
+    const thirdHeight =
+      crop.height / 3;
+
+    for (
+      let i = 1;
+      i < 3;
+      i++
+    ) {
+      context.beginPath();
+
+      context.moveTo(
+        crop.x +
+          thirdWidth * i,
+        crop.y
+      );
+
+      context.lineTo(
+        crop.x +
+          thirdWidth * i,
+        crop.y +
+          crop.height
+      );
+
+      context.stroke();
+
+      context.beginPath();
+
+      context.moveTo(
+        crop.x,
+        crop.y +
+          thirdHeight * i
+      );
+
+      context.lineTo(
+        crop.x +
+          crop.width,
+        crop.y +
+          thirdHeight * i
+      );
+
+      context.stroke();
+    }
+
+    /* =======================================================
+       CORNER MARKERS
+    ======================================================= */
+
+    const cornerLength = 18;
+
+    context.strokeStyle =
+      "#e87917";
+
+    context.lineWidth = 3;
+
+    /* top-left */
+    context.beginPath();
+    context.moveTo(
+      crop.x,
+      crop.y +
+        cornerLength
+    );
+    context.lineTo(
+      crop.x,
+      crop.y
+    );
+    context.lineTo(
+      crop.x +
+        cornerLength,
+      crop.y
+    );
+    context.stroke();
+
+    /* top-right */
+    context.beginPath();
+    context.moveTo(
+      crop.x +
+        crop.width -
+        cornerLength,
+      crop.y
+    );
+    context.lineTo(
+      crop.x +
+        crop.width,
+      crop.y
+    );
+    context.lineTo(
+      crop.x +
+        crop.width,
+      crop.y +
+        cornerLength
+    );
+    context.stroke();
+
+    /* bottom-left */
+    context.beginPath();
+    context.moveTo(
+      crop.x,
+      crop.y +
+        crop.height -
+        cornerLength
+    );
+    context.lineTo(
+      crop.x,
+      crop.y +
+        crop.height
+    );
+    context.lineTo(
+      crop.x +
+        cornerLength,
+      crop.y +
+        crop.height
+    );
+    context.stroke();
+
+    /* bottom-right */
+    context.beginPath();
+    context.moveTo(
+      crop.x +
+        crop.width -
+        cornerLength,
+      crop.y +
+        crop.height
+    );
+    context.lineTo(
+      crop.x +
+        crop.width,
+      crop.y +
+        crop.height
+    );
+    context.lineTo(
+      crop.x +
+        crop.width,
+      crop.y +
+        crop.height -
+        cornerLength
+    );
+    context.stroke();
+  }, [
+    imageLoaded,
+    previewSize,
+    getCropRect,
+    getBaseScale,
+    zoom,
+    rotation,
+    offsetX,
+    offsetY,
+  ]);
 
   /* =========================================================
-     REDRAW WHEN RATIO CHANGES
+     REDRAW
   ========================================================= */
 
   useEffect(() => {
-    if (!imageLoaded) {
-      return;
-    }
-
-    requestAnimationFrame(
-      drawPreview
-    );
-  }, [
-    selectedRatio,
-    imageLoaded,
-  ]);
+    drawCanvas();
+  }, [drawCanvas]);
 
   /* =========================================================
      IMAGE LOAD
@@ -282,13 +832,13 @@ function ImageCropper({
     setImageLoaded(true);
     setError("");
 
-    requestAnimationFrame(
-      drawPreview
-    );
+    requestAnimationFrame(() => {
+      drawCanvas();
+    });
   };
 
   /* =========================================================
-     CHANGE RATIO
+     RATIO CHANGE
   ========================================================= */
 
   const handleRatioChange = (
@@ -302,11 +852,314 @@ function ImageCropper({
       return;
     }
 
-    setError("");
-
     setSelectedRatio(
       ratio.label
     );
+
+    setZoom(1);
+    setOffsetX(0);
+    setOffsetY(0);
+
+    setError("");
+  };
+
+  /* =========================================================
+     ZOOM
+  ========================================================= */
+
+  const updateZoom = (
+    nextZoom
+  ) => {
+    const safeZoom =
+      Math.max(
+        MIN_ZOOM,
+        Math.min(
+          MAX_ZOOM,
+          Number(nextZoom)
+        )
+      );
+
+    setZoom(safeZoom);
+
+    const clamped =
+      clampOffset(
+        offsetX,
+        offsetY,
+        safeZoom,
+        rotation
+      );
+
+    setOffsetX(
+      clamped.x
+    );
+
+    setOffsetY(
+      clamped.y
+    );
+  };
+
+  const zoomOut = () => {
+    updateZoom(
+      zoom - ZOOM_STEP
+    );
+  };
+
+  const zoomIn = () => {
+    updateZoom(
+      zoom + ZOOM_STEP
+    );
+  };
+
+  /* =========================================================
+     ROTATE
+  ========================================================= */
+
+  const rotateLeft = () => {
+    const nextRotation =
+      (rotation - 90 + 360) %
+      360;
+
+    const clamped =
+      clampOffset(
+        offsetX,
+        offsetY,
+        zoom,
+        nextRotation
+      );
+
+    setRotation(
+      nextRotation
+    );
+
+    setOffsetX(
+      clamped.x
+    );
+
+    setOffsetY(
+      clamped.y
+    );
+  };
+
+  const rotateRight = () => {
+    const nextRotation =
+      (rotation + 90) %
+      360;
+
+    const clamped =
+      clampOffset(
+        offsetX,
+        offsetY,
+        zoom,
+        nextRotation
+      );
+
+    setRotation(
+      nextRotation
+    );
+
+    setOffsetX(
+      clamped.x
+    );
+
+    setOffsetY(
+      clamped.y
+    );
+  };
+
+  /* =========================================================
+     POINTER DRAG
+  ========================================================= */
+
+  const handlePointerDown = (
+    event
+  ) => {
+    if (
+      processing ||
+      !imageLoaded
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    dragRef.current = {
+      active: true,
+      pointerId:
+        event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startOffsetX: offsetX,
+      startOffsetY: offsetY,
+    };
+
+    event.currentTarget.setPointerCapture?.(
+      event.pointerId
+    );
+  };
+
+  const handlePointerMove = (
+    event
+  ) => {
+    const drag =
+      dragRef.current;
+
+    if (
+      !drag.active ||
+      drag.pointerId !==
+        event.pointerId
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const deltaX =
+      event.clientX -
+      drag.startX;
+
+    const deltaY =
+      event.clientY -
+      drag.startY;
+
+    const nextX =
+      drag.startOffsetX +
+      deltaX;
+
+    const nextY =
+      drag.startOffsetY +
+      deltaY;
+
+    const clamped =
+      clampOffset(
+        nextX,
+        nextY
+      );
+
+    setOffsetX(
+      clamped.x
+    );
+
+    setOffsetY(
+      clamped.y
+    );
+  };
+
+  const handlePointerUp = (
+    event
+  ) => {
+    const drag =
+      dragRef.current;
+
+    if (
+      drag.pointerId !==
+      event.pointerId
+    ) {
+      return;
+    }
+
+    dragRef.current = {
+      active: false,
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      startOffsetX: 0,
+      startOffsetY: 0,
+    };
+
+    event.currentTarget.releasePointerCapture?.(
+      event.pointerId
+    );
+  };
+
+  /* =========================================================
+     MOUSE WHEEL ZOOM
+  ========================================================= */
+
+  const handleWheel = (
+    event
+  ) => {
+    if (
+      processing ||
+      !imageLoaded
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const direction =
+      event.deltaY > 0
+        ? -1
+        : 1;
+
+    updateZoom(
+      zoom +
+        direction *
+          0.12
+    );
+  };
+
+  /* =========================================================
+     DOUBLE CLICK ZOOM
+  ========================================================= */
+
+  const handleDoubleClick = (
+    event
+  ) => {
+    event.preventDefault();
+
+    if (processing) {
+      return;
+    }
+
+    updateZoom(
+      zoom >= 2.8
+        ? 1
+        : zoom + 0.6
+    );
+  };
+
+  /* =========================================================
+     RESET
+  ========================================================= */
+
+  const handleReset = (
+    event
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (processing) {
+      return;
+    }
+
+    setSelectedRatio(
+      initialRatio
+    );
+
+    setZoom(1);
+    setRotation(0);
+    setOffsetX(0);
+    setOffsetY(0);
+
+    setError("");
+  };
+
+  /* =========================================================
+     CANCEL
+  ========================================================= */
+
+  const handleCancel = (
+    event
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (processing) {
+      return;
+    }
+
+    onCancel();
   };
 
   /* =========================================================
@@ -326,10 +1179,15 @@ function ImageCropper({
     const image =
       imageRef.current;
 
+    const crop =
+      getCropRect();
+
     if (
       !image ||
       !image.naturalWidth ||
-      !image.naturalHeight
+      !image.naturalHeight ||
+      !crop.width ||
+      !crop.height
     ) {
       setError(
         "Image is not ready yet. Please wait a moment."
@@ -342,60 +1200,77 @@ function ImageCropper({
       setProcessing(true);
       setError("");
 
-      const imageWidth =
-        image.naturalWidth;
+      const baseScale =
+        getBaseScale(
+          image.naturalWidth,
+          image.naturalHeight,
+          crop.width,
+          crop.height,
+          rotation
+        );
 
-      const imageHeight =
-        image.naturalHeight;
-
-      const {
-        cropX,
-        cropY,
-        cropWidth,
-        cropHeight,
-      } = calculateCrop(
-        imageWidth,
-        imageHeight,
-        currentRatio.value
-      );
-
-      /*
-        Keep output reasonably sized.
-      */
-
-      const MAX_SIZE = 2400;
+      const renderScale =
+        baseScale * zoom;
 
       let outputWidth =
-        Math.round(cropWidth);
+        MAX_OUTPUT_SIZE;
 
       let outputHeight =
-        Math.round(cropHeight);
+        Math.round(
+          outputWidth /
+            currentRatio.value
+        );
+
+      /*
+        Avoid unnecessary upscaling for small images.
+      */
+
+      const estimatedVisibleWidth =
+        crop.width /
+        renderScale;
+
+      const estimatedVisibleHeight =
+        crop.height /
+        renderScale;
+
+      const sourceLimit =
+        Math.max(
+          estimatedVisibleWidth,
+          estimatedVisibleHeight
+        );
 
       if (
-        outputWidth >
-          MAX_SIZE ||
-        outputHeight >
-          MAX_SIZE
+        sourceLimit <
+        MAX_OUTPUT_SIZE
       ) {
-        const scale =
-          Math.min(
-            MAX_SIZE /
-              outputWidth,
-            MAX_SIZE /
-              outputHeight
-          );
-
         outputWidth =
-          Math.round(
-            outputWidth *
-              scale
+          Math.min(
+            MAX_OUTPUT_SIZE,
+            Math.max(
+              800,
+              Math.round(
+                estimatedVisibleWidth *
+                  renderScale
+              )
+            )
           );
 
         outputHeight =
           Math.round(
-            outputHeight *
-              scale
+            outputWidth /
+              currentRatio.value
           );
+      }
+
+      if (
+        currentRatio.value === 1
+      ) {
+        outputWidth =
+          outputHeight =
+            Math.min(
+              MAX_OUTPUT_SIZE,
+              2400
+            );
       }
 
       const outputCanvas =
@@ -406,13 +1281,17 @@ function ImageCropper({
       outputCanvas.width =
         Math.max(
           1,
-          outputWidth
+          Math.round(
+            outputWidth
+          )
         );
 
       outputCanvas.height =
         Math.max(
           1,
-          outputHeight
+          Math.round(
+            outputHeight
+          )
         );
 
       const context =
@@ -432,17 +1311,63 @@ function ImageCropper({
       context.imageSmoothingQuality =
         "high";
 
-      context.drawImage(
-        image,
-        cropX,
-        cropY,
-        cropWidth,
-        cropHeight,
+      context.fillStyle =
+        "#ffffff";
+
+      context.fillRect(
         0,
         0,
         outputCanvas.width,
         outputCanvas.height
       );
+
+      /*
+        Convert preview coordinates into output coordinates.
+      */
+
+      const outputScale =
+        outputWidth /
+        crop.width;
+
+      const outputCenterX =
+        outputWidth / 2 +
+        offsetX *
+          outputScale;
+
+      const outputCenterY =
+        outputHeight / 2 +
+        offsetY *
+          outputScale;
+
+      context.save();
+
+      context.translate(
+        outputCenterX,
+        outputCenterY
+      );
+
+      context.rotate(
+        (rotation *
+          Math.PI) /
+          180
+      );
+
+      context.scale(
+        renderScale *
+          outputScale,
+        renderScale *
+          outputScale
+      );
+
+      context.drawImage(
+        image,
+        -image.naturalWidth / 2,
+        -image.naturalHeight / 2,
+        image.naturalWidth,
+        image.naturalHeight
+      );
+
+      context.restore();
 
       /* =====================================================
          CANVAS → BLOB
@@ -475,12 +1400,12 @@ function ImageCropper({
         );
 
       /* =====================================================
-         CREATE FILE
+         FILE NAME
       ===================================================== */
 
       const originalName =
         file?.name ||
-        "member-image";
+        "gallery-image";
 
       const baseName =
         originalName
@@ -500,7 +1425,7 @@ function ImageCropper({
             0,
             60
           ) ||
-        "member-image";
+        "gallery-image";
 
       const ratioName =
         selectedRatio.replace(
@@ -520,19 +1445,13 @@ function ImageCropper({
         );
 
       /* =====================================================
-         CREATE PREVIEW
+         PREVIEW URL
       ===================================================== */
 
       const previewUrl =
         URL.createObjectURL(
           blob
         );
-
-      /*
-        IMPORTANT:
-        Members.jsx receives an OBJECT,
-        not just the File.
-      */
 
       onApply({
         file: croppedFile,
@@ -559,44 +1478,6 @@ function ImageCropper({
     }
   };
 
-  /* =========================================================
-     CANCEL
-  ========================================================= */
-
-  const handleCancel = (
-    event
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (processing) {
-      return;
-    }
-
-    onCancel();
-  };
-
-  /* =========================================================
-     RESET
-  ========================================================= */
-
-  const handleReset = (
-    event
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (processing) {
-      return;
-    }
-
-    setSelectedRatio(
-      initialRatio
-    );
-
-    setError("");
-  };
-
   if (!file) {
     return null;
   }
@@ -614,12 +1495,14 @@ function ImageCropper({
           event.stopPropagation();
         }}
       >
-        {/* HEADER */}
+        {/* ==================================================
+            HEADER
+        ================================================== */}
 
         <div className="image-cropper-header">
           <div>
             <span className="image-cropper-kicker">
-              IMAGE CROP
+              IMAGE EDITOR
             </span>
 
             <h2>
@@ -627,9 +1510,9 @@ function ImageCropper({
             </h2>
 
             <p>
-              Choose a fixed frame
-              size. The crop is
-              centered automatically.
+              Drag to reposition,
+              zoom and rotate your
+              image before saving.
             </p>
           </div>
 
@@ -642,12 +1525,15 @@ function ImageCropper({
             disabled={
               processing
             }
+            aria-label="Close image editor"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* RATIO */}
+        {/* ==================================================
+            RATIO
+        ================================================== */}
 
         <div className="image-cropper-controls">
           <div className="image-cropper-control-title">
@@ -687,9 +1573,30 @@ function ImageCropper({
           </div>
         </div>
 
-        {/* PREVIEW */}
+        {/* ==================================================
+            EDITOR
+        ================================================== */}
 
-        <div className="image-cropper-preview">
+        <div
+          ref={previewRef}
+          className="image-cropper-preview"
+          style={{
+            position:
+              "relative",
+            touchAction:
+              "none",
+            userSelect:
+              "none",
+            WebkitUserSelect:
+              "none",
+            cursor:
+              processing
+                ? "wait"
+                : "grab",
+            overflow:
+              "hidden",
+          }}
+        >
           {!imageLoaded && (
             <div className="image-cropper-loading">
               Loading image...
@@ -703,9 +1610,44 @@ function ImageCropper({
                 ? "visible"
                 : ""
             }`}
+            onPointerDown={
+              handlePointerDown
+            }
+            onPointerMove={
+              handlePointerMove
+            }
+            onPointerUp={
+              handlePointerUp
+            }
+            onPointerCancel={
+              handlePointerUp
+            }
+            onWheel={
+              handleWheel
+            }
+            onDoubleClick={
+              handleDoubleClick
+            }
+            style={{
+              display:
+                "block",
+              width:
+                "100%",
+              height:
+                "100%",
+              touchAction:
+                "none",
+              cursor:
+                processing
+                  ? "wait"
+                  : dragRef.current.active
+                  ? "grabbing"
+                  : "grab",
+            }}
           />
 
           <img
+            ref={imageRef}
             src={imageUrl}
             alt=""
             onLoad={
@@ -716,16 +1658,248 @@ function ImageCropper({
                 "none",
             }}
           />
+
+          {/* Center hint */}
+
+          {imageLoaded &&
+            !processing && (
+              <div
+                style={{
+                  position:
+                    "absolute",
+                  left:
+                    "50%",
+                  bottom:
+                    "14px",
+                  transform:
+                    "translateX(-50%)",
+                  zIndex: 3,
+                  padding:
+                    "7px 12px",
+                  border:
+                    "1px solid rgba(255,255,255,0.18)",
+                  background:
+                    "rgba(0,0,0,0.5)",
+                  color:
+                    "rgba(255,255,255,0.82)",
+                  fontSize:
+                    "10px",
+                  fontWeight:
+                    700,
+                  letterSpacing:
+                    "0.08em",
+                  textTransform:
+                    "uppercase",
+                  pointerEvents:
+                    "none",
+                  backdropFilter:
+                    "blur(8px)",
+                  WebkitBackdropFilter:
+                    "blur(8px)",
+                }}
+              >
+                Drag image to reposition
+              </div>
+            )}
         </div>
 
-        {/* INFO */}
+        {/* ==================================================
+            TOOLS
+        ================================================== */}
+
+        <div
+          className="image-cropper-editor-tools"
+          style={{
+            display:
+              "flex",
+            alignItems:
+              "center",
+            justifyContent:
+              "space-between",
+            gap:
+              "14px",
+            flexWrap:
+              "wrap",
+            marginTop:
+              "14px",
+          }}
+        >
+          {/* ZOOM */}
+
+          <div
+            style={{
+              display:
+                "flex",
+              alignItems:
+                "center",
+              gap:
+                "8px",
+              flex:
+                "1 1 260px",
+            }}
+          >
+            <button
+              type="button"
+              className="image-cropper-tool-button"
+              onClick={
+                zoomOut
+              }
+              disabled={
+                processing ||
+                zoom <=
+                  MIN_ZOOM
+              }
+              aria-label="Zoom out"
+            >
+              <ZoomOut
+                size={16}
+              />
+            </button>
+
+            <input
+              className="image-cropper-zoom-slider"
+              type="range"
+              min={
+                MIN_ZOOM
+              }
+              max={
+                MAX_ZOOM
+              }
+              step="0.01"
+              value={
+                zoom
+              }
+              onChange={(
+                event
+              ) =>
+                updateZoom(
+                  event
+                    .target
+                    .value
+                )
+              }
+              disabled={
+                processing
+              }
+              aria-label="Image zoom"
+              style={{
+                flex:
+                  1,
+              }}
+            />
+
+            <button
+              type="button"
+              className="image-cropper-tool-button"
+              onClick={
+                zoomIn
+              }
+              disabled={
+                processing ||
+                zoom >=
+                  MAX_ZOOM
+              }
+              aria-label="Zoom in"
+            >
+              <ZoomIn
+                size={16}
+              />
+            </button>
+
+            <span
+              style={{
+                minWidth:
+                  "48px",
+                textAlign:
+                  "right",
+                fontSize:
+                  "11px",
+                fontWeight:
+                  700,
+                color:
+                  "rgba(255,255,255,0.65)",
+              }}
+            >
+              {Math.round(
+                zoom * 100
+              )}
+              %
+            </span>
+          </div>
+
+          {/* ROTATION */}
+
+          <div
+            style={{
+              display:
+                "flex",
+              alignItems:
+                "center",
+              gap:
+                "8px",
+            }}
+          >
+            <button
+              type="button"
+              className="image-cropper-tool-button"
+              onClick={
+                rotateLeft
+              }
+              disabled={
+                processing
+              }
+              aria-label="Rotate left"
+            >
+              <RotateCcw
+                size={16}
+              />
+            </button>
+
+            <button
+              type="button"
+              className="image-cropper-tool-button"
+              onClick={
+                rotateRight
+              }
+              disabled={
+                processing
+              }
+              aria-label="Rotate right"
+            >
+              <RotateCw
+                size={16}
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* ==================================================
+            INFO
+        ================================================== */}
 
         <div className="image-cropper-info">
           <span>
             <strong>
-              Crop:
+              Drag:
             </strong>{" "}
-            centered automatically
+            reposition
+          </span>
+
+          <span>
+            <strong>
+              Zoom:
+            </strong>{" "}
+            {Math.round(
+              zoom * 100
+            )}
+            %
+          </span>
+
+          <span>
+            <strong>
+              Rotation:
+            </strong>{" "}
+            {rotation}°
           </span>
 
           <span>
@@ -734,16 +1908,11 @@ function ImageCropper({
             </strong>{" "}
             {selectedRatio}
           </span>
-
-          <span>
-            <strong>
-              Custom crop:
-            </strong>{" "}
-            disabled
-          </span>
         </div>
 
-        {/* ERROR */}
+        {/* ==================================================
+            ERROR
+        ================================================== */}
 
         {error && (
           <div className="image-cropper-error">
@@ -751,7 +1920,9 @@ function ImageCropper({
           </div>
         )}
 
-        {/* FOOTER */}
+        {/* ==================================================
+            FOOTER
+        ================================================== */}
 
         <div className="image-cropper-footer">
           <button
@@ -795,7 +1966,8 @@ function ImageCropper({
               }
               disabled={
                 processing ||
-                !imageLoaded
+                !imageLoaded ||
+                !previewSize.width
               }
             >
               {processing ? (

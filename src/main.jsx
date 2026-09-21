@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 
 import {
-  HashRouter,
+  BrowserRouter,
   Routes,
   Route,
   Navigate,
@@ -12,6 +12,7 @@ import App from "./App.jsx";
 
 import AboutPage from "./pages/AboutPage.jsx";
 import ProjectsPage from "./pages/ProjectsPage.jsx";
+import GalleryPage from "./pages/GalleryPage.jsx";
 
 import AdminLogin from "./admin/AdminLogin.jsx";
 import AdminDashboard from "./admin/AdminDashboard.jsx";
@@ -31,15 +32,21 @@ import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
+        {/* =========================
+            PUBLIC WEBSITE
+        ========================== */}
 
-        {/* Public Website */}
         <Route path="/" element={<App />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/gallery" element={<GalleryPage />} />
 
-        {/* Admin */}
+        {/* =========================
+            ADMIN PANEL
+        ========================== */}
+
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/content" element={<AdminContent />} />
@@ -54,13 +61,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/admin/social-links" element={<AdminSocialLinks />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
 
-        {/* Unknown routes */}
+        {/* =========================
+            UNKNOWN ROUTES
+        ========================== */}
+
         <Route
           path="*"
           element={<Navigate to="/" replace />}
         />
-
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   </React.StrictMode>
 );

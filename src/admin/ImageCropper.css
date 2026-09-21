@@ -4,35 +4,23 @@
 
 .image-cropper-overlay {
   position: fixed;
-
   inset: 0;
-
   z-index: 999999;
 
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 
   padding: 24px;
 
-  background: rgba(
-    0,
-    0,
-    0,
-    0.82
-  );
+  background: rgba(0, 0, 0, 0.82);
 
   backdrop-filter: blur(10px);
-
   -webkit-backdrop-filter: blur(10px);
 
   overflow-y: auto;
-
   isolation: isolate;
 }
-
 
 /* ============================================================
    MODAL
@@ -40,36 +28,25 @@
 
 .image-cropper-modal {
   position: relative;
-
   z-index: 1000000;
 
-  width: min(
-    920px,
-    calc(100vw - 40px)
-  );
-
-  max-height: calc(
-    100vh - 40px
-  );
+  width: min(960px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
 
   overflow-y: auto;
 
   background: #ffffff;
-
   color: #171717;
 
   border-radius: 18px;
 
   box-shadow:
-    0 35px 90px
-      rgba(0, 0, 0, 0.4);
+    0 35px 90px rgba(0, 0, 0, 0.4);
 
-  border: 1px solid
-    rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 
   overscroll-behavior: contain;
 }
-
 
 /* ============================================================
    HEADER
@@ -77,17 +54,14 @@
 
 .image-cropper-header {
   display: flex;
-
   align-items: flex-start;
-
   justify-content: space-between;
 
   gap: 24px;
 
   padding: 26px 28px 22px;
 
-  border-bottom: 1px solid
-    #eeeeee;
+  border-bottom: 1px solid #eeeeee;
 }
 
 .image-cropper-kicker {
@@ -98,19 +72,17 @@
   color: #e87917;
 
   font-size: 10px;
-
   font-weight: 800;
 
   letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .image-cropper-header h2 {
   margin: 0;
 
   font-size: 25px;
-
   line-height: 1.1;
-
   font-weight: 700;
 
   color: #171717;
@@ -122,10 +94,8 @@
   color: #777777;
 
   font-size: 13px;
-
   line-height: 1.55;
 }
-
 
 /* ============================================================
    CLOSE BUTTON
@@ -135,21 +105,16 @@
   flex: 0 0 auto;
 
   width: 40px;
-
   height: 40px;
 
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 
   border: 1px solid #dddddd;
-
   border-radius: 10px;
 
   background: #ffffff;
-
   color: #333333;
 
   cursor: pointer;
@@ -163,7 +128,6 @@
 
 .image-cropper-close:hover {
   background: #f5f5f5;
-
   border-color: #cccccc;
 
   transform: rotate(3deg);
@@ -171,40 +135,45 @@
 
 .image-cropper-close:disabled {
   opacity: 0.5;
-
   cursor: not-allowed;
 }
 
-
 /* ============================================================
-   CONTROLS
+   MAIN CONTROLS
 ============================================================ */
 
 .image-cropper-controls {
   display: flex;
-
   align-items: center;
-
   justify-content: space-between;
 
-  gap: 20px;
+  gap: 24px;
 
   padding: 18px 28px;
 
-  border-bottom: 1px solid
-    #eeeeee;
+  border-bottom: 1px solid #eeeeee;
+
+  flex-wrap: wrap;
+}
+
+.image-cropper-control-group {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  min-width: 0;
 }
 
 .image-cropper-control-title {
   color: #777777;
 
   font-size: 10px;
-
   font-weight: 800;
 
   letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
-
 
 /* ============================================================
    RATIO BUTTONS
@@ -212,45 +181,37 @@
 
 .image-cropper-ratio-buttons {
   display: flex;
-
   align-items: center;
 
   gap: 8px;
+
+  flex-wrap: wrap;
 }
 
 .image-cropper-ratio-button {
   position: relative;
-
   z-index: 10;
 
   min-width: 58px;
-
   height: 38px;
 
   padding: 0 15px;
 
   display: inline-flex;
-
   align-items: center;
-
   justify-content: center;
 
   border: 1px solid #d8d8d8;
-
   border-radius: 9px;
 
   background: #ffffff;
-
   color: #333333;
 
   font-size: 12px;
-
   font-weight: 700;
 
   cursor: pointer;
-
   pointer-events: auto;
-
   user-select: none;
 
   transition:
@@ -262,7 +223,6 @@
 
 .image-cropper-ratio-button:hover {
   border-color: #e87917;
-
   color: #e87917;
 
   transform: translateY(-1px);
@@ -270,20 +230,187 @@
 
 .image-cropper-ratio-button.active {
   border-color: #e87917;
-
   background: #e87917;
-
   color: #ffffff;
 }
 
 .image-cropper-ratio-button:disabled {
   opacity: 0.5;
-
   cursor: not-allowed;
-
   transform: none;
 }
 
+/* ============================================================
+   EDITOR TOOLBAR
+============================================================ */
+
+.image-cropper-editor-tools {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  flex-wrap: wrap;
+}
+
+.image-cropper-tool-button {
+  min-width: 40px;
+  height: 38px;
+
+  padding: 0 11px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  border: 1px solid #d8d8d8;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: #333333;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.image-cropper-tool-button:hover {
+  background: #f8f8f8;
+  border-color: #e87917;
+  color: #e87917;
+
+  transform: translateY(-1px);
+}
+
+.image-cropper-tool-button:active {
+  transform: translateY(0);
+}
+
+.image-cropper-tool-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================================================
+   ZOOM CONTROLS
+============================================================ */
+
+.image-cropper-zoom-controls {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  width: 100%;
+}
+
+.image-cropper-zoom-button {
+  width: 34px;
+  height: 34px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 auto;
+
+  border: 1px solid #d8d8d8;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #333333;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.image-cropper-zoom-button:hover {
+  background: #f7f7f7;
+  border-color: #e87917;
+  color: #e87917;
+}
+
+.image-cropper-zoom-slider {
+  flex: 1;
+
+  min-width: 120px;
+
+  height: 5px;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  border-radius: 999px;
+
+  background: #e5e5e5;
+
+  cursor: pointer;
+}
+
+.image-cropper-zoom-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+
+  width: 17px;
+  height: 17px;
+
+  border-radius: 50%;
+
+  background: #e87917;
+
+  border: 2px solid #ffffff;
+
+  box-shadow:
+    0 1px 5px rgba(0, 0, 0, 0.2);
+
+  cursor: grab;
+}
+
+.image-cropper-zoom-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+}
+
+.image-cropper-zoom-slider::-moz-range-thumb {
+  width: 17px;
+  height: 17px;
+
+  border-radius: 50%;
+
+  background: #e87917;
+
+  border: 2px solid #ffffff;
+
+  box-shadow:
+    0 1px 5px rgba(0, 0, 0, 0.2);
+
+  cursor: grab;
+}
+
+.image-cropper-zoom-value {
+  min-width: 48px;
+
+  color: #555555;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  text-align: right;
+}
 
 /* ============================================================
    PREVIEW
@@ -291,19 +418,15 @@
 
 .image-cropper-preview {
   position: relative;
-
   z-index: 1;
 
   width: 100%;
 
-  min-height: 300px;
-
-  max-height: 550px;
+  min-height: 320px;
+  max-height: 560px;
 
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 
   padding: 20px;
@@ -311,37 +434,22 @@
   overflow: hidden;
 
   background:
-    linear-gradient(
-      45deg,
-      #ededed 25%,
-      transparent 25%
-    ),
-    linear-gradient(
-      -45deg,
-      #ededed 25%,
-      transparent 25%
-    ),
-    linear-gradient(
-      45deg,
-      transparent 75%,
-      #ededed 75%
-    ),
-    linear-gradient(
-      -45deg,
-      transparent 75%,
-      #ededed 75%
-    );
+    linear-gradient(45deg, #ededed 25%, transparent 25%),
+    linear-gradient(-45deg, #ededed 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ededed 75%),
+    linear-gradient(-45deg, transparent 75%, #ededed 75%);
 
-  background-size:
-    24px 24px;
+  background-size: 24px 24px;
 
   background-position:
     0 0,
     0 12px,
     12px -12px,
     -12px 0;
-}
 
+  user-select: none;
+  touch-action: none;
+}
 
 /* ============================================================
    CANVAS
@@ -349,17 +457,14 @@
 
 .image-cropper-canvas {
   position: relative;
-
   z-index: 5;
 
   display: block;
 
   max-width: 100%;
-
   max-height: 510px;
 
   width: auto;
-
   height: auto;
 
   object-fit: contain;
@@ -369,55 +474,46 @@
   background: #111111;
 
   box-shadow:
-    0 15px 45px
-      rgba(0, 0, 0, 0.3);
+    0 15px 45px rgba(0, 0, 0, 0.3);
 
   opacity: 0;
 
   transition: opacity 0.2s ease;
 
-  pointer-events: none;
+  pointer-events: auto;
+
+  cursor: grab;
+
+  touch-action: none;
+}
+
+.image-cropper-canvas:active {
+  cursor: grabbing;
 }
 
 .image-cropper-canvas.visible {
   opacity: 1;
 }
 
-
 /* ============================================================
    HIDDEN SOURCE IMAGE
 ============================================================ */
-
-/*
-  IMPORTANT:
-
-  This image is used ONLY as the source for canvas drawing.
-
-  It must NEVER appear visually.
-
-  This fixes the "two images" problem.
-*/
 
 .image-cropper-hidden-source {
   position: absolute;
 
   left: -99999px;
-
   top: -99999px;
 
   width: 1px;
-
   height: 1px;
 
   opacity: 0;
-
   visibility: hidden;
 
   pointer-events: none;
-
   user-select: none;
 }
-
 
 /* ============================================================
    LOADING
@@ -425,26 +521,53 @@
 
 .image-cropper-loading {
   position: absolute;
-
   inset: 0;
 
   z-index: 3;
 
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 
   color: #666666;
 
   font-size: 13px;
-
   font-weight: 600;
 
   pointer-events: none;
 }
 
+/* ============================================================
+   CROP HINT
+============================================================ */
+
+.image-cropper-drag-hint {
+  position: absolute;
+
+  bottom: 18px;
+  left: 50%;
+
+  z-index: 50;
+
+  transform: translateX(-50%);
+
+  padding: 7px 11px;
+
+  border-radius: 999px;
+
+  background: rgba(0, 0, 0, 0.58);
+
+  color: #ffffff;
+
+  font-size: 10px;
+  font-weight: 600;
+
+  white-space: nowrap;
+
+  pointer-events: none;
+
+  opacity: 0.9;
+}
 
 /* ============================================================
    INFO
@@ -452,9 +575,7 @@
 
 .image-cropper-info {
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 
   flex-wrap: wrap;
@@ -463,11 +584,8 @@
 
   padding: 15px 28px;
 
-  border-top: 1px solid
-    #eeeeee;
-
-  border-bottom: 1px solid
-    #eeeeee;
+  border-top: 1px solid #eeeeee;
+  border-bottom: 1px solid #eeeeee;
 
   color: #777777;
 
@@ -478,7 +596,6 @@
   color: #333333;
 }
 
-
 /* ============================================================
    ERROR
 ============================================================ */
@@ -488,20 +605,15 @@
 
   padding: 11px 13px;
 
-  border: 1px solid
-    #f0b4b4;
-
+  border: 1px solid #f0b4b4;
   border-radius: 8px;
 
   background: #fff5f5;
-
   color: #c62828;
 
   font-size: 12px;
-
   line-height: 1.5;
 }
-
 
 /* ============================================================
    FOOTER
@@ -509,9 +621,7 @@
 
 .image-cropper-footer {
   display: flex;
-
   align-items: center;
-
   justify-content: space-between;
 
   gap: 15px;
@@ -521,30 +631,25 @@
 
 .image-cropper-footer-right {
   display: flex;
-
   align-items: center;
 
   gap: 9px;
 }
 
-
 /* ============================================================
-   RESET
+   RESET / CANCEL / APPLY
 ============================================================ */
 
 .image-cropper-reset,
 .image-cropper-cancel,
 .image-cropper-apply {
   position: relative;
-
   z-index: 20;
 
   min-height: 40px;
 
   display: inline-flex;
-
   align-items: center;
-
   justify-content: center;
 
   gap: 7px;
@@ -554,59 +659,49 @@
   border-radius: 9px;
 
   font-size: 12px;
-
   font-weight: 700;
 
   cursor: pointer;
-
   pointer-events: auto;
 
   transition:
     transform 0.18s ease,
     background 0.18s ease,
-    border-color 0.18s ease;
+    border-color 0.18s ease,
+    color 0.18s ease;
 }
-
 
 /* ============================================================
    RESET
 ============================================================ */
 
 .image-cropper-reset {
-  border: 1px solid
-    transparent;
+  border: 1px solid transparent;
 
   background: transparent;
-
   color: #777777;
 }
 
 .image-cropper-reset:hover {
   color: #333333;
-
   background: #f5f5f5;
 }
-
 
 /* ============================================================
    CANCEL
 ============================================================ */
 
 .image-cropper-cancel {
-  border: 1px solid
-    #dddddd;
+  border: 1px solid #dddddd;
 
   background: #ffffff;
-
   color: #444444;
 }
 
 .image-cropper-cancel:hover {
   border-color: #bbbbbb;
-
   background: #f7f7f7;
 }
-
 
 /* ============================================================
    APPLY
@@ -615,21 +710,17 @@
 .image-cropper-apply {
   min-width: 150px;
 
-  border: 1px solid
-    #e87917;
+  border: 1px solid #e87917;
 
   background: #e87917;
-
   color: #ffffff;
 
   box-shadow:
-    0 5px 15px
-      rgba(232, 121, 23, 0.2);
+    0 5px 15px rgba(232, 121, 23, 0.2);
 }
 
 .image-cropper-apply:hover {
   background: #d9690e;
-
   border-color: #d9690e;
 
   transform: translateY(-1px);
@@ -645,21 +736,17 @@
   box-shadow: none;
 }
 
-
 /* ============================================================
    SPINNER
 ============================================================ */
 
 .image-cropper-spinner {
   width: 14px;
-
   height: 14px;
 
-  border: 2px solid
-    rgba(255, 255, 255, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.4);
 
-  border-top-color:
-    #ffffff;
+  border-top-color: #ffffff;
 
   border-radius: 50%;
 
@@ -674,14 +761,27 @@
   }
 }
 
+/* ============================================================
+   FOCUS STATES
+============================================================ */
+
+.image-cropper-tool-button:focus-visible,
+.image-cropper-ratio-button:focus-visible,
+.image-cropper-close:focus-visible,
+.image-cropper-reset:focus-visible,
+.image-cropper-cancel:focus-visible,
+.image-cropper-apply:focus-visible,
+.image-cropper-zoom-button:focus-visible {
+  outline: 2px solid rgba(232, 121, 23, 0.35);
+
+  outline-offset: 2px;
+}
 
 /* ============================================================
    MOBILE
 ============================================================ */
 
-@media (
-  max-width: 700px
-) {
+@media (max-width: 700px) {
   .image-cropper-overlay {
     padding: 10px;
   }
@@ -689,9 +789,7 @@
   .image-cropper-modal {
     width: 100%;
 
-    max-height: calc(
-      100vh - 20px
-    );
+    max-height: calc(100vh - 20px);
 
     border-radius: 14px;
   }
@@ -700,18 +798,48 @@
     padding: 20px;
   }
 
+  .image-cropper-header h2 {
+    font-size: 21px;
+  }
+
   .image-cropper-controls {
     align-items: flex-start;
 
     flex-direction: column;
 
     padding: 15px 20px;
+
+    gap: 16px;
+  }
+
+  .image-cropper-control-group {
+    width: 100%;
+
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 9px;
+  }
+
+  .image-cropper-editor-tools {
+    width: 100%;
+
+    justify-content: flex-start;
   }
 
   .image-cropper-preview {
     min-height: 240px;
 
+    max-height: 430px;
+
     padding: 12px;
+  }
+
+  .image-cropper-canvas {
+    max-height: 400px;
+
+    max-width: 100%;
   }
 
   .image-cropper-info {
@@ -741,5 +869,98 @@
 
   .image-cropper-reset {
     align-self: flex-start;
+  }
+
+  .image-cropper-drag-hint {
+    bottom: 10px;
+
+    font-size: 9px;
+  }
+}
+
+/* ============================================================
+   SMALL MOBILE
+============================================================ */
+
+@media (max-width: 440px) {
+  .image-cropper-overlay {
+    padding: 6px;
+  }
+
+  .image-cropper-modal {
+    border-radius: 12px;
+  }
+
+  .image-cropper-header {
+    gap: 12px;
+
+    padding: 16px;
+  }
+
+  .image-cropper-header h2 {
+    font-size: 19px;
+  }
+
+  .image-cropper-header p {
+    font-size: 12px;
+  }
+
+  .image-cropper-close {
+    width: 36px;
+    height: 36px;
+  }
+
+  .image-cropper-controls {
+    padding: 14px 16px;
+  }
+
+  .image-cropper-ratio-buttons {
+    width: 100%;
+  }
+
+  .image-cropper-ratio-button {
+    flex: 1;
+
+    min-width: 0;
+
+    padding: 0 10px;
+  }
+
+  .image-cropper-tool-button {
+    flex: 1;
+  }
+
+  .image-cropper-preview {
+    min-height: 220px;
+
+    padding: 8px;
+  }
+
+  .image-cropper-info {
+    padding: 12px 16px;
+  }
+
+  .image-cropper-footer {
+    padding: 14px 16px 16px;
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION
+============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .image-cropper-close,
+  .image-cropper-ratio-button,
+  .image-cropper-tool-button,
+  .image-cropper-zoom-button,
+  .image-cropper-reset,
+  .image-cropper-cancel,
+  .image-cropper-apply {
+    transition: none;
+  }
+
+  .image-cropper-spinner {
+    animation-duration: 1.4s;
   }
 }

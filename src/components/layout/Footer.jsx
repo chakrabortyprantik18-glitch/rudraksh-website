@@ -5,11 +5,47 @@ import {
   FaYoutube,
 } from "react-icons/fa";
 
+import { Link } from "react-router-dom";
+
 import "./Footer.css";
 
+import {
+  useWebsiteContent,
+  getContentImageUrl,
+} from "../../hooks/useWebsiteContent";
+
 function Footer() {
+  const { content } =
+    useWebsiteContent("footer");
+
+  /*
+   * ============================================================
+   * CMS CONTENT
+   * ============================================================
+   */
+
+  const description =
+    content?.description ||
+    "Building stronger communities through compassion, education, culture and collective action.";
+
+  const copyright =
+    content?.copyright ||
+    `© ${new Date().getFullYear()} Rudraksh Social & Cultural Organization. All rights reserved.`;
+
+  const logo =
+    getContentImageUrl(
+      content?.logo
+    ) || "/images/rudraksh-logo.png";
+
+  /*
+   * ============================================================
+   * RENDER
+   * ============================================================
+   */
+
   return (
     <footer className="footer">
+
       <div className="footer-container">
 
         {/* =========================
@@ -19,14 +55,25 @@ function Footer() {
         <div className="footer-brand">
 
           <img
-            src="/images/rudraksh-logo.png"
+            src={logo}
             alt="Rudraksh Social & Cultural Organization"
             className="footer-logo"
+            onError={(event) => {
+              if (
+                event.currentTarget.src.endsWith(
+                  "/images/rudraksh-logo.png"
+                )
+              ) {
+                return;
+              }
+
+              event.currentTarget.src =
+                "/images/rudraksh-logo.png";
+            }}
           />
 
           <p className="footer-description">
-            Building stronger communities through compassion,
-            education, culture and collective action.
+            {description}
           </p>
 
           {/* =========================
@@ -85,25 +132,45 @@ function Footer() {
 
         <div className="footer-links">
 
-          <h3>EXPLORE</h3>
+          <h3>
+            EXPLORE
+          </h3>
 
-          <a href="#home">Home</a>
+          <Link to="/#home">
+            Home
+          </Link>
 
-          <a href="#about">About Us</a>
+          <Link to="/#about">
+            About Us
+          </Link>
 
-          <a href="#projects">Projects</a>
+          <Link to="/projects">
+            Projects
+          </Link>
 
-          <a href="#gallery">Gallery</a>
+          <Link to="/gallery">
+            Gallery
+          </Link>
 
-          <a href="#members">Members</a>
+          <Link to="/members">
+            Members
+          </Link>
 
-          <a href="#membership">Become a Member</a>
+          <Link to="/#membership">
+            Become a Member
+          </Link>
 
-          <a href="#donate">Donate</a>
+          <Link to="/#donate">
+            Donate
+          </Link>
 
-          <a href="#faq">FAQ</a>
+          <Link to="/#faq">
+            FAQ
+          </Link>
 
-          <a href="#contact">Contact Us</a>
+          <Link to="/#contact">
+            Contact Us
+          </Link>
 
         </div>
 
@@ -115,11 +182,15 @@ function Footer() {
 
       <div className="footer-contact-strip">
 
-        <a href="mailto:rudrakshsocialculturalorganiza@gmail.com">
+        <a
+          href="mailto:rudrakshsocialculturalorganiza@gmail.com"
+        >
           rudrakshsocialculturalorganiza@gmail.com
         </a>
 
-        <a href="tel:+919365716093">
+        <a
+          href="tel:+919365716093"
+        >
           +91 93657 16093
         </a>
 
@@ -150,13 +221,14 @@ function Footer() {
         <div className="footer-bottom-left">
 
           <p>
-            © {new Date().getFullYear()} Rudraksh Social & Cultural
-            Organization. All rights reserved.
+            {copyright}
           </p>
 
           <p className="footer-credit">
             Designed &amp; Developed by{" "}
-            <strong>Prantik Chakrabarty</strong>
+            <strong>
+              Prantik Chakrabarty
+            </strong>
           </p>
 
         </div>
