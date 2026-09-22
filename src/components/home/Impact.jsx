@@ -1,10 +1,10 @@
 import { useRef } from "react";
+
 import { useGSAP } from "@gsap/react";
 
 import { gsap } from "../../services/gsap";
-import {
-  useWebsiteContent,
-} from "../../hooks/useWebsiteContent";
+
+import { useWebsiteContent } from "../../hooks/useWebsiteContent";
 
 import "./Impact.css";
 
@@ -16,7 +16,9 @@ function parseStatValue(value, fallback = "0") {
       ? fallback
       : String(value);
 
-  const match = text.match(/^([\d,]+(?:\.\d+)?)(.*)$/);
+  const match = text.match(
+    /^([\d,]+(?:\.\d+)?)(.*)$/
+  );
 
   if (!match) {
     return {
@@ -99,6 +101,13 @@ function Impact() {
    * ============================================================
    * GSAP
    * ============================================================
+   *
+   * IMPORTANT:
+   * The CMS content loads asynchronously.
+   *
+   * The dependency below makes GSAP run again after the
+   * actual CMS content has arrived.
+   * ============================================================
    */
 
   useGSAP(
@@ -149,9 +158,14 @@ function Impact() {
             return;
           }
 
-          element.textContent = `0${stat.parsed.suffix}`;
+          element.textContent =
+            `0${stat.parsed.suffix}`;
         }
       );
+
+      /*
+       * Reduced motion.
+       */
 
       const prefersReducedMotion =
         window.matchMedia(
@@ -215,12 +229,15 @@ function Impact() {
             once: true,
           },
         })
-        .from(".impact-heading", {
-          y: 20,
-          opacity: 0,
-          duration: 0.65,
-          ease: "power3.out",
-        })
+        .from(
+          ".impact-heading",
+          {
+            y: 20,
+            opacity: 0,
+            duration: 0.65,
+            ease: "power3.out",
+          }
+        )
         .from(
           ".impact-description",
           {
@@ -325,6 +342,7 @@ function Impact() {
           opacity: 0,
           duration: 0.7,
           ease: "power3.out",
+
           scrollTrigger: {
             trigger: section,
             start: "top 72%",
@@ -335,6 +353,20 @@ function Impact() {
     },
     {
       scope: sectionRef,
+
+      /*
+       * CRITICAL FIX:
+       * Re-run GSAP whenever CMS content changes.
+       */
+
+      dependencies: [content],
+
+      /*
+       * Clean up the previous GSAP animations
+       * before rebuilding them with fresh CMS data.
+       */
+
+      revertOnUpdate: true,
     }
   );
 
