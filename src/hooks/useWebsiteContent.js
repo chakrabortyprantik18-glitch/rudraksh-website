@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import { API_URL } from "../config/api";
 
 let contentCache = null;
@@ -31,6 +32,7 @@ async function fetchWebsiteContent() {
       const content = data.content || data.data || {};
 
       contentCache = content;
+
       return content;
     })
     .finally(() => {
@@ -42,8 +44,13 @@ async function fetchWebsiteContent() {
 
 export function useWebsiteContent(section = null) {
   const [content, setContent] = useState(() => {
-    if (!contentCache) return section ? {} : {};
-    return section ? contentCache[section] || {} : contentCache;
+    if (!contentCache) {
+      return {};
+    }
+
+    return section
+      ? contentCache[section] || {}
+      : contentCache;
   });
 
   const [loading, setLoading] = useState(!contentCache);
@@ -59,16 +66,25 @@ export function useWebsiteContent(section = null) {
 
         const data = await fetchWebsiteContent();
 
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
-        setContent(section ? data[section] || {} : data);
+        setContent(
+          section
+            ? data[section] || {}
+            : data
+        );
       } catch (err) {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         console.error("Website content error:", err);
 
         setError(
-          err?.message || "Unable to load website content"
+          err?.message ||
+            "Unable to load website content"
         );
       } finally {
         if (!cancelled) {
@@ -91,7 +107,11 @@ export function useWebsiteContent(section = null) {
   };
 }
 
-export function getContentValue(content, key, fallback = "") {
+export function getContentValue(
+  content,
+  key,
+  fallback = ""
+) {
   const value = content?.[key];
 
   if (
@@ -106,7 +126,9 @@ export function getContentValue(content, key, fallback = "") {
 }
 
 export function getContentImageUrl(filename) {
-  if (!filename) return "";
+  if (!filename) {
+    return "";
+  }
 
   if (
     filename.startsWith("http://") ||
@@ -116,7 +138,10 @@ export function getContentImageUrl(filename) {
     return filename;
   }
 
-  const cleanFilename = filename.replace(/^\/+/, "");
+  const cleanFilename = String(filename).replace(
+    /^\/+/,
+    ""
+  );
 
   return `${API_URL}/content-image/${encodeURIComponent(
     cleanFilename
