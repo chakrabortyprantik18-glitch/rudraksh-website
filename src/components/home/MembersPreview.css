@@ -78,7 +78,7 @@
 }
 
 /* =========================================================
-   GALLERY GRID
+   MEMBER GALLERY
 ========================================================= */
 
 .members-gallery-grid {
@@ -89,6 +89,7 @@
 
 .member-gallery-card {
   display: block;
+  min-width: 0;
   color: inherit;
   text-decoration: none;
 }
@@ -113,8 +114,7 @@
     transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.member-gallery-card:hover
-.member-gallery-image {
+.member-gallery-card:hover .member-gallery-image {
   transform: scale(1.06);
 }
 
@@ -213,8 +213,7 @@
     background 0.3s ease;
 }
 
-.member-gallery-card:hover
-.member-gallery-plus {
+.member-gallery-card:hover .member-gallery-plus {
   transform: rotate(90deg);
   background: rgba(255, 255, 255, 0.14);
 }
@@ -259,8 +258,7 @@
     color 0.25s ease;
 }
 
-.member-gallery-card:hover
-.member-gallery-arrow {
+.member-gallery-card:hover .member-gallery-arrow {
   transform: translate(4px, -4px);
   color: var(--orange);
 }
@@ -407,10 +405,7 @@
   }
 
   .members-container {
-    width: min(
-      100% - 28px,
-      1250px
-    );
+    width: min(100% - 28px, 1250px);
   }
 
   .members-gallery-grid {

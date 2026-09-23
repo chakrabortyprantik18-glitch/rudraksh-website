@@ -1,238 +1,154 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useGSAP } from "@gsap/react";
-
-import { gsap } from "../../services/gsap";
+import { motion } from "framer-motion";
+import { ArrowUpRight, Plus } from "lucide-react";
+import { BACKEND_URL } from "../../config/api";
 import "./MembersPreview.css";
 
-import { BACKEND_URL } from "../../config/api";
+const API_URL = `${BACKEND_URL}/api/members?limit=3`;
 
-const API_URL =
-  `${BACKEND_URL}/api/members?limit=5`;
+const getImageUrl = (image) => {
+  if (!image) return "";
 
-function MembersPreview() {
-  const sectionRef = useRef(null);
+  if (
+    image.startsWith("http://") ||
+    image.startsWith("https://") ||
+    image.startsWith("data:")
+  ) {
+    return image;
+  }
 
+  if (image.startsWith("/")) {
+    return `${BACKEND_URL}${image}`;
+  }
+
+  return `${BACKEND_URL}/${image}`;
+};
+
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.12,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: {
+    opacity: 0,
+    y: 35,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.7,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  },
+};
+
+export default function MembersPreview() {
   const [members, setMembers] = useState([]);
   const [totalMembers, setTotalMembers] = useState(0);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  /* =========================================================
-     LOAD MEMBERS
-  ========================================================= */
-
   useEffect(() => {
-    let cancelled = false;
+    let mounted = true;
 
-    const loadMembers = async () => {
+    const fetchMembers = async () => {
       try {
         setLoading(true);
         setError("");
 
-        const response = await fetch(API_URL, {
-          cache: "no-store",
-        });
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+          throw new Error("Failed to load members");
+        }
 
         const data = await response.json();
 
-        if (!response.ok || !data.success) {
-          throw new Error(
-            data.message ||
-              "Unable to load members."
-          );
-        }
+        if (!mounted) return;
 
-        if (cancelled) {
-          return;
-        }
-
-        const previewMembers =
-          Array.isArray(data.members)
-            ? data.members.slice(0, 5)
+        if (data?.success) {
+          const memberList = Array.isArray(data.members)
+            ? data.members.slice(0, 3)
             : [];
 
-        setMembers(previewMembers);
+          setMembers(memberList);
 
-        setTotalMembers(
-          Number(
-            data.total ??
-              data.count ??
-              data.members?.length ??
-              0
-          )
-        );
-      } catch (err) {
-        if (cancelled) {
-          return;
+          setTotalMembers(
+            Number(
+              data.total ??
+                data.totalMembers ??
+                data.count ??
+                data.members?.length ??
+                memberList.length
+            )
+          );
+        } else {
+          setMembers([]);
+          setTotalMembers(0);
+          setError(data?.message || "Unable to load members");
         }
+      } catch (err) {
+        if (!mounted) return;
 
-        console.error(
-          "PUBLIC MEMBERS LOAD ERROR:",
-          err
-        );
+        console.error("Members preview error:", err);
 
-        setError(
-          "Unable to load members right now."
-        );
+        setMembers([]);
+        setTotalMembers(0);
+        setError("Unable to load members");
       } finally {
-        if (!cancelled) {
+        if (mounted) {
           setLoading(false);
         }
       }
     };
 
-    loadMembers();
+    fetchMembers();
 
     return () => {
-      cancelled = true;
+      mounted = false;
     };
   }, []);
 
-  /* =========================================================
-     GSAP
-  ========================================================= */
-
-  useGSAP(
-    () => {
-      const section = sectionRef.current;
-
-      if (!section) {
-        return;
-      }
-
-      const elements =
-        section.querySelectorAll(
-          ".members-heading, .members-intro, .member-card, .members-bottom, .members-empty-state"
-        );
-
-      gsap.set(elements, {
-        opacity: 1,
-        y: 0,
-        x: 0,
-      });
-
-      const prefersReducedMotion =
-        window.matchMedia(
-          "(prefers-reduced-motion: reduce)"
-        ).matches;
-
-      if (prefersReducedMotion) {
-        return;
-      }
-
-      const rect =
-        section.getBoundingClientRect();
-
-      const visible =
-        rect.top < window.innerHeight &&
-        rect.bottom > 0;
-
-      if (visible) {
-        gsap.fromTo(
-          elements,
-          {
-            y: 35,
-            opacity: 0,
-          },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.75,
-            stagger: 0.08,
-            ease: "power3.out",
-          }
-        );
-      } else {
-        gsap
-          .timeline({
-            scrollTrigger: {
-              trigger: section,
-              start: "top 78%",
-              once: true,
-            },
-          })
-          .from(elements, {
-            y: 35,
-            opacity: 0,
-            duration: 0.75,
-            stagger: 0.08,
-            ease: "power3.out",
-          });
-      }
-    },
-    {
-      scope: sectionRef,
-      dependencies: [
-        members.length,
-        loading,
-      ],
-    }
-  );
-
-  /* =========================================================
-     IMAGE URL
-  ========================================================= */
-
-  const getImageUrl = (image) => {
-    if (!image) {
-      return "";
-    }
-
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://") ||
-      image.startsWith("data:")
-    ) {
-      return image;
-    }
-
-    if (image.startsWith("/")) {
-      return `${BACKEND_URL}${image}`;
-    }
-
-    return `${BACKEND_URL}/${image}`;
-  };
-
-  /* =========================================================
-     RENDER
-  ========================================================= */
-
   return (
-    <section
-      ref={sectionRef}
-      id="members"
-      className="members-preview"
-    >
+    <section id="members" className="members-preview">
       <div className="members-container">
 
-        {/* =================================================
+        {/* =====================================================
             HEADER
-        ================================================= */}
+        ===================================================== */}
 
         <div className="members-header">
-
-          <div className="members-heading">
-
-            <div className="section-eyebrow">
-              <span />
-              THE PEOPLE
-            </div>
-
+          <motion.div
+            className="members-heading"
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.7 }}
+          >
             <h2>
-              People make
+              The people
               <br />
-              <em>the difference.</em>
+              <em>behind</em> Rudraksh.
             </h2>
+          </motion.div>
 
-          </div>
-
-          <div className="members-intro">
-
+          <motion.div
+            className="members-intro"
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.7, delay: 0.1 }}
+          >
             <p>
-              Meet the people who are part
-              of the Rudraksh community.
+              Meet the people who contribute their time, energy and
+              dedication to the Rudraksh Social & Cultural Organization.
             </p>
 
             <Link
@@ -242,212 +158,181 @@ function MembersPreview() {
               View Full Members Gallery
               <span>↗</span>
             </Link>
-
-          </div>
-
+          </motion.div>
         </div>
 
-        {/* =================================================
-            MEMBER GALLERY
-        ================================================= */}
+        {/* =====================================================
+            MEMBERS GALLERY
+        ===================================================== */}
 
-        {loading && (
+        {loading ? (
           <div className="members-gallery-grid">
-
-            <div className="members-empty-state">
-              Loading members...
-            </div>
-
-          </div>
-        )}
-
-        {!loading && error && (
-          <div className="members-gallery-grid">
-
-            <div className="members-empty-state">
-              {error}
-            </div>
-
-          </div>
-        )}
-
-        {!loading &&
-          !error &&
-          members.length === 0 && (
-            <div className="members-gallery-grid">
-
-              <div className="members-empty-state">
-
-                <strong>
-                  No members published yet.
-                </strong>
-
-                <span>
-                  Add active members from
-                  the Admin Panel to populate
-                  this section.
-                </span>
-
+            {[1, 2, 3].map((item) => (
+              <div
+                className="member-gallery-card"
+                key={item}
+              >
+                <div
+                  className="member-gallery-image-wrap"
+                  style={{
+                    animation: "membersPulse 1.5s ease-in-out infinite",
+                  }}
+                />
               </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="members-empty-state">
+            <strong>Members unavailable</strong>
+            <span>{error}</span>
+          </div>
+        ) : members.length === 0 ? (
+          <div className="members-empty-state">
+            <strong>No members available</strong>
+            <span>
+              Members will appear here once they are added.
+            </span>
+          </div>
+        ) : (
+          <motion.div
+            className="members-gallery-grid"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{
+              once: true,
+              amount: 0.15,
+            }}
+          >
+            {members.map((member, index) => {
+              const imageUrl = getImageUrl(member.photo_url);
 
-            </div>
-          )}
-
-        {!loading &&
-          !error &&
-          members.length > 0 && (
-
-            <div className="members-gallery-grid">
-
-              {members.map(
-                (member, index) => {
-
-                  const imageUrl =
-                    getImageUrl(
-                      member.photo_url
-                    );
-
-                  return (
-                    <Link
-                      key={member.id}
-                      to="/members"
-                      className="member-gallery-card"
-                    >
-
-                      {/* IMAGE */}
-
-                      <div className="member-gallery-image-wrap">
-
-                        {imageUrl ? (
-                          <img
-                            src={imageUrl}
-                            alt={
-                              member.name ||
-                              "Rudraksh member"
-                            }
-                            className="member-gallery-image"
-                            loading={
-                              index === 0
-                                ? "eager"
-                                : "lazy"
-                            }
-                            onError={(event) => {
-                              event.currentTarget.style.display =
-                                "none";
-                            }}
-                          />
-                        ) : (
-                          <div className="member-gallery-image-empty">
-                            No photo
-                          </div>
-                        )}
-
-                        <div className="member-gallery-overlay" />
-
-                        {/* CATEGORY */}
-
-                        <span className="member-gallery-label">
-                          {member.position ||
-                            "RUDRAKSH MEMBER"}
-                        </span>
-
-                        {/* NUMBER */}
-
-                        <span className="member-gallery-index">
-                          {String(
-                            index + 1
-                          ).padStart(2, "0")}
-                        </span>
-
-                        {/* ARROW */}
-
-                        <span className="member-gallery-plus">
-                          +
-                        </span>
-
-                      </div>
-
-                      {/* MEMBER INFO */}
-
-                      <div className="member-gallery-content">
-
-                        <div>
-
-                          <h3>
-                            {member.name ||
-                              "Rudraksh Member"}
-                          </h3>
-
-                          <p>
-                            {member.position ||
-                              "Rudraksh Member"}
-                          </p>
-
+              return (
+                <motion.div
+                  className="member-gallery-card"
+                  variants={cardVariants}
+                  key={member.id || index}
+                >
+                  <Link
+                    to="/members"
+                    className="member-gallery-card"
+                  >
+                    <div className="member-gallery-image-wrap">
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={member.name || "Rudraksh member"}
+                          className="member-gallery-image"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="member-gallery-image-empty">
+                          No Photo
                         </div>
+                      )}
 
-                        <span className="member-gallery-arrow">
-                          ↗
-                        </span>
+                      <div className="member-gallery-overlay" />
 
+                      <div className="member-gallery-index">
+                        {String(index + 1).padStart(2, "0")}
                       </div>
 
-                    </Link>
-                  );
-                }
-              )}
+                      <div className="member-gallery-plus">
+                        <Plus size={18} strokeWidth={1.5} />
+                      </div>
 
-            </div>
-          )}
+                      {member.role && (
+                        <div className="member-gallery-label">
+                          {member.role}
+                        </div>
+                      )}
+                    </div>
 
-        {/* =================================================
+                    <div className="member-gallery-content">
+                      <div>
+                        <h3>
+                          {member.name || "Rudraksh Member"}
+                        </h3>
+
+                        {member.role && (
+                          <p>{member.role}</p>
+                        )}
+                      </div>
+
+                      <ArrowUpRight
+                        className="member-gallery-arrow"
+                        size={20}
+                        strokeWidth={1.5}
+                      />
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
+
+        {/* =====================================================
             BOTTOM
-        ================================================= */}
+        ===================================================== */}
 
-        {!loading &&
-          !error && (
-            <div className="members-bottom">
+        <motion.div
+          className="members-bottom"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{
+            once: true,
+            amount: 0.2,
+          }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="members-count">
+            <strong>
+              {totalMembers || members.length}
+            </strong>
 
-              <div className="members-count">
+            <span>
+              People
+              <br />
+              & Counting
+            </span>
+          </div>
 
-                <strong>
-                  {totalMembers}
-                </strong>
+          <div className="members-bottom-actions">
+            <Link
+              to="/members"
+              className="members-view-all"
+            >
+              View All Members
+              <span>↗</span>
+            </Link>
 
-                <span>
-                  active people currently
-                  connected
-                  <br />
-                  with Rudraksh
-                </span>
-
-              </div>
-
-              <div className="members-bottom-actions">
-
-                <Link
-                  to="/members"
-                  className="members-view-all"
-                >
-                  View All Members
-                  <span>↗</span>
-                </Link>
-
-                <Link
-                  to="/#membership"
-                  className="members-join"
-                >
-                  Become Part of Rudraksh
-                  <span>→</span>
-                </Link>
-
-              </div>
-
-            </div>
-          )}
-
+            <Link
+              to="/#membership"
+              className="members-join"
+            >
+              Become Part of Rudraksh
+              <span>→</span>
+            </Link>
+          </div>
+        </motion.div>
       </div>
+
+      <style>{`
+        @keyframes membersPulse {
+          0% {
+            opacity: 0.55;
+          }
+
+          50% {
+            opacity: 0.9;
+          }
+
+          100% {
+            opacity: 0.55;
+          }
+        }
+      `}</style>
     </section>
   );
 }
-
-export default MembersPreview;
