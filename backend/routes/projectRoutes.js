@@ -6,21 +6,22 @@ const multer = require("multer");
 const { pool } = require("../config/db");
 const { authenticateAdmin } = require("../middleware/authMiddleware");
 
+const {
+  PROJECTS_UPLOAD_DIR,
+} = require("../config/uploadPaths");
+
 const router = express.Router();
 
 // ============================================================
 // PROJECT IMAGE UPLOAD CONFIGURATION
 // ============================================================
 
-const uploadDir = path.join(
-  __dirname,
-  "..",
-  "uploads",
-  "projects"
-);
+const uploadDir = PROJECTS_UPLOAD_DIR;
 
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+  fs.mkdirSync(uploadDir, {
+    recursive: true,
+  });
 }
 
 const storage = multer.diskStorage({
@@ -40,7 +41,8 @@ const storage = multer.diskStorage({
       .replace(/^-|-$/g, "")
       .slice(0, 60);
 
-    const finalBaseName = safeBaseName || "project";
+    const finalBaseName =
+      safeBaseName || "project";
 
     cb(
       null,
@@ -84,15 +86,24 @@ const upload = multer({
 const deleteUploadedFile = (imageUrl) => {
   if (!imageUrl) return;
 
-  if (!imageUrl.startsWith("/uploads/projects/")) {
+  if (
+    !imageUrl.startsWith(
+      "/uploads/projects/"
+    )
+  ) {
     return;
   }
 
-  const filename = path.basename(imageUrl);
+  const filename = path.basename(
+    imageUrl
+  );
 
   if (!filename) return;
 
-  const filePath = path.join(uploadDir, filename);
+  const filePath = path.join(
+    uploadDir,
+    filename
+  );
 
   try {
     if (fs.existsSync(filePath)) {
@@ -112,7 +123,10 @@ const getUploadedImageUrl = (req) => {
   return `/uploads/projects/${req.file.filename}`;
 };
 
-const toBoolean = (value, fallback = false) => {
+const toBoolean = (
+  value,
+  fallback = false
+) => {
   if (
     value === undefined ||
     value === null ||
@@ -129,11 +143,15 @@ const toBoolean = (value, fallback = false) => {
     value === true ||
     value === 1 ||
     value === "1" ||
-    String(value).toLowerCase() === "true"
+    String(value).toLowerCase() ===
+      "true"
   );
 };
 
-const toInteger = (value, fallback = 0) => {
+const toInteger = (
+  value,
+  fallback = 0
+) => {
   const number = Number(value);
 
   return Number.isInteger(number)
@@ -141,7 +159,9 @@ const toInteger = (value, fallback = 0) => {
     : fallback;
 };
 
-const cleanOptionalString = (value) => {
+const cleanOptionalString = (
+  value
+) => {
   if (
     value === undefined ||
     value === null
@@ -159,9 +179,12 @@ const cleanOptionalString = (value) => {
 // GET /api/projects
 // ============================================================
 
-router.get("/", async (req, res) => {
-  try {
-    const [projects] = await pool.execute(`
+router.get(
+  "/",
+  async (req, res) => {
+    try {
+      const [projects] =
+        await pool.execute(`
       SELECT
         id,
         title,
@@ -185,47 +208,53 @@ router.get("/", async (req, res) => {
         id DESC
     `);
 
-    res.json({
-      success: true,
-      count: projects.length,
-      projects,
-    });
-  } catch (error) {
-    console.error(
-      "GET PROJECTS ERROR:",
-      error
-    );
+      res.json({
+        success: true,
+        count: projects.length,
+        projects,
+      });
+    } catch (error) {
+      console.error(
+        "GET PROJECTS ERROR:",
+        error
+      );
 
-    res.status(500).json({
-      success: false,
-      message: "Unable to fetch projects.",
-    });
+      res.status(500).json({
+        success: false,
+        message:
+          "Unable to fetch projects.",
+      });
+    }
   }
-});
+);
 
 // ============================================================
 // GET PROJECT BY ID
 // GET /api/projects/:id
 // ============================================================
 
-router.get("/:id", async (req, res) => {
-  try {
-    const projectId = Number(
-      req.params.id
-    );
+router.get(
+  "/:id",
+  async (req, res) => {
+    try {
+      const projectId = Number(
+        req.params.id
+      );
 
-    if (
-      !Number.isInteger(projectId) ||
-      projectId <= 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid project ID.",
-      });
-    }
+      if (
+        !Number.isInteger(projectId) ||
+        projectId <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid project ID.",
+        });
+      }
 
-    const [projects] = await pool.execute(
-      `
+      const [projects] =
+        await pool.execute(
+          `
       SELECT
         id,
         title,
@@ -245,32 +274,35 @@ router.get("/:id", async (req, res) => {
       WHERE id = ?
       LIMIT 1
       `,
-      [projectId]
-    );
+          [projectId]
+        );
 
-    if (projects.length === 0) {
-      return res.status(404).json({
+      if (projects.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Project not found.",
+        });
+      }
+
+      res.json({
+        success: true,
+        project: projects[0],
+      });
+    } catch (error) {
+      console.error(
+        "GET PROJECT ERROR:",
+        error
+      );
+
+      res.status(500).json({
         success: false,
-        message: "Project not found.",
+        message:
+          "Unable to fetch project.",
       });
     }
-
-    res.json({
-      success: true,
-      project: projects[0],
-    });
-  } catch (error) {
-    console.error(
-      "GET PROJECT ERROR:",
-      error
-    );
-
-    res.status(500).json({
-      success: false,
-      message: "Unable to fetch project.",
-    });
   }
-});
+);
 
 // ============================================================
 // CREATE PROJECT
@@ -460,7 +492,8 @@ router.post(
 
       // Duplicate slug
       if (
-        error.code === "ER_DUP_ENTRY"
+        error.code ===
+        "ER_DUP_ENTRY"
       ) {
         return res.status(409).json({
           success: false,
@@ -501,7 +534,9 @@ router.put(
       );
 
       if (
-        !Number.isInteger(projectId) ||
+        !Number.isInteger(
+          projectId
+        ) ||
         projectId <= 0
       ) {
         deleteUploadedFile(
@@ -792,7 +827,8 @@ router.put(
 
       // Duplicate slug
       if (
-        error.code === "ER_DUP_ENTRY"
+        error.code ===
+        "ER_DUP_ENTRY"
       ) {
         return res.status(409).json({
           success: false,
@@ -825,7 +861,9 @@ router.delete(
       );
 
       if (
-        !Number.isInteger(projectId) ||
+        !Number.isInteger(
+          projectId
+        ) ||
         projectId <= 0
       ) {
         return res.status(400).json({
@@ -918,7 +956,12 @@ router.delete(
 // ============================================================
 
 router.use(
-  (error, req, res, next) => {
+  (
+    error,
+    req,
+    res,
+    next
+  ) => {
     if (
       error instanceof
       multer.MulterError
@@ -936,7 +979,8 @@ router.use(
 
       return res.status(400).json({
         success: false,
-        message: error.message,
+        message:
+          error.message,
       });
     }
 

@@ -466,7 +466,7 @@ function Donate() {
 
             <div className="donate-impact-item">
               <span>03</span>
-              <p>Strengthen cultural activities</p>
+              <p>Healthcare Activities</p>
             </div>
           </div>
         </div>

@@ -8,16 +8,17 @@ const {
   authenticateAdmin,
 } = require("../middleware/authMiddleware");
 
+const {
+  MEMBERS_UPLOAD_DIR,
+} = require("../config/uploadPaths");
+
 const router = express.Router();
 
 /* =========================================================
    UPLOAD DIRECTORY
 ========================================================= */
 
-const uploadDirectory = path.join(
-  __dirname,
-  "../uploads/members"
-);
+const uploadDirectory = MEMBERS_UPLOAD_DIR;
 
 if (!fs.existsSync(uploadDirectory)) {
   fs.mkdirSync(uploadDirectory, {
@@ -170,10 +171,20 @@ router.get(
             id DESC
         `);
 
+      const limit = Number.parseInt(req.query.limit, 10);
+      const output =
+        Number.isInteger(limit) && limit > 0
+          ? members.slice(
+              0,
+              Math.min(limit, 100)
+            )
+          : members;
+
       res.json({
         success: true,
-        count: members.length,
-        members,
+        count: output.length,
+        total: members.length,
+        members: output,
       });
     } catch (error) {
       console.error(
@@ -250,7 +261,8 @@ router.get(
 
       res.json({
         success: true,
-        member: members[0],
+        member:
+          members[0],
       });
     } catch (error) {
       console.error(
@@ -268,7 +280,7 @@ router.get(
 );
 
 /* =========================================================
-   ADD MEMBER
+   CREATE MEMBER
    POST /api/members
 ========================================================= */
 
@@ -277,7 +289,7 @@ router.post(
   authenticateAdmin,
   upload.single("image"),
   async (req, res) => {
-    let uploadedImage = null;
+    let uploadedImageUrl = null;
 
     try {
       const {
@@ -294,8 +306,26 @@ router.post(
 
       if (
         !name ||
-        !name.trim()
+        !String(name).trim()
       ) {
+        if (req.file) {
+          const filePath =
+            path.join(
+              uploadDirectory,
+              req.file.filename
+            );
+
+          if (
+            fs.existsSync(
+              filePath
+            )
+          ) {
+            fs.unlinkSync(
+              filePath
+            );
+          }
+        }
+
         return res.status(400).json({
           success: false,
           message:
@@ -303,19 +333,42 @@ router.post(
         });
       }
 
-      /* -----------------------------------------------------
-         NEW UPLOADED IMAGE
-      ----------------------------------------------------- */
-
       if (req.file) {
-        uploadedImage =
+        uploadedImageUrl =
           `/uploads/members/${req.file.filename}`;
       }
 
-      const finalPhoto =
-        uploadedImage ||
-        photo_url ||
-        null;
+      const finalPhotoUrl =
+        uploadedImageUrl ||
+        (photo_url &&
+        String(photo_url).trim()
+          ? String(
+              photo_url
+            ).trim()
+          : null);
+
+      const finalJoinedDate =
+        joined_date &&
+        String(joined_date).trim()
+          ? String(
+              joined_date
+            ).trim()
+          : null;
+
+      const finalIsActive =
+        is_active !== undefined
+          ? String(is_active) ===
+            "true"
+          : true;
+
+      const finalDisplayOrder =
+        Number.isInteger(
+          Number(display_order)
+        )
+          ? Number(
+              display_order
+            )
+          : 0;
 
       const [result] =
         await pool.execute(
@@ -335,59 +388,54 @@ router.post(
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           [
-            name.trim(),
+            String(name).trim(),
 
-            position
-              ? position.trim()
-              : null,
-
-            bio
-              ? bio.trim()
-              : null,
-
-            finalPhoto,
-
-            phone
-              ? phone.trim()
-              : null,
-
-            email
-              ? email.trim()
-              : null,
-
-            joined_date ||
-              null,
-
-            is_active !==
-            undefined
+            position &&
+            String(position).trim()
               ? String(
-                  is_active
-                ) === "true"
-              : true,
+                  position
+                ).trim()
+              : null,
 
-            Number.isInteger(
-              Number(
-                display_order
-              )
-            )
-              ? Number(
-                  display_order
-                )
-              : 0,
+            bio &&
+            String(bio).trim()
+              ? String(
+                  bio
+                ).trim()
+              : null,
+
+            finalPhotoUrl,
+
+            phone &&
+            String(phone).trim()
+              ? String(
+                  phone
+                ).trim()
+              : null,
+
+            email &&
+            String(email).trim()
+              ? String(
+                  email
+                ).trim()
+              : null,
+
+            finalJoinedDate,
+
+            finalIsActive,
+
+            finalDisplayOrder,
           ]
         );
 
       res.status(201).json({
         success: true,
-
         message:
           "Member created successfully.",
-
         memberId:
           result.insertId,
-
         photoUrl:
-          finalPhoto,
+          finalPhotoUrl,
       });
     } catch (error) {
       console.error(
@@ -395,11 +443,9 @@ router.post(
         error
       );
 
-      if (
-        uploadedImage
-      ) {
+      if (uploadedImageUrl) {
         deleteUploadedFile(
-          uploadedImage
+          uploadedImageUrl
         );
       }
 
@@ -407,12 +453,6 @@ router.post(
         success: false,
         message:
           "Unable to create member.",
-
-        error:
-          process.env.NODE_ENV ===
-          "development"
-            ? error.message
-            : undefined,
       });
     }
   }
@@ -428,7 +468,8 @@ router.put(
   authenticateAdmin,
   upload.single("image"),
   async (req, res) => {
-    let uploadedImage = null;
+    let newUploadedImageUrl =
+      null;
 
     try {
       const memberId =
@@ -447,10 +488,6 @@ router.put(
         });
       }
 
-      /* -----------------------------------------------------
-         GET EXISTING MEMBER
-      ----------------------------------------------------- */
-
       const [existingMembers] =
         await pool.execute(
           `
@@ -465,9 +502,26 @@ router.put(
         );
 
       if (
-        existingMembers.length ===
-        0
+        existingMembers.length === 0
       ) {
+        if (req.file) {
+          const filePath =
+            path.join(
+              uploadDirectory,
+              req.file.filename
+            );
+
+          if (
+            fs.existsSync(
+              filePath
+            )
+          ) {
+            fs.unlinkSync(
+              filePath
+            );
+          }
+        }
+
         return res.status(404).json({
           success: false,
           message:
@@ -475,7 +529,7 @@ router.put(
         });
       }
 
-      const oldPhoto =
+      const oldPhotoUrl =
         existingMembers[0]
           .photo_url;
 
@@ -493,8 +547,26 @@ router.put(
 
       if (
         !name ||
-        !name.trim()
+        !String(name).trim()
       ) {
+        if (req.file) {
+          const filePath =
+            path.join(
+              uploadDirectory,
+              req.file.filename
+            );
+
+          if (
+            fs.existsSync(
+              filePath
+            )
+          ) {
+            fs.unlinkSync(
+              filePath
+            );
+          }
+        }
+
         return res.status(400).json({
           success: false,
           message:
@@ -502,137 +574,129 @@ router.put(
         });
       }
 
-      /* -----------------------------------------------------
-         NEW IMAGE
-      ----------------------------------------------------- */
-
       if (req.file) {
-        uploadedImage =
+        newUploadedImageUrl =
           `/uploads/members/${req.file.filename}`;
       }
 
-      /*
-        Priority:
-
-        1. Newly uploaded image
-        2. photo_url sent by frontend
-        3. Existing database image
-      */
-
-      const finalPhoto =
-        uploadedImage ||
-        photo_url ||
-        oldPhoto ||
-        null;
-
-      /* -----------------------------------------------------
-         UPDATE DATABASE
-      ----------------------------------------------------- */
-
-      const [result] =
-        await pool.execute(
-          `
-          UPDATE members
-          SET
-            name = ?,
-            position = ?,
-            bio = ?,
-            photo_url = ?,
-            phone = ?,
-            email = ?,
-            joined_date = ?,
-            is_active = ?,
-            display_order = ?
-          WHERE id = ?
-          `,
-          [
-            name.trim(),
-
-            position
-              ? position.trim()
-              : null,
-
-            bio
-              ? bio.trim()
-              : null,
-
-            finalPhoto,
-
-            phone
-              ? phone.trim()
-              : null,
-
-            email
-              ? email.trim()
-              : null,
-
-            joined_date ||
-              null,
-
-            is_active !==
-            undefined
-              ? String(
-                  is_active
-                ) === "true"
-              : true,
-
-            Number.isInteger(
-              Number(
-                display_order
+      const finalPhotoUrl =
+        newUploadedImageUrl ||
+        (
+          photo_url !==
+          undefined
+            ? (
+                photo_url &&
+                String(
+                  photo_url
+                ).trim()
               )
-            )
-              ? Number(
-                  display_order
-                )
-              : 0,
-
-            memberId,
-          ]
+                ? String(
+                    photo_url
+                  ).trim()
+                : null
+            : oldPhotoUrl
         );
 
+      const finalJoinedDate =
+        joined_date &&
+        String(joined_date).trim()
+          ? String(
+              joined_date
+            ).trim()
+          : null;
+
+      const finalIsActive =
+        is_active !== undefined
+          ? String(is_active) ===
+            "true"
+          : true;
+
+      const finalDisplayOrder =
+        Number.isInteger(
+          Number(display_order)
+        )
+          ? Number(
+              display_order
+            )
+          : 0;
+
+      await pool.execute(
+        `
+        UPDATE members
+        SET
+          name = ?,
+          position = ?,
+          bio = ?,
+          photo_url = ?,
+          phone = ?,
+          email = ?,
+          joined_date = ?,
+          is_active = ?,
+          display_order = ?
+        WHERE id = ?
+        `,
+        [
+          String(name).trim(),
+
+          position &&
+          String(position).trim()
+            ? String(
+                position
+              ).trim()
+            : null,
+
+          bio &&
+          String(bio).trim()
+            ? String(
+                bio
+              ).trim()
+            : null,
+
+          finalPhotoUrl,
+
+          phone &&
+          String(phone).trim()
+            ? String(
+                phone
+              ).trim()
+            : null,
+
+          email &&
+          String(email).trim()
+            ? String(
+                email
+              ).trim()
+            : null,
+
+          finalJoinedDate,
+
+          finalIsActive,
+
+          finalDisplayOrder,
+
+          memberId,
+        ]
+      );
+
+      // Delete old physical image
+      // only after successful DB update.
       if (
-        result.affectedRows ===
-        0
-      ) {
-        if (
-          uploadedImage
-        ) {
-          deleteUploadedFile(
-            uploadedImage
-          );
-        }
-
-        return res.status(404).json({
-          success: false,
-          message:
-            "Member not found.",
-        });
-      }
-
-      /* -----------------------------------------------------
-         DELETE OLD IMAGE AFTER
-         SUCCESSFUL REPLACEMENT
-      ----------------------------------------------------- */
-
-      if (
-        uploadedImage &&
-        oldPhoto &&
-        oldPhoto !==
-          uploadedImage
+        newUploadedImageUrl &&
+        oldPhotoUrl &&
+        oldPhotoUrl !==
+          newUploadedImageUrl
       ) {
         deleteUploadedFile(
-          oldPhoto
+          oldPhotoUrl
         );
       }
 
       res.json({
         success: true,
-
         message:
           "Member updated successfully.",
-
         photoUrl:
-          finalPhoto,
+          finalPhotoUrl,
       });
     } catch (error) {
       console.error(
@@ -641,10 +705,10 @@ router.put(
       );
 
       if (
-        uploadedImage
+        newUploadedImageUrl
       ) {
         deleteUploadedFile(
-          uploadedImage
+          newUploadedImageUrl
         );
       }
 
@@ -652,12 +716,6 @@ router.put(
         success: false,
         message:
           "Unable to update member.",
-
-        error:
-          process.env.NODE_ENV ===
-          "development"
-            ? error.message
-            : undefined,
       });
     }
   }
@@ -689,10 +747,6 @@ router.delete(
         });
       }
 
-      /* -----------------------------------------------------
-         GET IMAGE BEFORE DELETE
-      ----------------------------------------------------- */
-
       const [members] =
         await pool.execute(
           `
@@ -715,12 +769,8 @@ router.delete(
         });
       }
 
-      const imageToDelete =
+      const photoUrl =
         members[0].photo_url;
-
-      /* -----------------------------------------------------
-         DELETE DATABASE RECORD
-      ----------------------------------------------------- */
 
       const [result] =
         await pool.execute(
@@ -732,8 +782,7 @@ router.delete(
         );
 
       if (
-        result.affectedRows ===
-        0
+        result.affectedRows === 0
       ) {
         return res.status(404).json({
           success: false,
@@ -742,17 +791,9 @@ router.delete(
         });
       }
 
-      /* -----------------------------------------------------
-         DELETE PHYSICAL IMAGE
-      ----------------------------------------------------- */
-
-      if (
-        imageToDelete
-      ) {
-        deleteUploadedFile(
-          imageToDelete
-        );
-      }
+      deleteUploadedFile(
+        photoUrl
+      );
 
       res.json({
         success: true,
@@ -796,22 +837,10 @@ router.use(
         return res.status(400).json({
           success: false,
           message:
-            "Image must be smaller than 5MB.",
+            "Image must be smaller than 5 MB.",
         });
       }
 
-      return res.status(400).json({
-        success: false,
-        message:
-          error.message ||
-          "Image upload failed.",
-      });
-    }
-
-    if (
-      error &&
-      error.message
-    ) {
       return res.status(400).json({
         success: false,
         message:
@@ -819,8 +848,20 @@ router.use(
       });
     }
 
-    next(error);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message:
+          error.message,
+      });
+    }
+
+    next();
   }
 );
+
+/* =========================================================
+   EXPORT
+========================================================= */
 
 module.exports = router;

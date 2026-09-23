@@ -533,3 +533,114 @@ VALUES
 -- ============================================================
 
 SELECT 'Rudraksh database schema created successfully.' AS message;
+-- =========================================================
+-- DYNAMIC REGISTRATION FORMS SYSTEM
+-- =========================================================
+
+-- Stores each registration form
+CREATE TABLE IF NOT EXISTS forms (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    title VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+
+    description TEXT NULL,
+
+    -- Text shown on the public website button
+    button_text VARCHAR(255) NOT NULL DEFAULT 'REGISTER NOW',
+
+    -- Main ON/OFF switch
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+
+    -- Draft / published state
+    is_published BOOLEAN NOT NULL DEFAULT FALSE,
+
+    -- Optional form image/banner
+    image_url VARCHAR(500) NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+);
+
+
+-- Stores the fields belonging to each form
+CREATE TABLE IF NOT EXISTS form_fields (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    form_id INT NOT NULL,
+
+    field_name VARCHAR(100) NOT NULL,
+    field_label VARCHAR(255) NOT NULL,
+
+    -- Supported types:
+    -- text, number, email, phone, date,
+    -- select, radio, checkbox, textarea, file, image
+    field_type VARCHAR(50) NOT NULL DEFAULT 'text',
+
+    placeholder VARCHAR(255) NULL,
+
+    -- For dropdown/radio/checkbox options
+    options TEXT NULL,
+
+    -- Whether the visitor MUST fill this field
+    is_required BOOLEAN NOT NULL DEFAULT TRUE,
+
+    -- Controls the order of fields on the public form
+    field_order INT NOT NULL DEFAULT 0,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_form_fields_form
+        FOREIGN KEY (form_id)
+        REFERENCES forms(id)
+        ON DELETE CASCADE
+);
+
+
+-- Stores every visitor's submitted registration
+CREATE TABLE IF NOT EXISTS form_submissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    form_id INT NOT NULL,
+
+    -- Future registration/payment system can use these
+    registration_id VARCHAR(100) NULL UNIQUE,
+
+    submission_data LONGTEXT NOT NULL,
+
+    -- Future Razorpay integration
+    payment_status VARCHAR(50) NOT NULL DEFAULT 'not_required',
+
+    payment_id VARCHAR(255) NULL,
+
+    -- General submission status
+    status VARCHAR(50) NOT NULL DEFAULT 'submitted',
+
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_form_submissions_form
+        FOREIGN KEY (form_id)
+        REFERENCES forms(id)
+        ON DELETE CASCADE
+);
+
+
+-- Helpful indexes
+CREATE INDEX idx_forms_active
+    ON forms(is_active);
+
+CREATE INDEX idx_forms_published
+    ON forms(is_published);
+
+CREATE INDEX idx_form_fields_form
+    ON form_fields(form_id);
+
+CREATE INDEX idx_form_submissions_form
+    ON form_submissions(form_id);
+
+CREATE INDEX idx_form_submissions_status
+    ON form_submissions(status);

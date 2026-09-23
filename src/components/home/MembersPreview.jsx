@@ -13,23 +13,15 @@ const API_URL =
 function MembersPreview() {
   const sectionRef = useRef(null);
 
-  const [members, setMembers] =
-    useState([]);
+  const [members, setMembers] = useState([]);
+  const [totalMembers, setTotalMembers] = useState(0);
 
-  const [totalMembers, setTotalMembers] =
-    useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState("");
-
-  /*
-   * ============================================================
-   * LOAD ONLY 5 MEMBERS FOR HOMEPAGE
-   * ============================================================
-   */
+  /* =========================================================
+     LOAD MEMBERS
+  ========================================================= */
 
   useEffect(() => {
     let cancelled = false;
@@ -39,16 +31,13 @@ function MembersPreview() {
         setLoading(true);
         setError("");
 
-        const response =
-          await fetch(API_URL);
+        const response = await fetch(API_URL, {
+          cache: "no-store",
+        });
 
-        const data =
-          await response.json();
+        const data = await response.json();
 
-        if (
-          !response.ok ||
-          !data.success
-        ) {
+        if (!response.ok || !data.success) {
           throw new Error(
             data.message ||
               "Unable to load members."
@@ -64,9 +53,7 @@ function MembersPreview() {
             ? data.members.slice(0, 5)
             : [];
 
-        setMembers(
-          previewMembers
-        );
+        setMembers(previewMembers);
 
         setTotalMembers(
           Number(
@@ -103,16 +90,13 @@ function MembersPreview() {
     };
   }, []);
 
-  /*
-   * ============================================================
-   * GSAP
-   * ============================================================
-   */
+  /* =========================================================
+     GSAP
+  ========================================================= */
 
   useGSAP(
     () => {
-      const section =
-        sectionRef.current;
+      const section = sectionRef.current;
 
       if (!section) {
         return;
@@ -134,9 +118,7 @@ function MembersPreview() {
           "(prefers-reduced-motion: reduce)"
         ).matches;
 
-      if (
-        prefersReducedMotion
-      ) {
+      if (prefersReducedMotion) {
         return;
       }
 
@@ -144,8 +126,7 @@ function MembersPreview() {
         section.getBoundingClientRect();
 
       const visible =
-        rect.top <
-          window.innerHeight &&
+        rect.top < window.innerHeight &&
         rect.bottom > 0;
 
       if (visible) {
@@ -190,53 +171,33 @@ function MembersPreview() {
     }
   );
 
-  /*
-   * ============================================================
-   * IMAGE URL
-   * ============================================================
-   */
+  /* =========================================================
+     IMAGE URL
+  ========================================================= */
 
-  const getImageUrl = (
-    image
-  ) => {
+  const getImageUrl = (image) => {
     if (!image) {
       return "";
     }
 
     if (
-      image.startsWith(
-        "http://"
-      ) ||
-      image.startsWith(
-        "https://"
-      ) ||
+      image.startsWith("http://") ||
+      image.startsWith("https://") ||
       image.startsWith("data:")
     ) {
       return image;
     }
 
-    if (
-      image.startsWith(
-        "/uploads/"
-      )
-    ) {
-      return `${BACKEND_URL}${image}`;
-    }
-
-    if (
-      image.startsWith("/")
-    ) {
+    if (image.startsWith("/")) {
       return `${BACKEND_URL}${image}`;
     }
 
     return `${BACKEND_URL}/${image}`;
   };
 
-  /*
-   * ============================================================
-   * RENDER
-   * ============================================================
-   */
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <section
@@ -246,9 +207,9 @@ function MembersPreview() {
     >
       <div className="members-container">
 
-        {/* =========================
+        {/* =================================================
             HEADER
-        ========================== */}
+        ================================================= */}
 
         <div className="members-header">
 
@@ -262,51 +223,59 @@ function MembersPreview() {
             <h2>
               People make
               <br />
-              <em>
-                the difference.
-              </em>
+              <em>the difference.</em>
             </h2>
 
           </div>
 
           <div className="members-intro">
+
             <p>
-              Meet some of the people
-              who are part of the
-              Rudraksh community.
+              Meet the people who are part
+              of the Rudraksh community.
             </p>
+
+            <Link
+              to="/members"
+              className="members-gallery-link"
+            >
+              View Full Members Gallery
+              <span>↗</span>
+            </Link>
+
           </div>
 
         </div>
 
-        {/* =========================
-            MEMBER GRID
-        ========================== */}
+        {/* =================================================
+            MEMBER GALLERY
+        ================================================= */}
 
-        <div className="members-grid">
+        {loading && (
+          <div className="members-gallery-grid">
 
-          {/* LOADING */}
-
-          {loading && (
             <div className="members-empty-state">
               Loading members...
             </div>
-          )}
 
-          {/* ERROR */}
+          </div>
+        )}
 
-          {!loading &&
-            error && (
-              <div className="members-empty-state">
-                {error}
-              </div>
-            )}
+        {!loading && error && (
+          <div className="members-gallery-grid">
 
-          {/* EMPTY */}
+            <div className="members-empty-state">
+              {error}
+            </div>
 
-          {!loading &&
-            !error &&
-            members.length === 0 && (
+          </div>
+        )}
+
+        {!loading &&
+          !error &&
+          members.length === 0 && (
+            <div className="members-gallery-grid">
+
               <div className="members-empty-state">
 
                 <strong>
@@ -315,89 +284,124 @@ function MembersPreview() {
 
                 <span>
                   Add active members from
-                  the Admin Panel to
-                  populate this section.
+                  the Admin Panel to populate
+                  this section.
                 </span>
 
               </div>
-            )}
 
-          {/* MEMBERS */}
+            </div>
+          )}
 
-          {!loading &&
-            !error &&
-            members.map(
-              (member, index) => (
-                <article
-                  key={member.id}
-                  className="member-card"
-                >
-                  <div className="member-image-wrap">
+        {!loading &&
+          !error &&
+          members.length > 0 && (
 
-                    {member.photo_url ? (
-                      <img
-                        src={getImageUrl(
-                          member.photo_url
+            <div className="members-gallery-grid">
+
+              {members.map(
+                (member, index) => {
+
+                  const imageUrl =
+                    getImageUrl(
+                      member.photo_url
+                    );
+
+                  return (
+                    <Link
+                      key={member.id}
+                      to="/members"
+                      className="member-gallery-card"
+                    >
+
+                      {/* IMAGE */}
+
+                      <div className="member-gallery-image-wrap">
+
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={
+                              member.name ||
+                              "Rudraksh member"
+                            }
+                            className="member-gallery-image"
+                            loading={
+                              index === 0
+                                ? "eager"
+                                : "lazy"
+                            }
+                            onError={(event) => {
+                              event.currentTarget.style.display =
+                                "none";
+                            }}
+                          />
+                        ) : (
+                          <div className="member-gallery-image-empty">
+                            No photo
+                          </div>
                         )}
-                        alt={
-                          member.name ||
-                          "Rudraksh member"
-                        }
-                        className="member-image"
-                        loading={
-                          index === 0
-                            ? "eager"
-                            : "lazy"
-                        }
-                      />
-                    ) : (
-                      <div className="member-image member-image-empty">
-                        <span>
-                          No photo
+
+                        <div className="member-gallery-overlay" />
+
+                        {/* CATEGORY */}
+
+                        <span className="member-gallery-label">
+                          {member.position ||
+                            "RUDRAKSH MEMBER"}
                         </span>
+
+                        {/* NUMBER */}
+
+                        <span className="member-gallery-index">
+                          {String(
+                            index + 1
+                          ).padStart(2, "0")}
+                        </span>
+
+                        {/* ARROW */}
+
+                        <span className="member-gallery-plus">
+                          +
+                        </span>
+
                       </div>
-                    )}
 
-                    <div className="member-image-overlay" />
+                      {/* MEMBER INFO */}
 
-                    <span className="member-index">
-                      {String(
-                        index + 1
-                      ).padStart(
-                        2,
-                        "0"
-                      )}
-                    </span>
+                      <div className="member-gallery-content">
 
-                  </div>
+                        <div>
 
-                  <div className="member-content">
+                          <h3>
+                            {member.name ||
+                              "Rudraksh Member"}
+                          </h3>
 
-                    <div>
-                      <h3>
-                        {member.name}
-                      </h3>
+                          <p>
+                            {member.position ||
+                              "Rudraksh Member"}
+                          </p>
 
-                      <p>
-                        {member.position ||
-                          "Rudraksh Member"}
-                      </p>
-                    </div>
+                        </div>
 
-                    <span className="member-arrow">
-                      ↗
-                    </span>
+                        <span className="member-gallery-arrow">
+                          ↗
+                        </span>
 
-                  </div>
-                </article>
-              )
-            )}
+                      </div>
 
-        </div>
+                    </Link>
+                  );
+                }
+              )}
 
-        {/* =========================
+            </div>
+          )}
+
+        {/* =================================================
             BOTTOM
-        ========================== */}
+        ================================================= */}
 
         {!loading &&
           !error && (
@@ -425,10 +429,7 @@ function MembersPreview() {
                   className="members-view-all"
                 >
                   View All Members
-
-                  <span>
-                    ↗
-                  </span>
+                  <span>↗</span>
                 </Link>
 
                 <Link
@@ -436,10 +437,7 @@ function MembersPreview() {
                   className="members-join"
                 >
                   Become Part of Rudraksh
-
-                  <span>
-                    →
-                  </span>
+                  <span>→</span>
                 </Link>
 
               </div>

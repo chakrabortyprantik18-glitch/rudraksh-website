@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import "./Projects.css";
 import { BACKEND_URL } from "../../config/api";
 
@@ -342,13 +343,17 @@ function Projects() {
                         </p>
                       )}
 
-                      <a
-                        href="#projects"
+                      {/* =================================================
+                          PROJECT DETAIL LINK
+                      ================================================= */}
+
+                      <Link
+                        to={`/projects/${project.id}`}
                         className="project-link"
                       >
                         Explore Project
                         <span>→</span>
-                      </a>
+                      </Link>
 
                     </div>
 

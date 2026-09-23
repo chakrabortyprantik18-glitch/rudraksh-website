@@ -14,6 +14,8 @@ import App from "./App.jsx";
 import AboutPage from "./pages/AboutPage.jsx";
 import ProjectsPage from "./pages/ProjectsPage.jsx";
 import GalleryPage from "./pages/GalleryPage.jsx";
+import ProjectDetailPage from "./pages/ProjectDetailPage.jsx";
+import MembersPage from "./pages/MembersPage.jsx";
 
 import AdminLogin from "./admin/AdminLogin.jsx";
 import AdminDashboard from "./admin/AdminDashboard.jsx";
@@ -108,9 +110,27 @@ ReactDOM.createRoot(
           element={<ProjectsPage />}
         />
 
+        {/* =================================================
+            INDIVIDUAL PROJECT PAGE
+        ================================================= */}
+
+        <Route
+          path="/projects/:id"
+          element={<ProjectDetailPage />}
+        />
+
         <Route
           path="/gallery"
           element={<GalleryPage />}
+        />
+
+        {/* =================================================
+            MEMBERS PAGE
+        ================================================= */}
+
+        <Route
+          path="/members"
+          element={<MembersPage />}
         />
 
         {/* =================================================
@@ -125,9 +145,6 @@ ReactDOM.createRoot(
 
         {/* =================================================
             PROTECTED ADMIN PANEL
-
-            EVERY /admin/* ROUTE BELOW THIS POINT
-            REQUIRES ADMIN AUTHENTICATION.
         ================================================= */}
 
         <Route element={<ProtectedAdminRoute />}>

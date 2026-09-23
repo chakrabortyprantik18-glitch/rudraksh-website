@@ -4,23 +4,29 @@ const path = require("path");
 const fs = require("fs");
 
 const { pool } = require("../config/db");
+
 const {
   authenticateAdmin,
 } = require("../middleware/authMiddleware");
 
-const router = express.Router();
+const {
+  EVENTS_UPLOAD_DIR,
+} = require("../config/uploadPaths");
 
+const router = express.Router();
 
 /* =========================================================
    UPLOAD DIRECTORY
 ========================================================= */
 
-const uploadDirectory = path.join(
-  __dirname,
-  "../uploads/events"
-);
+const uploadDirectory =
+  EVENTS_UPLOAD_DIR;
 
-if (!fs.existsSync(uploadDirectory)) {
+if (
+  !fs.existsSync(
+    uploadDirectory
+  )
+) {
   fs.mkdirSync(
     uploadDirectory,
     {
@@ -29,14 +35,12 @@ if (!fs.existsSync(uploadDirectory)) {
   );
 }
 
-
 /* =========================================================
    MULTER STORAGE
 ========================================================= */
 
 const storage =
   multer.diskStorage({
-
     destination: (
       req,
       file,
@@ -53,11 +57,12 @@ const storage =
       file,
       cb
     ) => {
-
       const extension =
-        path.extname(
-          file.originalname
-        ).toLowerCase();
+        path
+          .extname(
+            file.originalname
+          )
+          .toLowerCase();
 
       const baseName =
         path
@@ -73,12 +78,23 @@ const storage =
             /-+/g,
             "-"
           )
-          .toLowerCase();
+          .replace(
+            /^-|-$/g,
+            ""
+          )
+          .toLowerCase()
+          .slice(
+            0,
+            60
+          );
+
+      const finalBaseName =
+        baseName || "event";
 
       const uniqueName =
-        `${Date.now()}-${Math.round(
+        `${finalBaseName}-${Date.now()}-${Math.round(
           Math.random() * 1e9
-        )}-${baseName || "event"}${extension}`;
+        )}${extension}`;
 
       cb(
         null,
@@ -86,7 +102,6 @@ const storage =
       );
     },
   });
-
 
 /* =========================================================
    FILE FILTER
@@ -97,7 +112,6 @@ const fileFilter = (
   file,
   cb
 ) => {
-
   const allowedTypes = [
     "image/jpeg",
     "image/png",
@@ -105,50 +119,44 @@ const fileFilter = (
   ];
 
   if (
-    allowedTypes.includes(
+    !allowedTypes.includes(
       file.mimetype
     )
   ) {
-    cb(
-      null,
-      true
-    );
-  } else {
-    cb(
+    return cb(
       new Error(
         "Only JPG, PNG and WEBP images are allowed."
       )
     );
   }
-};
 
+  cb(
+    null,
+    true
+  );
+};
 
 /* =========================================================
    MULTER
 ========================================================= */
 
-const upload = multer({
-
-  storage,
-
-  fileFilter,
-
-  limits: {
-    fileSize:
-      5 * 1024 * 1024,
-  },
-
-});
-
+const upload =
+  multer({
+    storage,
+    fileFilter,
+    limits: {
+      fileSize:
+        5 * 1024 * 1024,
+    },
+  });
 
 /* =========================================================
-   HELPER — DELETE FILE
+   HELPERS
 ========================================================= */
 
 const deleteUploadedFile = (
   imageUrl
 ) => {
-
   if (!imageUrl) {
     return;
   }
@@ -166,6 +174,10 @@ const deleteUploadedFile = (
       imageUrl
     );
 
+  if (!filename) {
+    return;
+  }
+
   const filePath =
     path.join(
       uploadDirectory,
@@ -173,7 +185,6 @@ const deleteUploadedFile = (
     );
 
   try {
-
     if (
       fs.existsSync(
         filePath
@@ -183,17 +194,66 @@ const deleteUploadedFile = (
         filePath
       );
     }
-
   } catch (error) {
-
     console.error(
       "DELETE EVENT IMAGE ERROR:",
       error
     );
-
   }
 };
 
+const getUploadedImageUrl = (
+  req
+) => {
+  if (!req.file) {
+    return null;
+  }
+
+  return `/uploads/events/${req.file.filename}`;
+};
+
+const toBoolean = (
+  value,
+  fallback = false
+) => {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return fallback;
+  }
+
+  if (
+    typeof value ===
+    "boolean"
+  ) {
+    return value;
+  }
+
+  return (
+    value === true ||
+    value === 1 ||
+    value === "1" ||
+    String(value)
+      .toLowerCase() ===
+      "true"
+  );
+};
+
+const toInteger = (
+  value,
+  fallback = 0
+) => {
+  const number =
+    Number(value);
+
+  return Number.isInteger(
+    number
+  )
+    ? number
+    : fallback;
+};
 
 /* =========================================================
    GET ALL PUBLISHED EVENTS
@@ -206,10 +266,10 @@ router.get(
     req,
     res
   ) => {
-
     try {
-
-      const [events] =
+      const [
+        events,
+      ] =
         await pool.execute(`
           SELECT
             id,
@@ -221,6 +281,7 @@ router.get(
             location,
             cover_image,
             status,
+            is_featured,
             is_published,
             display_order,
             created_at,
@@ -233,32 +294,28 @@ router.get(
             id DESC
         `);
 
-
-      res.json({
+      return res.json({
         success: true,
         count:
           events.length,
         events,
       });
-
     } catch (error) {
-
       console.error(
         "GET EVENTS ERROR:",
         error
       );
 
-      res.status(500).json({
+      return res.status(
+        500
+      ).json({
         success: false,
         message:
           "Unable to fetch events.",
       });
-
     }
-
   }
 );
-
 
 /* =========================================================
    GET EVENT BY ID
@@ -271,14 +328,11 @@ router.get(
     req,
     res
   ) => {
-
     try {
-
       const eventId =
         Number(
           req.params.id
         );
-
 
       if (
         !Number.isInteger(
@@ -286,17 +340,18 @@ router.get(
         ) ||
         eventId <= 0
       ) {
-
-        return res.status(400).json({
+        return res.status(
+          400
+        ).json({
           success: false,
           message:
             "Invalid event ID.",
         });
-
       }
 
-
-      const [events] =
+      const [
+        events,
+      ] =
         await pool.execute(
           `
           SELECT
@@ -309,6 +364,7 @@ router.get(
             location,
             cover_image,
             status,
+            is_featured,
             is_published,
             display_order,
             created_at,
@@ -317,47 +373,45 @@ router.get(
           WHERE id = ?
           LIMIT 1
           `,
-          [eventId]
+          [
+            eventId,
+          ]
         );
 
-
       if (
-        events.length === 0
+        events.length ===
+        0
       ) {
-
-        return res.status(404).json({
+        return res.status(
+          404
+        ).json({
           success: false,
           message:
             "Event not found.",
         });
-
       }
 
-
-      res.json({
+      return res.json({
         success: true,
         event:
           events[0],
       });
-
     } catch (error) {
-
       console.error(
         "GET EVENT ERROR:",
         error
       );
 
-      res.status(500).json({
+      return res.status(
+        500
+      ).json({
         success: false,
         message:
           "Unable to fetch event.",
       });
-
     }
-
   }
 );
-
 
 /* =========================================================
    CREATE EVENT
@@ -367,22 +421,19 @@ router.get(
 router.post(
   "/",
   authenticateAdmin,
-  upload.single("image"),
+  upload.single(
+    "image"
+  ),
   async (
     req,
     res
   ) => {
-
-    let uploadedImage = null;
+    const uploadedImageUrl =
+      getUploadedImageUrl(
+        req
+      );
 
     try {
-
-      /*
-        Multer parses multipart/form-data,
-        so req.body will now contain
-        the event fields.
-      */
-
       const {
         title,
         slug,
@@ -392,80 +443,104 @@ router.post(
         location,
         cover_image,
         status,
+        is_featured,
         is_published,
         display_order,
       } = req.body || {};
 
+      /* -----------------------------------------------------
+         VALIDATION
+      ----------------------------------------------------- */
 
       if (
         !title ||
-        !title.trim()
+        !String(title).trim()
       ) {
+        deleteUploadedFile(
+          uploadedImageUrl
+        );
 
-        return res.status(400).json({
+        return res.status(
+          400
+        ).json({
           success: false,
           message:
             "Event title is required.",
         });
-
       }
-
 
       if (
         !slug ||
-        !slug.trim()
+        !String(slug).trim()
       ) {
+        deleteUploadedFile(
+          uploadedImageUrl
+        );
 
-        return res.status(400).json({
+        return res.status(
+          400
+        ).json({
           success: false,
           message:
             "Event slug is required.",
         });
-
       }
 
+      if (
+        !event_date
+      ) {
+        deleteUploadedFile(
+          uploadedImageUrl
+        );
 
-      if (!event_date) {
-
-        return res.status(400).json({
+        return res.status(
+          400
+        ).json({
           success: false,
           message:
             "Event date is required.",
         });
-
       }
 
+      /* -----------------------------------------------------
+         STATUS
+      ----------------------------------------------------- */
 
-      const eventStatus =
-        [
-          "upcoming",
-          "ongoing",
-          "completed",
-        ].includes(status)
-          ? status
-          : "upcoming";
+      const eventStatus = [
+        "upcoming",
+        "ongoing",
+        "completed",
+      ].includes(
+        status
+      )
+        ? status
+        : "upcoming";
 
+      /* -----------------------------------------------------
+         IMAGE
+      ----------------------------------------------------- */
 
-      /*
-        If an image was uploaded,
-        create the public URL.
-      */
+      const finalCoverImage =
+        uploadedImageUrl ||
+        (
+          cover_image &&
+          String(
+            cover_image
+          ).trim()
+        )
+          ? uploadedImageUrl ||
+            String(
+              cover_image
+            ).trim()
+          : null;
 
-      if (req.file) {
+      /* -----------------------------------------------------
+         INSERT
+      ----------------------------------------------------- */
 
-        uploadedImage =
-          `/uploads/events/${req.file.filename}`;
-
-      }
-
-
-      const finalImage =
-        uploadedImage ||
-        cover_image ||
-        null;
-
-
-      const [result] =
+      const [
+        result,
+      ] =
         await pool.execute(
           `
           INSERT INTO events
@@ -478,54 +553,74 @@ router.post(
             location,
             cover_image,
             status,
+            is_featured,
             is_published,
             display_order
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           [
-            title.trim(),
+            String(
+              title
+            ).trim(),
 
-            slug.trim(),
+            String(
+              slug
+            ).trim(),
 
-            description
-              ? description.trim()
+            description &&
+            String(
+              description
+            ).trim()
+              ? String(
+                  description
+                ).trim()
               : null,
 
             event_date,
 
-            event_time ||
-              null,
-
-            location
-              ? location.trim()
+            event_time &&
+            String(
+              event_time
+            ).trim()
+              ? String(
+                  event_time
+                ).trim()
               : null,
 
-            finalImage,
+            location &&
+            String(
+              location
+            ).trim()
+              ? String(
+                  location
+                ).trim()
+              : null,
+
+            finalCoverImage,
 
             eventStatus,
 
-            is_published !==
-            undefined
-              ? String(
-                  is_published
-                ) === "true"
-              : true,
+            toBoolean(
+              is_featured,
+              false
+            ),
 
-            Number.isInteger(
-              Number(
-                display_order
-              )
-            )
-              ? Number(
-                  display_order
-                )
-              : 0,
+            toBoolean(
+              is_published,
+              true
+            ),
+
+            toInteger(
+              display_order,
+              0
+            ),
           ]
         );
 
-
-      res.status(201).json({
+      return res.status(
+        201
+      ).json({
         success: true,
 
         message:
@@ -534,57 +629,42 @@ router.post(
         eventId:
           result.insertId,
 
-        imageUrl:
-          finalImage,
+        cover_image:
+          finalCoverImage,
       });
-
     } catch (error) {
-
       console.error(
         "CREATE EVENT ERROR:",
         error
       );
 
-
-      if (
-        uploadedImage
-      ) {
-        deleteUploadedFile(
-          uploadedImage
-        );
-      }
-
+      deleteUploadedFile(
+        uploadedImageUrl
+      );
 
       if (
         error.code ===
         "ER_DUP_ENTRY"
       ) {
-
-        return res.status(409).json({
+        return res.status(
+          409
+        ).json({
           success: false,
           message:
             "An event with this slug already exists.",
         });
-
       }
 
-
-      res.status(500).json({
+      return res.status(
+        500
+      ).json({
         success: false,
         message:
           "Unable to create event.",
-        error:
-          process.env.NODE_ENV ===
-          "development"
-            ? error.message
-            : undefined,
       });
-
     }
-
   }
 );
-
 
 /* =========================================================
    UPDATE EVENT
@@ -594,21 +674,23 @@ router.post(
 router.put(
   "/:id",
   authenticateAdmin,
-  upload.single("image"),
+  upload.single(
+    "image"
+  ),
   async (
     req,
     res
   ) => {
-
-    let uploadedImage = null;
+    const uploadedImageUrl =
+      getUploadedImageUrl(
+        req
+      );
 
     try {
-
       const eventId =
         Number(
           req.params.id
         );
-
 
       if (
         !Number.isInteger(
@@ -616,17 +698,26 @@ router.put(
         ) ||
         eventId <= 0
       ) {
+        deleteUploadedFile(
+          uploadedImageUrl
+        );
 
-        return res.status(400).json({
+        return res.status(
+          400
+        ).json({
           success: false,
           message:
             "Invalid event ID.",
         });
-
       }
 
+      /* -----------------------------------------------------
+         EXISTING EVENT
+      ----------------------------------------------------- */
 
-      const [existingEvents] =
+      const [
+        existingEvents,
+      ] =
         await pool.execute(
           `
           SELECT
@@ -636,28 +727,35 @@ router.put(
           WHERE id = ?
           LIMIT 1
           `,
-          [eventId]
+          [
+            eventId,
+          ]
         );
-
 
       if (
         existingEvents.length ===
         0
       ) {
+        deleteUploadedFile(
+          uploadedImageUrl
+        );
 
-        return res.status(404).json({
+        return res.status(
+          404
+        ).json({
           success: false,
           message:
             "Event not found.",
         });
-
       }
 
-
-      const oldImage =
+      const oldCoverImage =
         existingEvents[0]
           .cover_image;
 
+      /* -----------------------------------------------------
+         REQUEST DATA
+      ----------------------------------------------------- */
 
       const {
         title,
@@ -668,88 +766,116 @@ router.put(
         location,
         cover_image,
         status,
+        is_featured,
         is_published,
         display_order,
       } = req.body || {};
 
+      /* -----------------------------------------------------
+         VALIDATION
+      ----------------------------------------------------- */
 
       if (
         !title ||
-        !title.trim()
+        !String(title).trim()
       ) {
+        deleteUploadedFile(
+          uploadedImageUrl
+        );
 
-        return res.status(400).json({
+        return res.status(
+          400
+        ).json({
           success: false,
           message:
             "Event title is required.",
         });
-
       }
-
 
       if (
         !slug ||
-        !slug.trim()
+        !String(slug).trim()
       ) {
+        deleteUploadedFile(
+          uploadedImageUrl
+        );
 
-        return res.status(400).json({
+        return res.status(
+          400
+        ).json({
           success: false,
           message:
             "Event slug is required.",
         });
-
       }
 
+      if (
+        !event_date
+      ) {
+        deleteUploadedFile(
+          uploadedImageUrl
+        );
 
-      if (!event_date) {
-
-        return res.status(400).json({
+        return res.status(
+          400
+        ).json({
           success: false,
           message:
             "Event date is required.",
         });
-
       }
 
+      /* -----------------------------------------------------
+         STATUS
+      ----------------------------------------------------- */
 
-      const eventStatus =
-        [
-          "upcoming",
-          "ongoing",
-          "completed",
-        ].includes(status)
-          ? status
-          : "upcoming";
+      const eventStatus = [
+        "upcoming",
+        "ongoing",
+        "completed",
+      ].includes(
+        status
+      )
+        ? status
+        : "upcoming";
 
+      /* -----------------------------------------------------
+         IMAGE
+      ----------------------------------------------------- */
 
-      /*
-        New uploaded image
-      */
+      let finalCoverImage;
 
-      if (req.file) {
-
-        uploadedImage =
-          `/uploads/events/${req.file.filename}`;
-
+      if (
+        uploadedImageUrl
+      ) {
+        finalCoverImage =
+          uploadedImageUrl;
+      } else if (
+        cover_image !==
+        undefined
+      ) {
+        finalCoverImage =
+          cover_image &&
+          String(
+            cover_image
+          ).trim()
+            ? String(
+                cover_image
+              ).trim()
+            : null;
+      } else {
+        finalCoverImage =
+          oldCoverImage ||
+          null;
       }
 
+      /* -----------------------------------------------------
+         UPDATE DATABASE
+      ----------------------------------------------------- */
 
-      /*
-        Priority:
-
-        1. New uploaded image
-        2. Existing image from form
-        3. Old database image
-      */
-
-      const finalImage =
-        uploadedImage ||
-        cover_image ||
-        oldImage ||
-        null;
-
-
-      const [result] =
+      const [
+        result,
+      ] =
         await pool.execute(
           `
           UPDATE events
@@ -762,150 +888,146 @@ router.put(
             location = ?,
             cover_image = ?,
             status = ?,
+            is_featured = ?,
             is_published = ?,
             display_order = ?
           WHERE id = ?
           `,
           [
-            title.trim(),
+            String(
+              title
+            ).trim(),
 
-            slug.trim(),
+            String(
+              slug
+            ).trim(),
 
-            description
-              ? description.trim()
+            description &&
+            String(
+              description
+            ).trim()
+              ? String(
+                  description
+                ).trim()
               : null,
 
             event_date,
 
-            event_time ||
-              null,
-
-            location
-              ? location.trim()
+            event_time &&
+            String(
+              event_time
+            ).trim()
+              ? String(
+                  event_time
+                ).trim()
               : null,
 
-            finalImage,
+            location &&
+            String(
+              location
+            ).trim()
+              ? String(
+                  location
+                ).trim()
+              : null,
+
+            finalCoverImage,
 
             eventStatus,
 
-            is_published !==
-            undefined
-              ? String(
-                  is_published
-                ) === "true"
-              : true,
+            toBoolean(
+              is_featured,
+              false
+            ),
 
-            Number.isInteger(
-              Number(
-                display_order
-              )
-            )
-              ? Number(
-                  display_order
-                )
-              : 0,
+            toBoolean(
+              is_published,
+              true
+            ),
+
+            toInteger(
+              display_order,
+              0
+            ),
 
             eventId,
           ]
         );
 
-
       if (
-        result.affectedRows === 0
+        result.affectedRows ===
+        0
       ) {
+        deleteUploadedFile(
+          uploadedImageUrl
+        );
 
-        if (
-          uploadedImage
-        ) {
-          deleteUploadedFile(
-            uploadedImage
-          );
-        }
-
-        return res.status(404).json({
+        return res.status(
+          404
+        ).json({
           success: false,
           message:
             "Event not found.",
         });
-
       }
 
-
-      /*
-        Delete the old physical image
-        only after successful replacement.
-      */
+      /* -----------------------------------------------------
+         DELETE OLD IMAGE
+      ----------------------------------------------------- */
 
       if (
-        uploadedImage &&
-        oldImage &&
-        oldImage !== uploadedImage
+        uploadedImageUrl &&
+        oldCoverImage &&
+        oldCoverImage !==
+          uploadedImageUrl
       ) {
-
         deleteUploadedFile(
-          oldImage
+          oldCoverImage
         );
-
       }
 
-
-      res.json({
+      return res.json({
         success: true,
 
         message:
           "Event updated successfully.",
 
-        imageUrl:
-          finalImage,
+        cover_image:
+          finalCoverImage,
       });
-
     } catch (error) {
-
       console.error(
         "UPDATE EVENT ERROR:",
         error
       );
 
-
-      if (
-        uploadedImage
-      ) {
-        deleteUploadedFile(
-          uploadedImage
-        );
-      }
-
+      deleteUploadedFile(
+        uploadedImageUrl
+      );
 
       if (
         error.code ===
         "ER_DUP_ENTRY"
       ) {
-
-        return res.status(409).json({
+        return res.status(
+          409
+        ).json({
           success: false,
           message:
             "An event with this slug already exists.",
         });
-
       }
 
-
-      res.status(500).json({
+      return res.status(
+        500
+      ).json({
         success: false,
         message:
           "Unable to update event.",
-        error:
-          process.env.NODE_ENV ===
-          "development"
-            ? error.message
-            : undefined,
       });
-
     }
-
   }
 );
-
 
 /* =========================================================
    DELETE EVENT
@@ -919,14 +1041,11 @@ router.delete(
     req,
     res
   ) => {
-
     try {
-
       const eventId =
         Number(
           req.params.id
         );
-
 
       if (
         !Number.isInteger(
@@ -934,17 +1053,22 @@ router.delete(
         ) ||
         eventId <= 0
       ) {
-
-        return res.status(400).json({
+        return res.status(
+          400
+        ).json({
           success: false,
           message:
             "Invalid event ID.",
         });
-
       }
 
+      /* -----------------------------------------------------
+         GET IMAGE BEFORE DELETE
+      ----------------------------------------------------- */
 
-      const [events] =
+      const [
+        events,
+      ] =
         await pool.execute(
           `
           SELECT
@@ -953,84 +1077,87 @@ router.delete(
           WHERE id = ?
           LIMIT 1
           `,
-          [eventId]
+          [
+            eventId,
+          ]
         );
 
-
       if (
-        events.length === 0
+        events.length ===
+        0
       ) {
-
-        return res.status(404).json({
+        return res.status(
+          404
+        ).json({
           success: false,
           message:
             "Event not found.",
         });
-
       }
 
-
-      const imageToDelete =
+      const oldCoverImage =
         events[0]
           .cover_image;
 
+      /* -----------------------------------------------------
+         DELETE DATABASE RECORD
+      ----------------------------------------------------- */
 
-      const [result] =
+      const [
+        result,
+      ] =
         await pool.execute(
           `
           DELETE FROM events
           WHERE id = ?
           `,
-          [eventId]
+          [
+            eventId,
+          ]
         );
 
-
       if (
-        result.affectedRows === 0
+        result.affectedRows ===
+        0
       ) {
-
-        return res.status(404).json({
+        return res.status(
+          404
+        ).json({
           success: false,
           message:
             "Event not found.",
         });
-
       }
 
+      /* -----------------------------------------------------
+         DELETE IMAGE
+      ----------------------------------------------------- */
 
-      if (
-        imageToDelete
-      ) {
-        deleteUploadedFile(
-          imageToDelete
-        );
-      }
+      deleteUploadedFile(
+        oldCoverImage
+      );
 
-
-      res.json({
+      return res.json({
         success: true,
         message:
           "Event deleted successfully.",
       });
-
     } catch (error) {
-
       console.error(
         "DELETE EVENT ERROR:",
         error
       );
 
-      res.status(500).json({
+      return res.status(
+        500
+      ).json({
         success: false,
         message:
           "Unable to delete event.",
       });
-
     }
-
   }
 );
-
 
 /* =========================================================
    MULTER ERROR HANDLER
@@ -1043,53 +1170,53 @@ router.use(
     res,
     next
   ) => {
-
     if (
       error instanceof
       multer.MulterError
     ) {
-
       if (
         error.code ===
         "LIMIT_FILE_SIZE"
       ) {
-
-        return res.status(400).json({
+        return res.status(
+          400
+        ).json({
           success: false,
           message:
             "Image must be smaller than 5MB.",
         });
-
       }
 
-
-      return res.status(400).json({
+      return res.status(
+        400
+      ).json({
         success: false,
         message:
           error.message ||
           "Image upload failed.",
       });
-
     }
-
 
     if (
       error &&
       error.message
     ) {
-
-      return res.status(400).json({
+      return res.status(
+        400
+      ).json({
         success: false,
         message:
           error.message,
       });
-
     }
-
 
     next(error);
   }
 );
 
+/* =========================================================
+   EXPORT
+========================================================= */
 
-module.exports = router;
+module.exports =
+  router;

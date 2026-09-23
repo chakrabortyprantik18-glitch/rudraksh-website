@@ -6,18 +6,17 @@ const fs = require("fs");
 const { pool } = require("../config/db");
 const { authenticateAdmin } = require("../middleware/authMiddleware");
 
+const {
+  GALLERY_UPLOAD_DIR,
+} = require("../config/uploadPaths");
+
 const router = express.Router();
 
 // ============================================================
 // UPLOAD DIRECTORY
 // ============================================================
 
-const uploadDirectory = path.join(
-  __dirname,
-  "..",
-  "uploads",
-  "gallery"
-);
+const uploadDirectory = GALLERY_UPLOAD_DIR;
 
 if (!fs.existsSync(uploadDirectory)) {
   fs.mkdirSync(uploadDirectory, {
@@ -35,11 +34,14 @@ const storage = multer.diskStorage({
   },
 
   filename: (req, file, cb) => {
-    const extension = path.extname(file.originalname).toLowerCase();
+    const extension = path
+      .extname(file.originalname)
+      .toLowerCase();
 
     const uniqueName =
-      `gallery-${Date.now()}-${Math.round(Math.random() * 1e9)}` +
-      extension;
+      `gallery-${Date.now()}-${Math.round(
+        Math.random() * 1e9
+      )}` + extension;
 
     cb(null, uniqueName);
   },
@@ -111,11 +113,15 @@ router.get("/", async (req, res) => {
       gallery: images,
     });
   } catch (error) {
-    console.error("GET GALLERY ERROR:", error);
+    console.error(
+      "GET GALLERY ERROR:",
+      error
+    );
 
     res.status(500).json({
       success: false,
-      message: "Unable to fetch gallery.",
+      message:
+        "Unable to fetch gallery.",
     });
   }
 });
@@ -125,58 +131,75 @@ router.get("/", async (req, res) => {
 // GET /api/gallery/:id
 // ============================================================
 
-router.get("/:id", async (req, res) => {
-  try {
-    const galleryId = Number(req.params.id);
+router.get(
+  "/:id",
+  async (req, res) => {
+    try {
+      const galleryId = Number(
+        req.params.id
+      );
 
-    if (!Number.isInteger(galleryId) || galleryId <= 0) {
-      return res.status(400).json({
+      if (
+        !Number.isInteger(
+          galleryId
+        ) ||
+        galleryId <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid gallery ID.",
+        });
+      }
+
+      const [images] =
+        await pool.execute(
+          `
+          SELECT
+            id,
+            title,
+            description,
+            image_url,
+            category,
+            event_id,
+            project_id,
+            display_order,
+            is_published,
+            created_at,
+            updated_at
+          FROM gallery
+          WHERE id = ?
+          LIMIT 1
+          `,
+          [galleryId]
+        );
+
+      if (images.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Gallery image not found.",
+        });
+      }
+
+      res.json({
+        success: true,
+        gallery: images[0],
+      });
+    } catch (error) {
+      console.error(
+        "GET GALLERY ITEM ERROR:",
+        error
+      );
+
+      res.status(500).json({
         success: false,
-        message: "Invalid gallery ID.",
+        message:
+          "Unable to fetch gallery image.",
       });
     }
-
-    const [images] = await pool.execute(
-      `
-      SELECT
-        id,
-        title,
-        description,
-        image_url,
-        category,
-        event_id,
-        project_id,
-        display_order,
-        is_published,
-        created_at,
-        updated_at
-      FROM gallery
-      WHERE id = ?
-      LIMIT 1
-      `,
-      [galleryId]
-    );
-
-    if (images.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Gallery image not found.",
-      });
-    }
-
-    res.json({
-      success: true,
-      gallery: images[0],
-    });
-  } catch (error) {
-    console.error("GET GALLERY ITEM ERROR:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Unable to fetch gallery image.",
-    });
   }
-});
+);
 
 // ============================================================
 // UPLOAD GALLERY IMAGE
@@ -192,7 +215,8 @@ router.post(
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: "Please select an image.",
+          message:
+            "Please select an image.",
         });
       }
 
@@ -206,63 +230,94 @@ router.post(
         is_published,
       } = req.body;
 
-      const imageUrl = `/uploads/gallery/${req.file.filename}`;
+      const imageUrl =
+        `/uploads/gallery/${req.file.filename}`;
 
-      const [result] = await pool.execute(
-        `
-        INSERT INTO gallery
-        (
-          title,
-          description,
-          image_url,
-          category,
-          event_id,
-          project_id,
-          display_order,
-          is_published
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `,
-        [
-          title ? title.trim() : null,
-          description || null,
-          imageUrl,
-          category || null,
-          event_id || null,
-          project_id || null,
-          Number.isInteger(Number(display_order))
-            ? Number(display_order)
-            : 0,
-          is_published !== undefined
-            ? String(is_published) === "true"
-            : true,
-        ]
-      );
+      const [result] =
+        await pool.execute(
+          `
+          INSERT INTO gallery
+          (
+            title,
+            description,
+            image_url,
+            category,
+            event_id,
+            project_id,
+            display_order,
+            is_published
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          [
+            title
+              ? title.trim()
+              : null,
+
+            description || null,
+
+            imageUrl,
+
+            category || null,
+
+            event_id || null,
+
+            project_id || null,
+
+            Number.isInteger(
+              Number(display_order)
+            )
+              ? Number(
+                  display_order
+                )
+              : 0,
+
+            is_published !== undefined
+              ? String(
+                  is_published
+                ) === "true"
+              : true,
+          ]
+        );
 
       res.status(201).json({
         success: true,
-        message: "Gallery image uploaded successfully.",
-        galleryId: result.insertId,
+        message:
+          "Gallery image uploaded successfully.",
+        galleryId:
+          result.insertId,
         imageUrl,
       });
     } catch (error) {
-      console.error("UPLOAD GALLERY ERROR:", error);
+      console.error(
+        "UPLOAD GALLERY ERROR:",
+        error
+      );
 
-      // Delete uploaded file if database insertion fails
+      // Delete uploaded file if
+      // database insertion fails.
       if (req.file) {
-        const uploadedFile = path.join(
-          uploadDirectory,
-          req.file.filename
-        );
+        const uploadedFile =
+          path.join(
+            uploadDirectory,
+            req.file.filename
+          );
 
-        if (fs.existsSync(uploadedFile)) {
-          fs.unlinkSync(uploadedFile);
+        if (
+          fs.existsSync(
+            uploadedFile
+          )
+        ) {
+          fs.unlinkSync(
+            uploadedFile
+          );
         }
       }
 
       res.status(500).json({
         success: false,
-        message: "Unable to upload gallery image.",
+        message:
+          "Unable to upload gallery image.",
       });
     }
   }
@@ -273,183 +328,274 @@ router.post(
 // PUT /api/gallery/:id
 // ============================================================
 
-router.put("/:id", authenticateAdmin, async (req, res) => {
-  try {
-    const galleryId = Number(req.params.id);
+router.put(
+  "/:id",
+  authenticateAdmin,
+  async (req, res) => {
+    try {
+      const galleryId = Number(
+        req.params.id
+      );
 
-    if (!Number.isInteger(galleryId) || galleryId <= 0) {
-      return res.status(400).json({
+      if (
+        !Number.isInteger(
+          galleryId
+        ) ||
+        galleryId <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid gallery ID.",
+        });
+      }
+
+      const {
+        title,
+        description,
+        category,
+        event_id,
+        project_id,
+        display_order,
+        is_published,
+      } = req.body;
+
+      const [result] =
+        await pool.execute(
+          `
+          UPDATE gallery
+          SET
+            title = ?,
+            description = ?,
+            category = ?,
+            event_id = ?,
+            project_id = ?,
+            display_order = ?,
+            is_published = ?
+          WHERE id = ?
+          `,
+          [
+            title
+              ? title.trim()
+              : null,
+
+            description || null,
+
+            category || null,
+
+            event_id || null,
+
+            project_id || null,
+
+            Number.isInteger(
+              Number(display_order)
+            )
+              ? Number(
+                  display_order
+                )
+              : 0,
+
+            is_published !== undefined
+              ? Boolean(
+                  is_published
+                )
+              : true,
+
+            galleryId,
+          ]
+        );
+
+      if (
+        result.affectedRows === 0
+      ) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Gallery image not found.",
+        });
+      }
+
+      res.json({
+        success: true,
+        message:
+          "Gallery item updated successfully.",
+      });
+    } catch (error) {
+      console.error(
+        "UPDATE GALLERY ERROR:",
+        error
+      );
+
+      res.status(500).json({
         success: false,
-        message: "Invalid gallery ID.",
+        message:
+          "Unable to update gallery item.",
       });
     }
-
-    const {
-      title,
-      description,
-      category,
-      event_id,
-      project_id,
-      display_order,
-      is_published,
-    } = req.body;
-
-    const [result] = await pool.execute(
-      `
-      UPDATE gallery
-      SET
-        title = ?,
-        description = ?,
-        category = ?,
-        event_id = ?,
-        project_id = ?,
-        display_order = ?,
-        is_published = ?
-      WHERE id = ?
-      `,
-      [
-        title ? title.trim() : null,
-        description || null,
-        category || null,
-        event_id || null,
-        project_id || null,
-        Number.isInteger(Number(display_order))
-          ? Number(display_order)
-          : 0,
-        is_published !== undefined
-          ? Boolean(is_published)
-          : true,
-        galleryId,
-      ]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Gallery image not found.",
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "Gallery item updated successfully.",
-    });
-  } catch (error) {
-    console.error("UPDATE GALLERY ERROR:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Unable to update gallery item.",
-    });
   }
-});
+);
 
 // ============================================================
 // DELETE GALLERY ITEM
 // DELETE /api/gallery/:id
 // ============================================================
 
-router.delete("/:id", authenticateAdmin, async (req, res) => {
-  try {
-    const galleryId = Number(req.params.id);
-
-    if (!Number.isInteger(galleryId) || galleryId <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid gallery ID.",
-      });
-    }
-
-    const [images] = await pool.execute(
-      `
-      SELECT image_url
-      FROM gallery
-      WHERE id = ?
-      LIMIT 1
-      `,
-      [galleryId]
-    );
-
-    if (images.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Gallery image not found.",
-      });
-    }
-
-    const imageUrl = images[0].image_url;
-
-    const [result] = await pool.execute(
-      `
-      DELETE FROM gallery
-      WHERE id = ?
-      `,
-      [galleryId]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Gallery image not found.",
-      });
-    }
-
-    // Delete physical image
-    if (imageUrl && imageUrl.startsWith("/uploads/gallery/")) {
-      const filename = path.basename(imageUrl);
-
-      const filePath = path.join(
-        uploadDirectory,
-        filename
+router.delete(
+  "/:id",
+  authenticateAdmin,
+  async (req, res) => {
+    try {
+      const galleryId = Number(
+        req.params.id
       );
 
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      if (
+        !Number.isInteger(
+          galleryId
+        ) ||
+        galleryId <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid gallery ID.",
+        });
       }
+
+      const [images] =
+        await pool.execute(
+          `
+          SELECT image_url
+          FROM gallery
+          WHERE id = ?
+          LIMIT 1
+          `,
+          [galleryId]
+        );
+
+      if (images.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Gallery image not found.",
+        });
+      }
+
+      const imageUrl =
+        images[0].image_url;
+
+      const [result] =
+        await pool.execute(
+          `
+          DELETE FROM gallery
+          WHERE id = ?
+          `,
+          [galleryId]
+        );
+
+      if (
+        result.affectedRows === 0
+      ) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Gallery image not found.",
+        });
+      }
+
+      // Delete physical image
+      if (
+        imageUrl &&
+        imageUrl.startsWith(
+          "/uploads/gallery/"
+        )
+      ) {
+        const filename =
+          path.basename(
+            imageUrl
+          );
+
+        const filePath =
+          path.join(
+            uploadDirectory,
+            filename
+          );
+
+        if (
+          fs.existsSync(
+            filePath
+          )
+        ) {
+          fs.unlinkSync(
+            filePath
+          );
+        }
+      }
+
+      res.json({
+        success: true,
+        message:
+          "Gallery image deleted successfully.",
+      });
+    } catch (error) {
+      console.error(
+        "DELETE GALLERY ERROR:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Unable to delete gallery image.",
+      });
     }
-
-    res.json({
-      success: true,
-      message: "Gallery image deleted successfully.",
-    });
-  } catch (error) {
-    console.error("DELETE GALLERY ERROR:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Unable to delete gallery image.",
-    });
   }
-});
+);
 
 // ============================================================
 // MULTER ERROR HANDLER
 // ============================================================
 
-router.use((error, req, res, next) => {
-  if (error instanceof multer.MulterError) {
-    if (error.code === "LIMIT_FILE_SIZE") {
+router.use(
+  (
+    error,
+    req,
+    res,
+    next
+  ) => {
+    if (
+      error instanceof
+      multer.MulterError
+    ) {
+      if (
+        error.code ===
+        "LIMIT_FILE_SIZE"
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Image must be smaller than 5 MB.",
+        });
+      }
+
       return res.status(400).json({
         success: false,
-        message: "Image must be smaller than 5 MB.",
+        message:
+          error.message,
       });
     }
 
-    return res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message:
+          error.message,
+      });
+    }
 
-  if (error) {
-    return res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    next();
   }
-
-  next();
-});
+);
 
 // ============================================================
 // EXPORT
