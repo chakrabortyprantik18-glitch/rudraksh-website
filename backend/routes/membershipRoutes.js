@@ -5,6 +5,9 @@ const fs = require("fs");
 
 const { pool } = require("../config/db");
 const { authenticateAdmin } = require("../middleware/authMiddleware");
+const {
+  MEMBERSHIP_UPLOAD_DIR,
+} = require("../config/uploadPaths");
 
 const router = express.Router();
 
@@ -12,12 +15,7 @@ const router = express.Router();
    MEMBERSHIP PHOTO UPLOAD
 ========================================================= */
 
-const uploadDirectory = path.join(
-  __dirname,
-  "..",
-  "uploads",
-  "membership"
-);
+const uploadDirectory = MEMBERSHIP_UPLOAD_DIR;
 
 if (!fs.existsSync(uploadDirectory)) {
   fs.mkdirSync(uploadDirectory, {
