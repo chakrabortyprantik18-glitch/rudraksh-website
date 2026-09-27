@@ -1,5 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
+const net = require("net");
 
 const { pool } = require("../config/db");
 const { authenticateAdmin } = require("../middleware/authMiddleware");
@@ -125,8 +126,7 @@ const writeActivityLog = async (
   req,
   action,
   entityId,
-  description,
-  entityType = "admin_account"
+  description
 ) => {
   try {
     await pool.execute(
@@ -146,7 +146,7 @@ const writeActivityLog = async (
       [
         req.currentAdmin?.id || getRequesterId(req),
         action,
-        entityType,
+        "admin_account",
         entityId ? String(entityId) : null,
         description,
         getClientIp(req),
@@ -160,722 +160,6 @@ const writeActivityLog = async (
     );
   }
 };
-
-/*
-=========================================================
-SECURITY SETTINGS HELPERS
-=========================================================
-*/
-
-const getOrCreateAccessSettings = async () => {
-  const [rows] = await pool.execute(
-    `
-      SELECT
-        id,
-        mobile_access_enabled,
-        ip_restriction_enabled,
-        mobile_access_code,
-        mobile_access_code_expires_at
-      FROM admin_access_settings
-      ORDER BY id ASC
-      LIMIT 1
-    `
-  );
-
-  if (rows.length) {
-    return rows[0];
-  }
-
-  await pool.execute(
-    `
-      INSERT INTO admin_access_settings
-      (
-        mobile_access_enabled,
-        ip_restriction_enabled,
-        mobile_access_code,
-        mobile_access_code_expires_at
-      )
-      VALUES (0, 0, NULL, NULL)
-    `
-  );
-
-  const [createdRows] = await pool.execute(
-    `
-      SELECT
-        id,
-        mobile_access_enabled,
-        ip_restriction_enabled,
-        mobile_access_code,
-        mobile_access_code_expires_at
-      FROM admin_access_settings
-      ORDER BY id ASC
-      LIMIT 1
-    `
-  );
-
-  return createdRows[0];
-};
-
-const normalizeBoolean = (value) => {
-  return (
-    value === true ||
-    value === "true" ||
-    value === 1 ||
-    value === "1"
-  );
-};
-
-/*
-=========================================================
-GET ADMIN ACCESS SECURITY SETTINGS
-
-GET /api/admin/security/access-settings
-=========================================================
-*/
-
-router.get(
-  "/access-settings",
-  authenticateAdmin,
-  requireSuperAdmin,
-  async (req, res) => {
-    try {
-      const settings = await getOrCreateAccessSettings();
-
-      return res.json({
-        success: true,
-        settings: {
-          id: settings.id,
-          mobile_access_enabled:
-            Boolean(settings.mobile_access_enabled),
-          ip_restriction_enabled:
-            Boolean(settings.ip_restriction_enabled),
-          mobile_access_code:
-            settings.mobile_access_code || null,
-          mobile_access_code_expires_at:
-            settings.mobile_access_code_expires_at || null,
-        },
-      });
-    } catch (error) {
-      console.error(
-        "GET ACCESS SECURITY SETTINGS ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Unable to load access security settings.",
-      });
-    }
-  }
-);
-
-/*
-=========================================================
-UPDATE ADMIN ACCESS SECURITY SETTINGS
-
-PUT /api/admin/security/access-settings
-
-Body:
-{
-  "mobile_access_enabled": true,
-  "ip_restriction_enabled": false
-}
-
-Only Super Admin.
-=========================================================
-*/
-
-router.put(
-  "/access-settings",
-  authenticateAdmin,
-  requireSuperAdmin,
-  async (req, res) => {
-    try {
-      const mobileAccessEnabled = normalizeBoolean(
-        req.body?.mobile_access_enabled
-      );
-
-      const ipRestrictionEnabled = normalizeBoolean(
-        req.body?.ip_restriction_enabled
-      );
-
-      const settings = await getOrCreateAccessSettings();
-
-      await pool.execute(
-        `
-          UPDATE admin_access_settings
-          SET
-            mobile_access_enabled = ?,
-            ip_restriction_enabled = ?
-          WHERE id = ?
-        `,
-        [
-          mobileAccessEnabled ? 1 : 0,
-          ipRestrictionEnabled ? 1 : 0,
-          settings.id,
-        ]
-      );
-
-      await writeActivityLog(
-        req,
-        "ADMIN_ACCESS_SETTINGS_UPDATED",
-        settings.id,
-        `Super Administrator updated access security settings. Mobile access: ${
-          mobileAccessEnabled ? "enabled" : "disabled"
-        }; IP restriction: ${
-          ipRestrictionEnabled ? "enabled" : "disabled"
-        }.`,
-        "admin_access_settings"
-      );
-
-      return res.json({
-        success: true,
-        message: "Access security settings updated successfully.",
-      });
-    } catch (error) {
-      console.error(
-        "UPDATE ACCESS SECURITY SETTINGS ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Unable to update access security settings.",
-      });
-    }
-  }
-);
-
-/*
-=========================================================
-GENERATE MOBILE ACCESS CODE
-
-POST /api/admin/security/access-settings/generate-code
-
-Body:
-{
-  "expires_in_minutes": 30
-}
-
-Default expiry: 30 minutes.
-Maximum expiry: 24 hours.
-=========================================================
-*/
-
-router.post(
-  "/access-settings/generate-code",
-  authenticateAdmin,
-  requireSuperAdmin,
-  async (req, res) => {
-    try {
-      const settings = await getOrCreateAccessSettings();
-
-      let expiresInMinutes = Number(
-        req.body?.expires_in_minutes
-      );
-
-      if (
-        !Number.isFinite(expiresInMinutes) ||
-        expiresInMinutes <= 0
-      ) {
-        expiresInMinutes = 30;
-      }
-
-      expiresInMinutes = Math.min(
-        Math.floor(expiresInMinutes),
-        1440
-      );
-
-      /*
-        Six digit numeric access code.
-      */
-      const mobileAccessCode = String(
-        crypto.randomInt(100000, 1000000)
-      );
-
-      const expiresAt = new Date(
-        Date.now() +
-          expiresInMinutes * 60 * 1000
-      );
-
-      await pool.execute(
-        `
-          UPDATE admin_access_settings
-          SET
-            mobile_access_code = ?,
-            mobile_access_code_expires_at = ?
-          WHERE id = ?
-        `,
-        [
-          mobileAccessCode,
-          expiresAt,
-          settings.id,
-        ]
-      );
-
-      await writeActivityLog(
-        req,
-        "MOBILE_ACCESS_CODE_GENERATED",
-        settings.id,
-        `Super Administrator generated a new mobile access code. Expiry: ${expiresInMinutes} minutes.`,
-        "admin_access_settings"
-      );
-
-      return res.json({
-        success: true,
-        message: "Mobile access code generated successfully.",
-        code: mobileAccessCode,
-        expires_at: expiresAt,
-        expires_in_minutes: expiresInMinutes,
-      });
-    } catch (error) {
-      console.error(
-        "GENERATE MOBILE ACCESS CODE ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Unable to generate mobile access code.",
-      });
-    }
-  }
-);
-
-/*
-=========================================================
-CLEAR MOBILE ACCESS CODE
-
-POST /api/admin/security/access-settings/clear-code
-=========================================================
-*/
-
-router.post(
-  "/access-settings/clear-code",
-  authenticateAdmin,
-  requireSuperAdmin,
-  async (req, res) => {
-    try {
-      const settings = await getOrCreateAccessSettings();
-
-      await pool.execute(
-        `
-          UPDATE admin_access_settings
-          SET
-            mobile_access_code = NULL,
-            mobile_access_code_expires_at = NULL
-          WHERE id = ?
-        `,
-        [settings.id]
-      );
-
-      await writeActivityLog(
-        req,
-        "MOBILE_ACCESS_CODE_CLEARED",
-        settings.id,
-        "Super Administrator cleared the mobile access code.",
-        "admin_access_settings"
-      );
-
-      return res.json({
-        success: true,
-        message: "Mobile access code cleared successfully.",
-      });
-    } catch (error) {
-      console.error(
-        "CLEAR MOBILE ACCESS CODE ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Unable to clear mobile access code.",
-      });
-    }
-  }
-);
-
-/*
-=========================================================
-GET ALLOWED IP ADDRESSES
-
-GET /api/admin/security/allowed-ips
-=========================================================
-*/
-
-router.get(
-  "/allowed-ips",
-  authenticateAdmin,
-  requireSuperAdmin,
-  async (req, res) => {
-    try {
-      const [ips] = await pool.execute(
-        `
-          SELECT
-            id,
-            ip_address,
-            label,
-            is_active,
-            created_by,
-            created_at
-          FROM admin_allowed_ips
-          ORDER BY created_at DESC, id DESC
-        `
-      );
-
-      return res.json({
-        success: true,
-        ips,
-      });
-    } catch (error) {
-      console.error(
-        "GET ALLOWED IPS ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Unable to load allowed IP addresses.",
-      });
-    }
-  }
-);
-
-/*
-=========================================================
-ADD ALLOWED IP
-
-POST /api/admin/security/allowed-ips
-
-Body:
-{
-  "ip_address": "127.0.0.1",
-  "label": "Office Laptop"
-}
-=========================================================
-*/
-
-router.post(
-  "/allowed-ips",
-  authenticateAdmin,
-  requireSuperAdmin,
-  async (req, res) => {
-    try {
-      const rawIp = req.body?.ip_address;
-      const rawLabel = req.body?.label;
-
-      const ipAddress =
-        typeof rawIp === "string"
-          ? rawIp.trim()
-          : "";
-
-      const label =
-        typeof rawLabel === "string" &&
-        rawLabel.trim()
-          ? rawLabel.trim()
-          : null;
-
-      if (!ipAddress) {
-        return res.status(400).json({
-          success: false,
-          message: "IP address is required.",
-        });
-      }
-
-      /*
-        Basic IPv4 / IPv6 validation.
-        Node's built-in net module is used instead
-        of accepting arbitrary strings.
-      */
-      const net = require("net");
-
-      if (!net.isIP(ipAddress)) {
-        return res.status(400).json({
-          success: false,
-          message: "Please enter a valid IPv4 or IPv6 address.",
-        });
-      }
-
-      const [existing] = await pool.execute(
-        `
-          SELECT
-            id,
-            ip_address,
-            label,
-            is_active
-          FROM admin_allowed_ips
-          WHERE ip_address = ?
-          LIMIT 1
-        `,
-        [ipAddress]
-      );
-
-      if (existing.length) {
-        return res.status(409).json({
-          success: false,
-          message: "This IP address already exists.",
-          ip: existing[0],
-        });
-      }
-
-      const [result] = await pool.execute(
-        `
-          INSERT INTO admin_allowed_ips
-          (
-            ip_address,
-            label,
-            is_active,
-            created_by
-          )
-          VALUES (?, ?, 1, ?)
-        `,
-        [
-          ipAddress,
-          label,
-          req.currentAdmin.id,
-        ]
-      );
-
-      await writeActivityLog(
-        req,
-        "ALLOWED_IP_ADDED",
-        result.insertId,
-        `Super Administrator added allowed IP ${ipAddress}${
-          label ? ` (${label})` : ""
-        }.`,
-        "admin_allowed_ip"
-      );
-
-      return res.status(201).json({
-        success: true,
-        message: "Allowed IP address added successfully.",
-        id: result.insertId,
-      });
-    } catch (error) {
-      console.error(
-        "ADD ALLOWED IP ERROR:",
-        error
-      );
-
-      /*
-        Handles the database unique index as well.
-      */
-      if (
-        error?.code === "ER_DUP_ENTRY"
-      ) {
-        return res.status(409).json({
-          success: false,
-          message: "This IP address already exists.",
-        });
-      }
-
-      return res.status(500).json({
-        success: false,
-        message: "Unable to add allowed IP address.",
-      });
-    }
-  }
-);
-
-/*
-=========================================================
-UPDATE ALLOWED IP
-
-PUT /api/admin/security/allowed-ips/:id
-
-Body:
-{
-  "label": "Office Laptop",
-  "is_active": true
-}
-=========================================================
-*/
-
-router.put(
-  "/allowed-ips/:id",
-  authenticateAdmin,
-  requireSuperAdmin,
-  async (req, res) => {
-    try {
-      const ipId = Number(req.params.id);
-
-      if (
-        !Number.isInteger(ipId) ||
-        ipId <= 0
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid allowed IP ID.",
-        });
-      }
-
-      const [existingRows] = await pool.execute(
-        `
-          SELECT
-            id,
-            ip_address,
-            label,
-            is_active
-          FROM admin_allowed_ips
-          WHERE id = ?
-          LIMIT 1
-        `,
-        [ipId]
-      );
-
-      if (!existingRows.length) {
-        return res.status(404).json({
-          success: false,
-          message: "Allowed IP address not found.",
-        });
-      }
-
-      const existing = existingRows[0];
-
-      const label =
-        typeof req.body?.label === "string"
-          ? req.body.label.trim() || null
-          : existing.label;
-
-      const isActive =
-        req.body?.is_active === undefined
-          ? Boolean(existing.is_active)
-          : normalizeBoolean(
-              req.body.is_active
-            );
-
-      await pool.execute(
-        `
-          UPDATE admin_allowed_ips
-          SET
-            label = ?,
-            is_active = ?
-          WHERE id = ?
-        `,
-        [
-          label,
-          isActive ? 1 : 0,
-          ipId,
-        ]
-      );
-
-      await writeActivityLog(
-        req,
-        isActive
-          ? "ALLOWED_IP_ENABLED"
-          : "ALLOWED_IP_DISABLED",
-        ipId,
-        `Super Administrator ${
-          isActive ? "enabled" : "disabled"
-        } allowed IP ${existing.ip_address}.`,
-        "admin_allowed_ip"
-      );
-
-      return res.json({
-        success: true,
-        message: isActive
-          ? "Allowed IP enabled successfully."
-          : "Allowed IP disabled successfully.",
-      });
-    } catch (error) {
-      console.error(
-        "UPDATE ALLOWED IP ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Unable to update allowed IP address.",
-      });
-    }
-  }
-);
-
-/*
-=========================================================
-DELETE ALLOWED IP
-
-DELETE /api/admin/security/allowed-ips/:id
-=========================================================
-*/
-
-router.delete(
-  "/allowed-ips/:id",
-  authenticateAdmin,
-  requireSuperAdmin,
-  async (req, res) => {
-    try {
-      const ipId = Number(req.params.id);
-
-      if (
-        !Number.isInteger(ipId) ||
-        ipId <= 0
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid allowed IP ID.",
-        });
-      }
-
-      const [existingRows] = await pool.execute(
-        `
-          SELECT
-            id,
-            ip_address,
-            label
-          FROM admin_allowed_ips
-          WHERE id = ?
-          LIMIT 1
-        `,
-        [ipId]
-      );
-
-      if (!existingRows.length) {
-        return res.status(404).json({
-          success: false,
-          message: "Allowed IP address not found.",
-        });
-      }
-
-      const existing = existingRows[0];
-
-      await pool.execute(
-        `
-          DELETE FROM admin_allowed_ips
-          WHERE id = ?
-        `,
-        [ipId]
-      );
-
-      await writeActivityLog(
-        req,
-        "ALLOWED_IP_DELETED",
-        ipId,
-        `Super Administrator deleted allowed IP ${existing.ip_address}${
-          existing.label
-            ? ` (${existing.label})`
-            : ""
-        }.`,
-        "admin_allowed_ip"
-      );
-
-      return res.json({
-        success: true,
-        message: "Allowed IP address deleted successfully.",
-      });
-    } catch (error) {
-      console.error(
-        "DELETE ALLOWED IP ERROR:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message: "Unable to delete allowed IP address.",
-      });
-    }
-  }
-);
 
 /*
 =========================================================
@@ -1164,15 +448,6 @@ router.put(
 MANUAL BLOCK / UNBLOCK
 
 PUT /api/admin/security/accounts/:id/status
-
-Body:
-{
-  "blocked": true
-}
-
-This is different from a security lock:
-- Block = manual administrative deactivation
-- Security lock = automatic security protection
 =========================================================
 */
 
@@ -1262,16 +537,6 @@ router.put(
 UNLOCK SECURITY LOCK
 
 PUT /api/admin/security/accounts/:id/unlock
-
-Only Super Admin can unlock.
-
-Resets:
-- attempts = 3
-- locked_at = NULL
-- locked_ip = NULL
-- lock_reason = NULL
-
-Manual active/inactive status is not changed here.
 =========================================================
 */
 
@@ -1409,6 +674,990 @@ router.get(
       return res.status(500).json({
         success: false,
         message: "Unable to load security history.",
+      });
+    }
+  }
+);
+
+/*
+=========================================================
+ADMIN ACCESS SECURITY CONTROLS
+
+These controls are protected by:
+1. authenticateAdmin
+2. Super Administrator role
+3. A separate password stored ONLY in the server
+   environment as ADMIN_ACCESS_SETTINGS_PASSWORD
+4. A short-lived in-memory access token
+
+The password is intentionally NOT stored in frontend code,
+localStorage, the database, or the React bundle.
+=========================================================
+*/
+
+const accessUnlockSessions = new Map();
+const ACCESS_UNLOCK_TTL_MS = 10 * 60 * 1000;
+
+const getAccessSettingsPassword = () => {
+  return String(
+    process.env.ADMIN_ACCESS_SETTINGS_PASSWORD || ""
+  );
+};
+
+const safePasswordMatches = (provided, expected) => {
+  if (!provided || !expected) {
+    return false;
+  }
+
+  const providedHash = crypto
+    .createHash("sha256")
+    .update(String(provided))
+    .digest();
+
+  const expectedHash = crypto
+    .createHash("sha256")
+    .update(String(expected))
+    .digest();
+
+  return crypto.timingSafeEqual(
+    providedHash,
+    expectedHash
+  );
+};
+
+const cleanupAccessUnlockSessions = () => {
+  const now = Date.now();
+
+  for (const [token, session] of accessUnlockSessions.entries()) {
+    if (session.expiresAt <= now) {
+      accessUnlockSessions.delete(token);
+    }
+  }
+};
+
+const requireAccessSettingsUnlock = (req, res, next) => {
+  cleanupAccessUnlockSessions();
+
+  const accessToken = String(
+    req.headers["x-access-settings-token"] || ""
+  ).trim();
+
+  if (!accessToken) {
+    return res.status(423).json({
+      success: false,
+      message:
+        "Admin access security is locked. Password verification is required.",
+    });
+  }
+
+  const session = accessUnlockSessions.get(accessToken);
+  const requesterId = getRequesterId(req);
+
+  if (
+    !session ||
+    session.expiresAt <= Date.now() ||
+    String(session.adminId) !== String(requesterId)
+  ) {
+    if (session) {
+      accessUnlockSessions.delete(accessToken);
+    }
+
+    return res.status(423).json({
+      success: false,
+      message:
+        "Admin access security unlock has expired. Enter the password again.",
+    });
+  }
+
+  req.accessSecuritySession = session;
+  next();
+};
+
+const getOrCreateAccessSettings = async () => {
+  const [rows] = await pool.execute(
+    `
+      SELECT
+        id,
+        mobile_access_enabled,
+        ip_restriction_enabled,
+        mobile_access_code,
+        mobile_access_code_expires_at
+      FROM admin_access_settings
+      ORDER BY id ASC
+      LIMIT 1
+    `
+  );
+
+  if (rows.length) {
+    return rows[0];
+  }
+
+  await pool.execute(
+    `
+      INSERT INTO admin_access_settings
+      (
+        mobile_access_enabled,
+        ip_restriction_enabled,
+        mobile_access_code,
+        mobile_access_code_expires_at
+      )
+      VALUES (0, 0, NULL, NULL)
+    `
+  );
+
+  const [created] = await pool.execute(
+    `
+      SELECT
+        id,
+        mobile_access_enabled,
+        ip_restriction_enabled,
+        mobile_access_code,
+        mobile_access_code_expires_at
+      FROM admin_access_settings
+      ORDER BY id ASC
+      LIMIT 1
+    `
+  );
+
+  return created[0];
+};
+
+const normalizeBoolean = (value) => {
+  return (
+    value === true ||
+    value === 1 ||
+    value === "1" ||
+    value === "true" ||
+    value === "TRUE" ||
+    value === "on"
+  ) ? 1 : 0;
+};
+
+/*
+POST /api/admin/security/access-settings/unlock
+*/
+
+router.post(
+  "/access-settings/unlock",
+  authenticateAdmin,
+  requireSuperAdmin,
+  async (req, res) => {
+    try {
+      const expectedPassword = getAccessSettingsPassword();
+
+      const providedPassword = String(
+        req.body?.password || ""
+      );
+
+      if (!expectedPassword) {
+        console.error(
+          "ADMIN_ACCESS_SETTINGS_PASSWORD is not configured."
+        );
+
+        return res.status(500).json({
+          success: false,
+          message:
+            "Admin access security password is not configured on the server.",
+        });
+      }
+
+      if (
+        !safePasswordMatches(
+          providedPassword,
+          expectedPassword
+        )
+      ) {
+        await writeActivityLog(
+          req,
+          "ADMIN_ACCESS_SECURITY_UNLOCK_FAILED",
+          null,
+          "A failed attempt was made to unlock the Admin Access Security controls."
+        );
+
+        return res.status(401).json({
+          success: false,
+          message: "Invalid access password.",
+        });
+      }
+
+      cleanupAccessUnlockSessions();
+
+      const accessToken =
+        crypto.randomBytes(32).toString("hex");
+
+      const expiresAt =
+        Date.now() + ACCESS_UNLOCK_TTL_MS;
+
+      accessUnlockSessions.set(
+        accessToken,
+        {
+          adminId: req.currentAdmin.id,
+          expiresAt,
+        }
+      );
+
+      await writeActivityLog(
+        req,
+        "ADMIN_ACCESS_SECURITY_UNLOCKED",
+        null,
+        "Super Administrator unlocked the Admin Access Security controls."
+      );
+
+      return res.json({
+        success: true,
+        access_token: accessToken,
+        expires_at:
+          new Date(expiresAt).toISOString(),
+        message:
+          "Admin access security unlocked.",
+      });
+    } catch (error) {
+      console.error(
+        "ADMIN ACCESS SECURITY UNLOCK ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to verify the access password.",
+      });
+    }
+  }
+);
+
+/*
+GET /api/admin/security/access-settings
+*/
+
+router.get(
+  "/access-settings",
+  authenticateAdmin,
+  requireSuperAdmin,
+  requireAccessSettingsUnlock,
+  async (req, res) => {
+    try {
+      const settings =
+        await getOrCreateAccessSettings();
+
+      const [allowedIps] =
+        await pool.execute(
+          `
+            SELECT
+              id,
+              ip_address,
+              label,
+              is_active,
+              created_by,
+              created_at
+            FROM admin_allowed_ips
+            ORDER BY created_at DESC, id DESC
+          `
+        );
+
+      return res.json({
+        success: true,
+        settings,
+        allowed_ips: allowedIps,
+      });
+    } catch (error) {
+      console.error(
+        "GET ADMIN ACCESS SETTINGS ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to load admin access security settings.",
+      });
+    }
+  }
+);
+
+/*
+PUT /api/admin/security/access-settings
+*/
+
+router.put(
+  "/access-settings",
+  authenticateAdmin,
+  requireSuperAdmin,
+  requireAccessSettingsUnlock,
+  async (req, res) => {
+    try {
+      const current =
+        await getOrCreateAccessSettings();
+
+      const mobileAccessEnabled =
+        req.body?.mobile_access_enabled === undefined
+          ? Number(
+              current.mobile_access_enabled
+            )
+          : normalizeBoolean(
+              req.body.mobile_access_enabled
+            );
+
+      const ipRestrictionEnabled =
+        req.body?.ip_restriction_enabled === undefined
+          ? Number(
+              current.ip_restriction_enabled
+            )
+          : normalizeBoolean(
+              req.body.ip_restriction_enabled
+            );
+
+      await pool.execute(
+        `
+          UPDATE admin_access_settings
+          SET
+            mobile_access_enabled = ?,
+            ip_restriction_enabled = ?
+          WHERE id = ?
+        `,
+        [
+          mobileAccessEnabled,
+          ipRestrictionEnabled,
+          current.id,
+        ]
+      );
+
+      const settings =
+        await getOrCreateAccessSettings();
+
+      await writeActivityLog(
+        req,
+        "ADMIN_ACCESS_SECURITY_SETTINGS_UPDATED",
+        current.id,
+        `Admin access security settings updated. Mobile access: ${
+          mobileAccessEnabled
+            ? "enabled"
+            : "disabled"
+        }; IP restriction: ${
+          ipRestrictionEnabled
+            ? "enabled"
+            : "disabled"
+        }.`
+      );
+
+      const [allowedIps] =
+        await pool.execute(
+          `
+            SELECT
+              id,
+              ip_address,
+              label,
+              is_active,
+              created_by,
+              created_at
+            FROM admin_allowed_ips
+            ORDER BY created_at DESC, id DESC
+          `
+        );
+
+      return res.json({
+        success: true,
+        settings,
+        allowed_ips: allowedIps,
+        message:
+          "Access security settings updated successfully.",
+      });
+    } catch (error) {
+      console.error(
+        "UPDATE ADMIN ACCESS SETTINGS ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to update admin access security settings.",
+      });
+    }
+  }
+);
+
+/*
+POST /api/admin/security/access-settings/generate-code
+*/
+
+router.post(
+  "/access-settings/generate-code",
+  authenticateAdmin,
+  requireSuperAdmin,
+  requireAccessSettingsUnlock,
+  async (req, res) => {
+    try {
+      const rawMinutes =
+        Number(
+          req.body?.expires_in_minutes ??
+          req.body?.expires_minutes ??
+          30
+        );
+
+      if (!Number.isFinite(rawMinutes)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid code expiry time.",
+        });
+      }
+
+      const expiresInMinutes =
+        Math.min(
+          1440,
+          Math.max(
+            1,
+            Math.floor(rawMinutes)
+          )
+        );
+
+      const code = String(
+        crypto.randomInt(
+          100000,
+          1000000
+        )
+      );
+
+      const expiresAt =
+        new Date(
+          Date.now() +
+          expiresInMinutes *
+          60 *
+          1000
+        );
+
+      const settings =
+        await getOrCreateAccessSettings();
+
+      await pool.execute(
+        `
+          UPDATE admin_access_settings
+          SET
+            mobile_access_code = ?,
+            mobile_access_code_expires_at = ?
+          WHERE id = ?
+        `,
+        [
+          code,
+          expiresAt,
+          settings.id,
+        ]
+      );
+
+      const updated =
+        await getOrCreateAccessSettings();
+
+      await writeActivityLog(
+        req,
+        "ADMIN_MOBILE_ACCESS_CODE_GENERATED",
+        settings.id,
+        `Super Administrator generated a temporary mobile access code with ${expiresInMinutes} minute expiry.`
+      );
+
+      return res.json({
+        success: true,
+        code,
+        expires_at:
+          expiresAt.toISOString(),
+        settings: updated,
+        message:
+          "Mobile access code generated successfully.",
+      });
+    } catch (error) {
+      console.error(
+        "GENERATE MOBILE ACCESS CODE ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to generate mobile access code.",
+      });
+    }
+  }
+);
+
+/*
+POST /api/admin/security/access-settings/clear-code
+*/
+
+router.post(
+  "/access-settings/clear-code",
+  authenticateAdmin,
+  requireSuperAdmin,
+  requireAccessSettingsUnlock,
+  async (req, res) => {
+    try {
+      const settings =
+        await getOrCreateAccessSettings();
+
+      await pool.execute(
+        `
+          UPDATE admin_access_settings
+          SET
+            mobile_access_code = NULL,
+            mobile_access_code_expires_at = NULL
+          WHERE id = ?
+        `,
+        [settings.id]
+      );
+
+      await writeActivityLog(
+        req,
+        "ADMIN_MOBILE_ACCESS_CODE_CLEARED",
+        settings.id,
+        "Super Administrator cleared the temporary mobile access code."
+      );
+
+      return res.json({
+        success: true,
+        message:
+          "Mobile access code cleared.",
+      });
+    } catch (error) {
+      console.error(
+        "CLEAR MOBILE ACCESS CODE ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to clear mobile access code.",
+      });
+    }
+  }
+);
+
+/*
+GET /api/admin/security/allowed-ips
+*/
+
+router.get(
+  "/allowed-ips",
+  authenticateAdmin,
+  requireSuperAdmin,
+  requireAccessSettingsUnlock,
+  async (req, res) => {
+    try {
+      const [allowedIps] =
+        await pool.execute(
+          `
+            SELECT
+              id,
+              ip_address,
+              label,
+              is_active,
+              created_by,
+              created_at
+            FROM admin_allowed_ips
+            ORDER BY created_at DESC, id DESC
+          `
+        );
+
+      return res.json({
+        success: true,
+        allowed_ips: allowedIps,
+      });
+    } catch (error) {
+      console.error(
+        "GET ALLOWED ADMIN IPS ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to load allowed IP addresses.",
+      });
+    }
+  }
+);
+
+/*
+POST /api/admin/security/allowed-ips
+*/
+
+router.post(
+  "/allowed-ips",
+  authenticateAdmin,
+  requireSuperAdmin,
+  requireAccessSettingsUnlock,
+  async (req, res) => {
+    try {
+      const ipAddress =
+        String(
+          req.body?.ip_address || ""
+        ).trim();
+
+      const label =
+        req.body?.label
+          ? String(
+              req.body.label
+            ).trim()
+          : null;
+
+      if (!ipAddress) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "IP address is required.",
+        });
+      }
+
+      if (!net.isIP(ipAddress)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Enter a valid IPv4 or IPv6 address.",
+        });
+      }
+
+      const [existing] =
+        await pool.execute(
+          `
+            SELECT id
+            FROM admin_allowed_ips
+            WHERE ip_address = ?
+            LIMIT 1
+          `,
+          [ipAddress]
+        );
+
+      if (existing.length) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "That IP address is already in the allowed list.",
+        });
+      }
+
+      await pool.execute(
+        `
+          INSERT INTO admin_allowed_ips
+          (
+            ip_address,
+            label,
+            is_active,
+            created_by
+          )
+          VALUES (?, ?, 1, ?)
+        `,
+        [
+          ipAddress,
+          label,
+          req.currentAdmin.id,
+        ]
+      );
+
+      await writeActivityLog(
+        req,
+        "ADMIN_ALLOWED_IP_ADDED",
+        null,
+        `Super Administrator added allowed IP ${ipAddress}${
+          label
+            ? ` (${label})`
+            : ""
+        }.`
+      );
+
+      const [allowedIps] =
+        await pool.execute(
+          `
+            SELECT
+              id,
+              ip_address,
+              label,
+              is_active,
+              created_by,
+              created_at
+            FROM admin_allowed_ips
+            ORDER BY created_at DESC, id DESC
+          `
+        );
+
+      return res.status(201).json({
+        success: true,
+        allowed_ips: allowedIps,
+        message:
+          "Allowed IP address added successfully.",
+      });
+    } catch (error) {
+      console.error(
+        "ADD ALLOWED ADMIN IP ERROR:",
+        error
+      );
+
+      if (
+        error?.code ===
+        "ER_DUP_ENTRY"
+      ) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "That IP address is already in the allowed list.",
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to add allowed IP address.",
+      });
+    }
+  }
+);
+
+/*
+PUT /api/admin/security/allowed-ips/:id
+*/
+
+router.put(
+  "/allowed-ips/:id",
+  authenticateAdmin,
+  requireSuperAdmin,
+  requireAccessSettingsUnlock,
+  async (req, res) => {
+    try {
+      const ipId =
+        Number(req.params.id);
+
+      if (
+        !Number.isInteger(ipId) ||
+        ipId <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid allowed IP ID.",
+        });
+      }
+
+      const fields = [];
+      const values = [];
+
+      if (
+        req.body?.ip_address !==
+        undefined
+      ) {
+        const ipAddress =
+          String(
+            req.body.ip_address
+          ).trim();
+
+        if (!net.isIP(ipAddress)) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "Enter a valid IPv4 or IPv6 address.",
+          });
+        }
+
+        fields.push(
+          "ip_address = ?"
+        );
+
+        values.push(
+          ipAddress
+        );
+      }
+
+      if (
+        req.body?.label !==
+        undefined
+      ) {
+        fields.push(
+          "label = ?"
+        );
+
+        values.push(
+          req.body.label === null
+            ? null
+            : String(
+                req.body.label
+              ).trim() || null
+        );
+      }
+
+      if (
+        req.body?.is_active !==
+        undefined
+      ) {
+        fields.push(
+          "is_active = ?"
+        );
+
+        values.push(
+          normalizeBoolean(
+            req.body.is_active
+          )
+        );
+      }
+
+      if (!fields.length) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "No changes were provided.",
+        });
+      }
+
+      values.push(ipId);
+
+      const [result] =
+        await pool.execute(
+          `
+            UPDATE admin_allowed_ips
+            SET ${fields.join(", ")}
+            WHERE id = ?
+          `,
+          values
+        );
+
+      if (!result.affectedRows) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Allowed IP address not found.",
+        });
+      }
+
+      await writeActivityLog(
+        req,
+        "ADMIN_ALLOWED_IP_UPDATED",
+        ipId,
+        `Super Administrator updated allowed IP record #${ipId}.`
+      );
+
+      const [allowedIps] =
+        await pool.execute(
+          `
+            SELECT
+              id,
+              ip_address,
+              label,
+              is_active,
+              created_by,
+              created_at
+            FROM admin_allowed_ips
+            ORDER BY created_at DESC, id DESC
+          `
+        );
+
+      return res.json({
+        success: true,
+        allowed_ips: allowedIps,
+        message:
+          "Allowed IP updated successfully.",
+      });
+    } catch (error) {
+      console.error(
+        "UPDATE ALLOWED ADMIN IP ERROR:",
+        error
+      );
+
+      if (
+        error?.code ===
+        "ER_DUP_ENTRY"
+      ) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "That IP address is already in the allowed list.",
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to update allowed IP.",
+      });
+    }
+  }
+);
+
+/*
+DELETE /api/admin/security/allowed-ips/:id
+*/
+
+router.delete(
+  "/allowed-ips/:id",
+  authenticateAdmin,
+  requireSuperAdmin,
+  requireAccessSettingsUnlock,
+  async (req, res) => {
+    try {
+      const ipId =
+        Number(req.params.id);
+
+      if (
+        !Number.isInteger(ipId) ||
+        ipId <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid allowed IP ID.",
+        });
+      }
+
+      const [result] =
+        await pool.execute(
+          `
+            DELETE FROM admin_allowed_ips
+            WHERE id = ?
+          `,
+          [ipId]
+        );
+
+      if (!result.affectedRows) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "Allowed IP address not found.",
+        });
+      }
+
+      await writeActivityLog(
+        req,
+        "ADMIN_ALLOWED_IP_REMOVED",
+        ipId,
+        `Super Administrator removed allowed IP record #${ipId}.`
+      );
+
+      const [allowedIps] =
+        await pool.execute(
+          `
+            SELECT
+              id,
+              ip_address,
+              label,
+              is_active,
+              created_by,
+              created_at
+            FROM admin_allowed_ips
+            ORDER BY created_at DESC, id DESC
+          `
+        );
+
+      return res.json({
+        success: true,
+        allowed_ips: allowedIps,
+        message:
+          "Allowed IP removed successfully.",
+      });
+    } catch (error) {
+      console.error(
+        "DELETE ALLOWED ADMIN IP ERROR:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to remove allowed IP.",
       });
     }
   }
