@@ -21,6 +21,117 @@ function getClientIp(req) {
   return req.ip || req.socket?.remoteAddress || "unknown";
 }
 
+function isMobileRequest(req) {
+  const userAgent = String(
+    req.get("user-agent") || ""
+  ).toLowerCase();
+
+  return /android|iphone|ipad|ipod|windows phone|mobile|tablet/.test(
+    userAgent
+  );
+}
+
+function normalizeIpAddress(ip) {
+  const value = String(ip || "").trim();
+
+  if (value.startsWith("::ffff:")) {
+    return value.slice(7);
+  }
+
+  return value;
+}
+
+async function getAdminAccessSettings() {
+  const [rows] = await pool.execute(
+    `
+      SELECT
+        id,
+        mobile_access_enabled,
+        ip_restriction_enabled,
+        mobile_access_code,
+        mobile_access_code_expires_at
+      FROM admin_access_settings
+      ORDER BY id ASC
+      LIMIT 1
+    `
+  );
+
+  return rows[0] || null;
+}
+
+async function getActiveAllowedIps() {
+  const [rows] = await pool.execute(
+    `
+      SELECT ip_address
+      FROM admin_allowed_ips
+      WHERE is_active = 1
+    `
+  );
+
+  return rows.map((row) => normalizeIpAddress(row.ip_address));
+}
+
+async function enforceAdminAccessRestrictions(req) {
+  const settings = await getAdminAccessSettings();
+
+  if (!settings) {
+    return {
+      allowed: true,
+      mobileRequest: isMobileRequest(req),
+      settings: null,
+    };
+  }
+
+  const mobileRequest = isMobileRequest(req);
+
+  /* ---------------------------------------------------------
+     MOBILE ACCESS
+  --------------------------------------------------------- */
+
+  if (
+    mobileRequest &&
+    !Number(settings.mobile_access_enabled)
+  ) {
+    return {
+      allowed: false,
+      status: 403,
+      code: "MOBILE_ACCESS_DISABLED",
+      message:
+        "Mobile admin access is currently disabled. Enable Mobile Access from Admin Access Security before signing in from a phone or tablet.",
+    };
+  }
+
+  /* ---------------------------------------------------------
+     IP RESTRICTION
+  --------------------------------------------------------- */
+
+  if (Number(settings.ip_restriction_enabled)) {
+    const allowedIps = await getActiveAllowedIps();
+    const requesterIp = normalizeIpAddress(
+      getClientIp(req)
+    );
+
+    if (
+      allowedIps.length === 0 ||
+      !allowedIps.includes(requesterIp)
+    ) {
+      return {
+        allowed: false,
+        status: 403,
+        code: "IP_ACCESS_DENIED",
+        message:
+          "This IP address is not authorized to access the admin panel.",
+      };
+    }
+  }
+
+  return {
+    allowed: true,
+    mobileRequest,
+    settings,
+  };
+}
+
 async function logActivity({
   adminId = null,
   action,
@@ -48,14 +159,19 @@ async function logActivity({
         adminId,
         action,
         entityType,
-        entityId !== null ? String(entityId) : null,
+        entityId !== null
+          ? String(entityId)
+          : null,
         description,
         getClientIp(req),
         req.get("user-agent") || null,
       ]
     );
   } catch (error) {
-    console.error("ACTIVITY LOG ERROR:", error);
+    console.error(
+      "ACTIVITY LOG ERROR:",
+      error
+    );
   }
 }
 
@@ -66,7 +182,8 @@ function requireSuperAdmin(req, res, next) {
   ) {
     return res.status(403).json({
       success: false,
-      message: "Super administrator access is required.",
+      message:
+        "Super administrator access is required.",
     });
   }
 
@@ -80,25 +197,31 @@ function requireSuperAdmin(req, res, next) {
    At 0 the account is locked.
 ========================================================= */
 
-async function recordSecurityViolation(req, adminId, reason) {
-  const connection = await pool.getConnection();
+async function recordSecurityViolation(
+  req,
+  adminId,
+  reason
+) {
+  const connection =
+    await pool.getConnection();
 
   try {
     await connection.beginTransaction();
 
-    const [rows] = await connection.execute(
-      `
-      SELECT
-        id,
-        role,
-        security_attempts_remaining,
-        locked_at
-      FROM admins
-      WHERE id = ?
-      FOR UPDATE
-      `,
-      [adminId]
-    );
+    const [rows] =
+      await connection.execute(
+        `
+        SELECT
+          id,
+          role,
+          security_attempts_remaining,
+          locked_at
+        FROM admins
+        WHERE id = ?
+        FOR UPDATE
+        `,
+        [adminId]
+      );
 
     if (!rows.length) {
       await connection.rollback();
@@ -135,7 +258,9 @@ async function recordSecurityViolation(req, adminId, reason) {
 
     const current = Math.max(
       0,
-      Number(admin.security_attempts_remaining ?? 3)
+      Number(
+        admin.security_attempts_remaining ?? 3
+      )
     );
 
     const remaining = Math.max(
@@ -143,7 +268,8 @@ async function recordSecurityViolation(req, adminId, reason) {
       current - 1
     );
 
-    const locked = remaining === 0;
+    const locked =
+      remaining === 0;
 
     await connection.execute(
       `
@@ -223,139 +349,307 @@ async function recordSecurityViolation(req, adminId, reason) {
    LOGIN
 ========================================================= */
 
-router.post("/login", async (req, res) => {
-  try {
-    const { username, password } = req.body || {};
-
-    if (!username || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Username and password are required.",
-      });
-    }
-
-    const [admins] = await pool.execute(
-      `
-      SELECT
-        id,
-        name,
+router.post(
+  "/login",
+  async (req, res) => {
+    try {
+      const {
         username,
-        email,
-        password_hash,
-        role,
-        is_active,
-        security_attempts_remaining,
-        locked_at,
-        locked_ip,
-        lock_reason
-      FROM admins
-      WHERE username = ?
-      LIMIT 1
-      `,
-      [username.trim()]
-    );
+        password,
+      } = req.body || {};
 
-    if (!admins.length) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid username or password.",
+      if (!username || !password) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Username and password are required.",
+        });
+      }
+
+      /* -----------------------------------------------------
+         CHECK MOBILE / IP ACCESS BEFORE LOGIN
+      ----------------------------------------------------- */
+
+      const accessCheck =
+        await enforceAdminAccessRestrictions(
+          req
+        );
+
+      if (!accessCheck.allowed) {
+        await logActivity({
+          adminId: null,
+          action: accessCheck.code,
+          entityType: "admin_access",
+          entityId: null,
+          description:
+            accessCheck.message,
+          req,
+        });
+
+        return res
+          .status(accessCheck.status)
+          .json({
+            success: false,
+            code: accessCheck.code,
+            message:
+              accessCheck.message,
+          });
+      }
+
+      /* -----------------------------------------------------
+         FIND ADMIN
+      ----------------------------------------------------- */
+
+      const [admins] =
+        await pool.execute(
+          `
+          SELECT
+            id,
+            name,
+            username,
+            email,
+            password_hash,
+            role,
+            is_active,
+            security_attempts_remaining,
+            locked_at,
+            locked_ip,
+            lock_reason
+          FROM admins
+          WHERE username = ?
+          LIMIT 1
+          `,
+          [username.trim()]
+        );
+
+      if (!admins.length) {
+        return res.status(401).json({
+          success: false,
+          message:
+            "Invalid username or password.",
+        });
+      }
+
+      const admin = admins[0];
+
+      /* -----------------------------------------------------
+         ADMIN ACTIVE CHECK
+      ----------------------------------------------------- */
+
+      if (!admin.is_active) {
+        return res.status(403).json({
+          success: false,
+          code: "ADMIN_BLOCKED",
+          message:
+            "This admin account has been blocked. Please contact the Super Admin.",
+        });
+      }
+
+      /* -----------------------------------------------------
+         SECURITY LOCK CHECK
+      ----------------------------------------------------- */
+
+      if (
+        admin.locked_at ||
+        Number(
+          admin.security_attempts_remaining
+        ) <= 0
+      ) {
+        return res.status(423).json({
+          success: false,
+          code:
+            "ADMIN_SECURITY_LOCKED",
+          message:
+            "You have been blocked by the system. Your IP address has been marked as terminated. Please contact the Super Admin.",
+          lock: {
+            locked_at:
+              admin.locked_at,
+            locked_ip:
+              admin.locked_ip,
+            lock_reason:
+              admin.lock_reason,
+            attempts_remaining:
+              Number(
+                admin.security_attempts_remaining
+              ),
+          },
+        });
+      }
+
+      /* -----------------------------------------------------
+         PASSWORD CHECK
+      ----------------------------------------------------- */
+
+      const passwordMatch =
+        await bcrypt.compare(
+          password,
+          admin.password_hash
+        );
+
+      if (!passwordMatch) {
+        return res.status(401).json({
+          success: false,
+          message:
+            "Invalid username or password.",
+        });
+      }
+
+      /* -----------------------------------------------------
+         MOBILE ACCESS CODE
+         
+         Desktop:
+         - Username + password is enough.
+
+         Phone/tablet:
+         - Mobile Access must be enabled.
+         - Valid mobile code is required.
+      ----------------------------------------------------- */
+
+      if (accessCheck.mobileRequest) {
+        const providedMobileCode =
+          String(
+            req.body?.mobile_access_code ??
+              req.body?.mobileAccessCode ??
+              ""
+          ).trim();
+
+        const storedMobileCode =
+          String(
+            accessCheck.settings
+              ?.mobile_access_code || ""
+          ).trim();
+
+        const expiry =
+          accessCheck.settings
+            ?.mobile_access_code_expires_at
+            ? new Date(
+                accessCheck.settings
+                  .mobile_access_code_expires_at
+              )
+            : null;
+
+        /* ---------------------------------------------------
+           NO CODE CONFIGURED
+        --------------------------------------------------- */
+
+        if (
+          !storedMobileCode ||
+          !expiry ||
+          Number.isNaN(
+            expiry.getTime()
+          )
+        ) {
+          return res.status(503).json({
+            success: false,
+            code:
+              "MOBILE_ACCESS_CODE_NOT_CONFIGURED",
+            message:
+              "Mobile access is enabled, but no valid mobile access code is currently configured.",
+          });
+        }
+
+        /* ---------------------------------------------------
+           CODE EXPIRED
+        --------------------------------------------------- */
+
+        if (
+          expiry.getTime() <=
+          Date.now()
+        ) {
+          return res.status(403).json({
+            success: false,
+            code:
+              "MOBILE_ACCESS_CODE_EXPIRED",
+            message:
+              "The mobile access code has expired. Please generate a new code from Admin Access Security.",
+          });
+        }
+
+        /* ---------------------------------------------------
+           CODE REQUIRED / INVALID
+        --------------------------------------------------- */
+
+        if (
+          providedMobileCode !==
+          storedMobileCode
+        ) {
+          return res.status(401).json({
+            success: false,
+            code:
+              providedMobileCode
+                ? "INVALID_MOBILE_ACCESS_CODE"
+                : "MOBILE_ACCESS_CODE_REQUIRED",
+            message:
+              providedMobileCode
+                ? "Invalid mobile access code."
+                : "A mobile access code is required to sign in from this device.",
+          });
+        }
+      }
+
+      /* -----------------------------------------------------
+         CREATE JWT
+      ----------------------------------------------------- */
+
+      const token = jwt.sign(
+        {
+          id: admin.id,
+          username: admin.username,
+          role: admin.role,
+        },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "1d",
+        }
+      );
+
+      await pool.execute(
+        `
+        UPDATE admins
+        SET last_login = NOW()
+        WHERE id = ?
+        `,
+        [admin.id]
+      );
+
+      await logActivity({
+        adminId: admin.id,
+        action: "ADMIN_LOGIN",
+        entityType: "admin",
+        entityId: admin.id,
+        description:
+          "Administrator logged into the admin panel.",
+        req,
       });
-    }
 
-    const admin = admins[0];
-
-    if (!admin.is_active) {
-      return res.status(403).json({
-        success: false,
-        code: "ADMIN_BLOCKED",
+      return res.json({
+        success: true,
         message:
-          "This admin account has been blocked. Please contact the Super Admin.",
-      });
-    }
-
-    if (
-      admin.locked_at ||
-      Number(admin.security_attempts_remaining) <= 0
-    ) {
-      return res.status(423).json({
-        success: false,
-        code: "ADMIN_SECURITY_LOCKED",
-        message:
-          "You have been blocked by the system. Your IP address has been marked as terminated. Please contact the Super Admin.",
-        lock: {
-          locked_at: admin.locked_at,
-          locked_ip: admin.locked_ip,
-          lock_reason: admin.lock_reason,
-          attempts_remaining: Number(
-            admin.security_attempts_remaining
-          ),
+          "Login successful.",
+        token,
+        admin: {
+          id: admin.id,
+          name: admin.name,
+          username:
+            admin.username,
+          email: admin.email,
+          role: admin.role,
         },
       });
-    }
+    } catch (error) {
+      console.error(
+        "ADMIN LOGIN ERROR:",
+        error
+      );
 
-    const passwordMatch = await bcrypt.compare(
-      password,
-      admin.password_hash
-    );
-
-    if (!passwordMatch) {
-      return res.status(401).json({
+      return res.status(500).json({
         success: false,
-        message: "Invalid username or password.",
+        message:
+          "Unable to process admin login.",
       });
     }
-
-    const token = jwt.sign(
-      {
-        id: admin.id,
-        username: admin.username,
-        role: admin.role,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1d",
-      }
-    );
-
-    await pool.execute(
-      `
-      UPDATE admins
-      SET last_login = NOW()
-      WHERE id = ?
-      `,
-      [admin.id]
-    );
-
-    await logActivity({
-      adminId: admin.id,
-      action: "ADMIN_LOGIN",
-      entityType: "admin",
-      entityId: admin.id,
-      description: "Administrator logged into the admin panel.",
-      req,
-    });
-
-    return res.json({
-      success: true,
-      message: "Login successful.",
-      token,
-      admin: {
-        id: admin.id,
-        name: admin.name,
-        username: admin.username,
-        email: admin.email,
-        role: admin.role,
-      },
-    });
-  } catch (error) {
-    console.error("ADMIN LOGIN ERROR:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Unable to process admin login.",
-    });
   }
-});
+);
 
 /* =========================================================
    ADMIN PROFILE
@@ -366,33 +660,35 @@ router.get(
   authenticateAdmin,
   async (req, res) => {
     try {
-      const [admins] = await pool.execute(
-        `
-        SELECT
-          id,
-          name,
-          username,
-          email,
-          role,
-          is_active,
-          security_attempts_remaining,
-          locked_at,
-          locked_ip,
-          lock_reason,
-          last_login,
-          created_at,
-          updated_at
-        FROM admins
-        WHERE id = ?
-        LIMIT 1
-        `,
-        [req.admin.id]
-      );
+      const [admins] =
+        await pool.execute(
+          `
+          SELECT
+            id,
+            name,
+            username,
+            email,
+            role,
+            is_active,
+            security_attempts_remaining,
+            locked_at,
+            locked_ip,
+            lock_reason,
+            last_login,
+            created_at,
+            updated_at
+          FROM admins
+          WHERE id = ?
+          LIMIT 1
+          `,
+          [req.admin.id]
+        );
 
       if (!admins.length) {
         return res.status(404).json({
           success: false,
-          message: "Admin account not found.",
+          message:
+            "Admin account not found.",
         });
       }
 
@@ -401,11 +697,15 @@ router.get(
         admin: admins[0],
       });
     } catch (error) {
-      console.error("ADMIN PROFILE ERROR:", error);
+      console.error(
+        "ADMIN PROFILE ERROR:",
+        error
+      );
 
       return res.status(500).json({
         success: false,
-        message: "Unable to load admin profile.",
+        message:
+          "Unable to load admin profile.",
       });
     }
   }
@@ -454,18 +754,34 @@ router.get(
       return res.json({
         success: true,
         statistics: {
-          members: Number(memberResult[0].total),
-          projects: Number(projectResult[0].total),
-          events: Number(eventResult[0].total),
-          gallery: Number(galleryResult[0].total),
+          members:
+            Number(
+              memberResult[0].total
+            ),
+          projects:
+            Number(
+              projectResult[0].total
+            ),
+          events:
+            Number(
+              eventResult[0].total
+            ),
+          gallery:
+            Number(
+              galleryResult[0].total
+            ),
         },
       });
     } catch (error) {
-      console.error("DASHBOARD STATISTICS ERROR:", error);
+      console.error(
+        "DASHBOARD STATISTICS ERROR:",
+        error
+      );
 
       return res.status(500).json({
         success: false,
-        message: "Unable to load dashboard statistics.",
+        message:
+          "Unable to load dashboard statistics.",
       });
     }
   }
@@ -481,7 +797,8 @@ router.get(
   (req, res) => {
     return res.json({
       success: true,
-      message: "Admin authentication is working.",
+      message:
+        "Admin authentication is working.",
       admin: req.admin,
     });
   }
@@ -497,10 +814,12 @@ router.post(
   async (req, res) => {
     await logActivity({
       adminId: req.admin.id,
-      action: "ADMIN_LOGOUT",
+      action:
+        "ADMIN_LOGOUT",
       entityType: "admin",
       entityId: req.admin.id,
-      description: "Administrator logged out.",
+      description:
+        "Administrator logged out.",
       req,
     });
 
@@ -526,7 +845,10 @@ router.post(
   authenticateAdmin,
   async (req, res) => {
     try {
-      if (req.admin.role === "super_admin") {
+      if (
+        req.admin.role ===
+        "super_admin"
+      ) {
         return res.json({
           success: true,
           allowed: true,
@@ -535,11 +857,12 @@ router.post(
         });
       }
 
-      const result = await recordSecurityViolation(
-        req,
-        req.admin.id,
-        "Unauthorized attempt to access Website Content."
-      );
+      const result =
+        await recordSecurityViolation(
+          req,
+          req.admin.id,
+          "Unauthorized attempt to access Website Content."
+        );
 
       if (result.locked) {
         return res.status(423).json({
@@ -556,7 +879,8 @@ router.post(
         success: false,
         allowed: false,
         locked: false,
-        attempts_remaining: result.remaining,
+        attempts_remaining:
+          result.remaining,
         message:
           "Website Content is restricted to the Super Administrator.",
       });
@@ -585,7 +909,8 @@ router.get(
   requireSuperAdmin,
   async (req, res) => {
     try {
-      const [admins] = await pool.execute(`
+      const [admins] =
+        await pool.execute(`
         SELECT
           id,
           name,
@@ -609,11 +934,15 @@ router.get(
         admins,
       });
     } catch (error) {
-      console.error("GET ADMIN ACCOUNTS ERROR:", error);
+      console.error(
+        "GET ADMIN ACCOUNTS ERROR:",
+        error
+      );
 
       return res.status(500).json({
         success: false,
-        message: "Unable to load admin accounts.",
+        message:
+          "Unable to load admin accounts.",
       });
     }
   }
@@ -637,7 +966,11 @@ router.post(
         role = "admin",
       } = req.body || {};
 
-      if (!name || !username || !password) {
+      if (
+        !name ||
+        !username ||
+        !password
+      ) {
         return res.status(400).json({
           success: false,
           message:
@@ -650,10 +983,13 @@ router.post(
         "editor",
       ];
 
-      if (!allowedRoles.includes(role)) {
+      if (
+        !allowedRoles.includes(role)
+      ) {
         return res.status(400).json({
           success: false,
-          message: "Invalid admin role.",
+          message:
+            "Invalid admin role.",
         });
       }
 
@@ -665,23 +1001,28 @@ router.post(
         });
       }
 
-      const cleanName = name.trim();
-      const cleanUsername = username.trim();
+      const cleanName =
+        name.trim();
+
+      const cleanUsername =
+        username.trim();
+
       const cleanEmail =
         email && email.trim()
           ? email.trim()
           : null;
 
-      const [existingUsername] =
-        await pool.execute(
-          `
-          SELECT id
-          FROM admins
-          WHERE username = ?
-          LIMIT 1
-          `,
-          [cleanUsername]
-        );
+      const [
+        existingUsername,
+      ] = await pool.execute(
+        `
+        SELECT id
+        FROM admins
+        WHERE username = ?
+        LIMIT 1
+        `,
+        [cleanUsername]
+      );
 
       if (existingUsername.length) {
         return res.status(409).json({
@@ -692,16 +1033,17 @@ router.post(
       }
 
       if (cleanEmail) {
-        const [existingEmail] =
-          await pool.execute(
-            `
-            SELECT id
-            FROM admins
-            WHERE email = ?
-            LIMIT 1
-            `,
-            [cleanEmail]
-          );
+        const [
+          existingEmail,
+        ] = await pool.execute(
+          `
+          SELECT id
+          FROM admins
+          WHERE email = ?
+          LIMIT 1
+          `,
+          [cleanEmail]
+        );
 
         if (existingEmail.length) {
           return res.status(409).json({
@@ -713,63 +1055,72 @@ router.post(
       }
 
       const passwordHash =
-        await bcrypt.hash(password, 12);
+        await bcrypt.hash(
+          password,
+          12
+        );
 
-      const [result] = await pool.execute(
-        `
-        INSERT INTO admins
-        (
-          name,
-          username,
-          email,
-          password_hash,
-          role,
-          is_active,
-          security_attempts_remaining
-        )
-        VALUES (?, ?, ?, ?, ?, 1, 3)
-        `,
-        [
-          cleanName,
-          cleanUsername,
-          cleanEmail,
-          passwordHash,
-          role,
-        ]
-      );
+      const [result] =
+        await pool.execute(
+          `
+          INSERT INTO admins
+          (
+            name,
+            username,
+            email,
+            password_hash,
+            role,
+            is_active,
+            security_attempts_remaining
+          )
+          VALUES (?, ?, ?, ?, ?, 1, 3)
+          `,
+          [
+            cleanName,
+            cleanUsername,
+            cleanEmail,
+            passwordHash,
+            role,
+          ]
+        );
 
       await logActivity({
-        adminId: req.admin.id,
-        action: "ADMIN_CREATED",
-        entityType: "admin",
-        entityId: result.insertId,
+        adminId:
+          req.admin.id,
+        action:
+          "ADMIN_CREATED",
+        entityType:
+          "admin",
+        entityId:
+          result.insertId,
         description:
           `Administrator account "${cleanUsername}" was created.`,
         req,
       });
 
-      const [admins] = await pool.execute(
-        `
-        SELECT
-          id,
-          name,
-          username,
-          email,
-          role,
-          is_active,
-          security_attempts_remaining,
-          locked_at,
-          locked_ip,
-          lock_reason,
-          last_login,
-          created_at,
-          updated_at
-        FROM admins
-        WHERE id = ?
-        LIMIT 1
-        `,
-        [result.insertId]
-      );
+      const [admins] =
+        await pool.execute(
+          `
+          SELECT
+            id,
+            name,
+            username,
+            email,
+            role,
+            is_active,
+            security_attempts_remaining,
+            locked_at,
+            locked_ip,
+            lock_reason,
+            last_login,
+            created_at,
+            updated_at
+          FROM admins
+          WHERE id = ?
+          LIMIT 1
+          `,
+          [result.insertId]
+        );
 
       return res.status(201).json({
         success: true,
@@ -802,19 +1153,26 @@ router.put(
   requireSuperAdmin,
   async (req, res) => {
     try {
-      const adminId = Number(req.params.id);
+      const adminId =
+        Number(req.params.id);
 
       if (
-        !Number.isInteger(adminId) ||
+        !Number.isInteger(
+          adminId
+        ) ||
         adminId <= 0
       ) {
         return res.status(400).json({
           success: false,
-          message: "Invalid admin account ID.",
+          message:
+            "Invalid admin account ID.",
         });
       }
 
-      if (adminId === req.admin.id) {
+      if (
+        adminId ===
+        req.admin.id
+      ) {
         return res.status(400).json({
           success: false,
           message:
@@ -863,7 +1221,8 @@ router.put(
       ) {
         return res.status(400).json({
           success: false,
-          message: "Invalid admin role.",
+          message:
+            "Invalid admin role.",
         });
       }
 
@@ -879,7 +1238,8 @@ router.put(
 
       const cleanEmail =
         email !== undefined
-          ? email && email.trim()
+          ? email &&
+            email.trim()
             ? email.trim()
             : null
           : null;
@@ -906,21 +1266,24 @@ router.put(
         });
       }
 
-      if (username !== undefined) {
-        const [duplicate] =
-          await pool.execute(
-            `
-            SELECT id
-            FROM admins
-            WHERE username = ?
-              AND id != ?
-            LIMIT 1
-            `,
-            [
-              cleanUsername,
-              adminId,
-            ]
-          );
+      if (
+        username !== undefined
+      ) {
+        const [
+          duplicate,
+        ] = await pool.execute(
+          `
+          SELECT id
+          FROM admins
+          WHERE username = ?
+            AND id != ?
+          LIMIT 1
+          `,
+          [
+            cleanUsername,
+            adminId,
+          ]
+        );
 
         if (duplicate.length) {
           return res.status(409).json({
@@ -935,20 +1298,21 @@ router.put(
         email !== undefined &&
         cleanEmail
       ) {
-        const [duplicate] =
-          await pool.execute(
-            `
-            SELECT id
-            FROM admins
-            WHERE email = ?
-              AND id != ?
-            LIMIT 1
-            `,
-            [
-              cleanEmail,
-              adminId,
-            ]
-          );
+        const [
+          duplicate,
+        ] = await pool.execute(
+          `
+          SELECT id
+          FROM admins
+          WHERE email = ?
+            AND id != ?
+          LIMIT 1
+          `,
+          [
+            cleanEmail,
+            adminId,
+          ]
+        );
 
         if (duplicate.length) {
           return res.status(409).json({
@@ -976,21 +1340,31 @@ router.put(
         [
           cleanName,
           cleanUsername,
-          email !== undefined ? 1 : 0,
+          email !== undefined
+            ? 1
+            : 0,
           cleanEmail,
-          role !== undefined ? role : null,
+          role !== undefined
+            ? role
+            : null,
           is_active !== undefined
-            ? Boolean(is_active)
+            ? Boolean(
+                is_active
+              )
             : null,
           adminId,
         ]
       );
 
       await logActivity({
-        adminId: req.admin.id,
-        action: "ADMIN_UPDATED",
-        entityType: "admin",
-        entityId: adminId,
+        adminId:
+          req.admin.id,
+        action:
+          "ADMIN_UPDATED",
+        entityType:
+          "admin",
+        entityId:
+          adminId,
         description:
           `Administrator account ID ${adminId} was updated.`,
         req,
@@ -1024,7 +1398,8 @@ router.put(
         success: true,
         message:
           "Admin account updated successfully.",
-        admin: admins[0],
+        admin:
+          admins[0],
       });
     } catch (error) {
       console.error(
@@ -1051,11 +1426,17 @@ router.put(
   requireSuperAdmin,
   async (req, res) => {
     try {
-      const adminId = Number(req.params.id);
-      const { password } = req.body || {};
+      const adminId =
+        Number(req.params.id);
+
+      const {
+        password,
+      } = req.body || {};
 
       if (
-        !Number.isInteger(adminId) ||
+        !Number.isInteger(
+          adminId
+        ) ||
         adminId <= 0
       ) {
         return res.status(400).json({
@@ -1101,7 +1482,10 @@ router.put(
       }
 
       const passwordHash =
-        await bcrypt.hash(password, 12);
+        await bcrypt.hash(
+          password,
+          12
+        );
 
       await pool.execute(
         `
@@ -1116,11 +1500,14 @@ router.put(
       );
 
       await logActivity({
-        adminId: req.admin.id,
+        adminId:
+          req.admin.id,
         action:
           "ADMIN_PASSWORD_RESET",
-        entityType: "admin",
-        entityId: adminId,
+        entityType:
+          "admin",
+        entityId:
+          adminId,
         description:
           `Password reset performed for administrator account ID ${adminId}.`,
         req,
@@ -1156,10 +1543,13 @@ router.delete(
   requireSuperAdmin,
   async (req, res) => {
     try {
-      const adminId = Number(req.params.id);
+      const adminId =
+        Number(req.params.id);
 
       if (
-        !Number.isInteger(adminId) ||
+        !Number.isInteger(
+          adminId
+        ) ||
         adminId <= 0
       ) {
         return res.status(400).json({
@@ -1169,7 +1559,10 @@ router.delete(
         });
       }
 
-      if (adminId === req.admin.id) {
+      if (
+        adminId ===
+        req.admin.id
+      ) {
         return res.status(400).json({
           success: false,
           message:
@@ -1200,20 +1593,24 @@ router.delete(
       }
 
       if (
-        existing[0].role === "super_admin"
+        existing[0].role ===
+        "super_admin"
       ) {
-        const [superAdmins] =
-          await pool.execute(
-            `
-            SELECT COUNT(*) AS total
-            FROM admins
-            WHERE role = 'super_admin'
-              AND is_active = 1
-            `
-          );
+        const [
+          superAdmins,
+        ] = await pool.execute(
+          `
+          SELECT COUNT(*) AS total
+          FROM admins
+          WHERE role = 'super_admin'
+            AND is_active = 1
+          `
+        );
 
         if (
-          Number(superAdmins[0].total) <= 1
+          Number(
+            superAdmins[0].total
+          ) <= 1
         ) {
           return res.status(400).json({
             success: false,
@@ -1232,10 +1629,14 @@ router.delete(
       );
 
       await logActivity({
-        adminId: req.admin.id,
-        action: "ADMIN_DELETED",
-        entityType: "admin",
-        entityId: adminId,
+        adminId:
+          req.admin.id,
+        action:
+          "ADMIN_DELETED",
+        entityType:
+          "admin",
+        entityId:
+          adminId,
         description:
           `Administrator account ID ${adminId} was deleted.`,
         req,
