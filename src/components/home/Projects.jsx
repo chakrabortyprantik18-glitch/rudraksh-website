@@ -13,18 +13,11 @@ function Projects() {
   useEffect(() => {
     async function loadProjects() {
       try {
-        console.log("📡 Loading projects...");
-
         const response = await fetch(
           `${API_URL}/api/projects`,
           {
             cache: "no-store",
           }
-        );
-
-        console.log(
-          "📡 Projects API status:",
-          response.status
         );
 
         if (!response.ok) {
@@ -35,11 +28,6 @@ function Projects() {
 
         const data = await response.json();
 
-        console.log(
-          "📦 Projects API response:",
-          data
-        );
-
         if (!Array.isArray(data.projects)) {
           throw new Error(
             "Invalid projects response from server"
@@ -49,7 +37,7 @@ function Projects() {
         setProjects(data.projects);
       } catch (err) {
         console.error(
-          "❌ PROJECTS LOAD ERROR:",
+          "PROJECTS LOAD ERROR:",
           err
         );
 
@@ -66,12 +54,13 @@ function Projects() {
 
   function getImageUrl(image) {
     if (!image) {
-      return null;
+      return "";
     }
 
     if (
       image.startsWith("http://") ||
-      image.startsWith("https://")
+      image.startsWith("https://") ||
+      image.startsWith("data:")
     ) {
       return image;
     }
@@ -82,6 +71,8 @@ function Projects() {
 
     return `${API_URL}/${image}`;
   }
+
+  const previewProjects = projects.slice(0, 3);
 
   return (
     <section
@@ -94,7 +85,7 @@ function Projects() {
             HEADER
         ================================================= */}
 
-        <div className="projects-top">
+        <div className="projects-header">
 
           <div className="projects-heading">
 
@@ -120,13 +111,13 @@ function Projects() {
               we serve.
             </p>
 
-            <a
-              href="#projects"
+            <Link
+              to="/projects"
               className="projects-view-all"
             >
               View All Projects
               <span>↗</span>
-            </a>
+            </Link>
 
           </div>
 
@@ -139,26 +130,18 @@ function Projects() {
         {loading && (
           <div className="projects-grid">
 
-            <article className="project-card">
-
-              <div className="project-content">
-
-                <span className="project-category">
-                  PROJECTS
-                </span>
-
-                <h3>
-                  Loading projects...
-                </h3>
-
-                <p>
-                  Loading the latest projects from
-                  Rudraksh.
-                </p>
-
-              </div>
-
-            </article>
+            {[1, 2, 3].map((item) => (
+              <article
+                className="project-item"
+                key={item}
+              >
+                <div className="project-image-wrap">
+                  <div className="project-loading">
+                    Loading
+                  </div>
+                </div>
+              </article>
+            ))}
 
           </div>
         )}
@@ -168,27 +151,15 @@ function Projects() {
         ================================================= */}
 
         {!loading && error && (
-          <div className="projects-grid">
+          <div className="projects-empty">
 
-            <article className="project-card">
+            <span>ERROR</span>
 
-              <div className="project-content">
+            <h3>
+              Projects unavailable
+            </h3>
 
-                <span className="project-category">
-                  ERROR
-                </span>
-
-                <h3>
-                  Projects unavailable
-                </h3>
-
-                <p>
-                  {error}
-                </p>
-
-              </div>
-
-            </article>
+            <p>{error}</p>
 
           </div>
         )}
@@ -199,167 +170,125 @@ function Projects() {
 
         {!loading &&
           !error &&
-          projects.length === 0 && (
-            <div className="projects-grid">
+          previewProjects.length === 0 && (
+            <div className="projects-empty">
 
-              <article className="project-card">
+              <span>OUR WORK</span>
 
-                <div className="project-content">
+              <h3>
+                No projects published yet.
+              </h3>
 
-                  <span className="project-category">
-                    OUR WORK
-                  </span>
-
-                  <h3>
-                    No projects published yet.
-                  </h3>
-
-                  <p>
-                    Projects published from the Admin
-                    Panel will appear here.
-                  </p>
-
-                </div>
-
-              </article>
+              <p>
+                Projects published from the Admin
+                Panel will appear here.
+              </p>
 
             </div>
           )}
 
         {/* =================================================
-            PROJECTS
+            PROJECT PREVIEW
         ================================================= */}
 
         {!loading &&
           !error &&
-          projects.length > 0 && (
+          previewProjects.length > 0 && (
 
             <div className="projects-grid">
 
-              {projects.map((project, index) => {
+              {previewProjects.map(
+                (project, index) => {
 
-                const number = String(
-                  index + 1
-                ).padStart(2, "0");
+                  const imageUrl =
+                    getImageUrl(
+                      project.cover_image
+                    );
 
-                const imageUrl =
-                  getImageUrl(
-                    project.cover_image
-                  );
+                  const number = String(
+                    index + 1
+                  ).padStart(2, "0");
 
-                return (
-                  <article
-                    key={
-                      project.id ||
-                      project.slug ||
-                      index
-                    }
-                    className="project-card"
-                  >
+                  return (
+                    <Link
+                      key={
+                        project.id ||
+                        project.slug ||
+                        index
+                      }
+                      to={`/projects/${project.id}`}
+                      className={`project-item ${
+                        index === 0
+                          ? "project-item-large"
+                          : ""
+                      }`}
+                    >
 
-                    {/* IMAGE */}
+                      <div className="project-image-wrap">
 
-                    <div className="project-image-wrap">
-
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={
-                            project.title ||
-                            "Rudraksh project"
-                          }
-                          className="project-image"
-                          loading="lazy"
-                          onError={(event) => {
-                            event.currentTarget.style.display =
-                              "none";
-                          }}
-                        />
-                      ) : (
-                        <div
-                          className="project-image"
-                          style={{
-                            minHeight: "260px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          PROJECT
-                        </div>
-                      )}
-
-                      <div className="project-image-overlay" />
-
-                      <span className="project-number">
-                        {number}
-                      </span>
-
-                      <span className="project-arrow">
-                        ↗
-                      </span>
-
-                    </div>
-
-                    {/* CONTENT */}
-
-                    <div className="project-content">
-
-                      <span className="project-category">
-                        {project.status
-                          ? project.status.toUpperCase()
-                          : "PROJECT"}
-                      </span>
-
-                      <h3>
-                        {project.title}
-                      </h3>
-
-                      <p>
-                        {project.short_description ||
-                          project.description ||
-                          "Learn more about this project."}
-                      </p>
-
-                      {project.location && (
-                        <p>
-                          📍 {project.location}
-                        </p>
-                      )}
-
-                      {project.project_date && (
-                        <p>
-                          📅{" "}
-                          {new Date(
-                            project.project_date
-                          ).toLocaleDateString(
-                            "en-IN",
-                            {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={
+                              project.title ||
+                              "Rudraksh project"
                             }
+                            className="project-image"
+                            loading={
+                              index === 0
+                                ? "eager"
+                                : "lazy"
+                            }
+                            onError={(event) => {
+                              event.currentTarget.style.display =
+                                "none";
+                            }}
+                          />
+                        ) : (
+                          <div className="project-image-empty">
+                            PROJECT
+                          </div>
+                        )}
+
+                        <div className="project-image-overlay" />
+
+                        <span className="project-label">
+                          {project.status
+                            ? project.status
+                            : "PROJECT"}
+                        </span>
+
+                        <span className="project-index">
+                          {number}
+                        </span>
+
+                        <span className="project-plus">
+                          +
+                        </span>
+
+                        <div className="project-overlay-content">
+
+                          <h3>
+                            {project.title ||
+                              "Rudraksh Project"}
+                          </h3>
+
+                          {project.short_description && (
+                            <p>
+                              {
+                                project.short_description
+                              }
+                            </p>
                           )}
-                        </p>
-                      )}
 
-                      {/* =================================================
-                          PROJECT DETAIL LINK
-                      ================================================= */}
+                        </div>
 
-                      <Link
-                        to={`/projects/${project.id}`}
-                        className="project-link"
-                      >
-                        Explore Project
-                        <span>→</span>
-                      </Link>
+                      </div>
 
-                    </div>
-
-                  </article>
-                );
-              })}
+                    </Link>
+                  );
+                }
+              )}
 
             </div>
           )}
