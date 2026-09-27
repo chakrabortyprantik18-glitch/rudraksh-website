@@ -75,7 +75,7 @@ function Contact() {
   const whatsappUrl =
     whatsappNumber
       ? `https://wa.me/${whatsappNumber}`
-      : "https://wa.me/919365716039";
+      : "https://wa.me/8811863845";
 
   /*
    * ============================================================

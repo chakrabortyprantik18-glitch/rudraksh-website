@@ -510,7 +510,7 @@ VALUES
 ),
 (
     'phone',
-    '+919365716093',
+    '+918811863845',
     'text',
     'Official phone number'
 ),

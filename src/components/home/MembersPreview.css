@@ -1,8 +1,15 @@
+/* =========================================================
+   MEMBERS PREVIEW
+   Gallery-style homepage section
+========================================================= */
+
 .members-preview {
   position: relative;
   overflow: hidden;
-  padding: 135px 0 140px;
-  background: var(--cream);
+
+  padding: 135px 0 125px;
+
+  background: var(--paper);
   color: var(--brown);
 }
 
@@ -17,50 +24,100 @@
 
 .members-header {
   display: grid;
+
   grid-template-columns: 1.1fr 0.9fr;
+
   gap: 80px;
+
   align-items: end;
+
   margin-bottom: 60px;
+}
+
+.members-heading {
+  min-width: 0;
+}
+
+.members-heading .section-eyebrow {
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  margin-bottom: 22px;
+
+  color: var(--orange);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.2em;
+}
+
+.members-heading .section-eyebrow span {
+  width: 30px;
+  height: 1px;
+
+  background: var(--orange);
 }
 
 .members-heading h2 {
   margin: 0;
+
   font-family: var(--font-display);
+
   font-size: clamp(48px, 5.8vw, 76px);
+
   font-weight: 500;
+
   line-height: 0.98;
+
   letter-spacing: -0.05em;
 }
 
 .members-heading h2 em {
   color: var(--orange);
+
   font-style: normal;
 }
 
 .members-intro {
-  max-width: 420px;
-  padding-bottom: 4px;
+  max-width: 430px;
+
+  padding-bottom: 5px;
 }
 
 .members-intro p {
   margin: 0;
+
   color: var(--muted);
+
   font-size: 14px;
+
   line-height: 1.8;
 }
+
+/* =========================================================
+   VIEW FULL GALLERY LINK
+========================================================= */
 
 .members-gallery-link {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 24px;
+
+  gap: 13px;
+
+  margin-top: 25px;
+
   color: var(--brown);
+
   border-bottom: 1px solid var(--brown);
+
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+
   text-decoration: none;
+
   transition:
     color 0.25s ease,
     border-color 0.25s ease,
@@ -72,24 +129,44 @@
 }
 
 .members-gallery-link:hover {
-  gap: 16px;
+  gap: 17px;
+
   color: var(--orange);
+
   border-color: var(--orange);
 }
 
 /* =========================================================
-   GALLERY GRID
+   MEMBERS GALLERY GRID
 ========================================================= */
 
 .members-gallery-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+
+  grid-template-columns: 1.45fr 0.8fr 0.8fr;
+
+  grid-template-rows: 470px;
+
+  gap: 16px;
 }
 
+/* =========================================================
+   MEMBER CARD
+========================================================= */
+
 .member-gallery-card {
+  position: relative;
+
   display: block;
+
+  min-width: 0;
+
+  overflow: hidden;
+
+  background: #ded3c8;
+
   color: inherit;
+
   text-decoration: none;
 }
 
@@ -99,70 +176,45 @@
 
 .member-gallery-image-wrap {
   position: relative;
-  height: 430px;
+
+  width: 100%;
+  height: 100%;
+
   overflow: hidden;
-  background: #d8cdc2;
 }
 
 .member-gallery-image {
   width: 100%;
-  height: 100%;
-  display: block;
+  height: 108%;
+
   object-fit: cover;
+
+  display: block;
+
   transition:
-    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.member-gallery-card:hover
-.member-gallery-image {
-  transform: scale(1.06);
-}
-
-.member-gallery-image-empty {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #756c64;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* =========================================================
-   IMAGE OVERLAY
+   OVERLAY
 ========================================================= */
 
 .member-gallery-overlay {
   position: absolute;
+
   inset: 0;
-  pointer-events: none;
+
   background:
     linear-gradient(
-      to top,
-      rgba(25, 18, 14, 0.72) 0%,
-      rgba(25, 18, 14, 0.16) 38%,
-      rgba(25, 18, 14, 0) 65%
+      180deg,
+      rgba(40, 20, 10, 0.04) 20%,
+      rgba(40, 20, 10, 0.12) 45%,
+      rgba(40, 20, 10, 0.78) 100%
     );
-}
 
-/* =========================================================
-   CATEGORY / POSITION
-========================================================= */
+  pointer-events: none;
 
-.member-gallery-label {
-  position: absolute;
-  left: 22px;
-  bottom: 21px;
-  max-width: calc(100% - 65px);
-  color: #ffffff;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  line-height: 1.4;
-  text-transform: uppercase;
+  z-index: 1;
 }
 
 /* =========================================================
@@ -171,52 +223,69 @@
 
 .member-gallery-index {
   position: absolute;
-  right: 18px;
+
   top: 18px;
-  width: 38px;
-  height: 38px;
+  left: 18px;
+
+  z-index: 3;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.48);
+
+  width: 35px;
+  height: 35px;
+
+  border: 1px solid rgba(255, 255, 255, 0.45);
+
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.1);
+
+  background: rgba(0, 0, 0, 0.12);
+
   color: #ffffff;
+
   font-size: 9px;
-  font-weight: 600;
+  font-weight: 700;
+
   backdrop-filter: blur(7px);
 }
 
 /* =========================================================
-   PLUS
+   PLUS BUTTON
 ========================================================= */
 
 .member-gallery-plus {
   position: absolute;
+
+  top: 18px;
   right: 18px;
-  bottom: 18px;
-  width: 38px;
-  height: 38px;
+
+  z-index: 3;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.48);
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.1);
-  color: #ffffff;
-  font-size: 21px;
-  font-weight: 300;
-  line-height: 1;
-  backdrop-filter: blur(7px);
-  transition:
-    transform 0.3s ease,
-    background 0.3s ease;
-}
 
-.member-gallery-card:hover
-.member-gallery-plus {
-  transform: rotate(90deg);
-  background: rgba(255, 255, 255, 0.14);
+  width: 40px;
+  height: 40px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  color: var(--brown);
+
+  font-size: 18px;
+
+  opacity: 0;
+
+  transform: translateY(8px);
+
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 
 /* =========================================================
@@ -224,213 +293,354 @@
 ========================================================= */
 
 .member-gallery-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 20px;
-  padding: 20px 2px 0;
+  position: absolute;
+
+  left: 22px;
+  right: 22px;
+  bottom: 22px;
+
+  z-index: 3;
+
+  color: #ffffff;
+}
+
+.member-gallery-label {
+  display: inline-block;
+
+  margin-bottom: 8px;
+
+  font-size: 8px;
+  font-weight: 700;
+
+  letter-spacing: 0.17em;
+
+  text-transform: uppercase;
+
+  opacity: 0.82;
 }
 
 .member-gallery-content h3 {
-  margin: 0 0 7px;
-  color: var(--brown);
+  margin: 0;
+
   font-family: var(--font-display);
-  font-size: 22px;
+
+  font-size: 28px;
+
   font-weight: 500;
+
   line-height: 1.05;
+
+  letter-spacing: -0.025em;
 }
 
 .member-gallery-content p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  line-height: 1.5;
-  text-transform: uppercase;
-}
+  margin: 8px 0 0;
 
-.member-gallery-arrow {
-  flex-shrink: 0;
-  color: var(--brown);
-  font-size: 20px;
-  transition:
-    transform 0.25s ease,
-    color 0.25s ease;
-}
+  font-size: 11px;
 
-.member-gallery-card:hover
-.member-gallery-arrow {
-  transform: translate(4px, -4px);
-  color: var(--orange);
+  line-height: 1.6;
+
+  opacity: 0.82;
 }
 
 /* =========================================================
-   EMPTY / LOADING / ERROR
+   ARROW
 ========================================================= */
 
-.members-empty-state {
-  grid-column: 1 / -1;
-  min-height: 280px;
-  padding: 50px 30px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  border: 1px dashed rgba(75, 54, 40, 0.25);
-  text-align: center;
-  color: var(--muted);
-}
+.member-gallery-arrow {
+  position: absolute;
 
-.members-empty-state strong {
-  color: var(--brown);
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 500;
-}
+  right: 22px;
+  bottom: 22px;
 
-.members-empty-state span {
-  max-width: 420px;
-  font-size: 13px;
-  line-height: 1.7;
+  z-index: 4;
+
+  color: #ffffff;
+
+  font-size: 18px;
+
+  opacity: 0;
+
+  transform: translateX(-8px);
+
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 
 /* =========================================================
-   BOTTOM
+   HOVER
+========================================================= */
+
+.member-gallery-card:hover .member-gallery-image {
+  transform: scale(1.06);
+}
+
+.member-gallery-card:hover .member-gallery-plus {
+  opacity: 1;
+
+  transform: translateY(0);
+}
+
+.member-gallery-card:hover .member-gallery-arrow {
+  opacity: 1;
+
+  transform: translateX(0);
+}
+
+/* =========================================================
+   BOTTOM ACTIONS
 ========================================================= */
 
 .members-bottom {
   display: flex;
+
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  gap: 30px;
-  margin-top: 55px;
-  padding-top: 30px;
-  border-top: 1px solid rgba(75, 54, 40, 0.18);
+
+  gap: 25px;
+
+  margin-top: 28px;
 }
 
-.members-count {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.members-count strong {
-  font-family: var(--font-display);
-  font-size: 38px;
-  font-weight: 500;
-  line-height: 1;
-}
-
-.members-count span {
+.members-total {
   color: var(--muted);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  line-height: 1.5;
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.14em;
+
   text-transform: uppercase;
 }
 
-.members-bottom-actions {
+.members-total strong {
+  color: var(--brown);
+}
+
+.members-actions {
   display: flex;
+
   align-items: center;
-  gap: 28px;
+
+  gap: 25px;
 }
 
 .members-view-all,
-.members-join {
+.members-join-link {
   display: inline-flex;
+
   align-items: center;
+
   gap: 10px;
-  text-decoration: none;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
 
-.members-view-all {
   color: var(--brown);
-  border-bottom: 1px solid var(--brown);
-}
 
-.members-join {
-  color: var(--orange);
+  font-size: 9px;
+  font-weight: 700;
+
+  text-decoration: none;
+
+  transition:
+    color 0.25s ease,
+    gap 0.25s ease;
 }
 
 .members-view-all span,
-.members-join span {
-  font-size: 15px;
+.members-join-link span {
+  font-size: 14px;
 }
 
-.members-view-all:hover {
+.members-view-all:hover,
+.members-join-link:hover {
+  gap: 14px;
+
   color: var(--orange);
-  border-color: var(--orange);
-}
-
-.members-join:hover span {
-  transform: translateX(5px);
-}
-
-.members-view-all,
-.members-join,
-.members-join span {
-  transition:
-    color 0.25s ease,
-    border-color 0.25s ease,
-    transform 0.25s ease;
 }
 
 /* =========================================================
-   RESPONSIVE
+   TABLET
 ========================================================= */
 
-@media (max-width: 950px) {
-  .members-header {
-    grid-template-columns: 1fr;
-    gap: 25px;
-  }
-
-  .members-gallery-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .member-gallery-image-wrap {
-    height: 400px;
-  }
-}
-
-@media (max-width: 680px) {
+@media (max-width: 900px) {
   .members-preview {
-    padding: 95px 0 100px;
+    padding: 105px 0 115px;
   }
 
   .members-container {
-    width: min(
-      100% - 28px,
-      1250px
-    );
+    width: calc(100% - 50px);
+  }
+
+  .members-header {
+    gap: 45px;
+
+    margin-bottom: 50px;
+  }
+
+  .members-heading h2 {
+    font-size: clamp(43px, 6vw, 62px);
+  }
+
+  .members-intro p {
+    font-size: 13px;
+  }
+
+  .members-gallery-grid {
+    gap: 15px;
+
+    grid-template-rows: 350px;
+  }
+
+  .member-gallery-content h3 {
+    font-size: 25px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 760px) {
+  .members-preview {
+    padding: 90px 0 100px;
+  }
+
+  .members-container {
+    width: calc(100% - 34px);
+  }
+
+  .members-header {
+    grid-template-columns: 1fr;
+
+    gap: 28px;
+
+    margin-bottom: 45px;
+  }
+
+  .members-heading h2 {
+    font-size: clamp(45px, 12vw, 65px);
+  }
+
+  .members-intro {
+    max-width: 520px;
   }
 
   .members-gallery-grid {
     grid-template-columns: 1fr;
-    gap: 28px;
+
+    grid-template-rows: none;
+
+    gap: 18px;
   }
 
-  .member-gallery-image-wrap {
-    height: 430px;
+  .member-gallery-card {
+    height: min(520px, 125vw);
+  }
+
+  .member-gallery-plus,
+  .member-gallery-arrow {
+    opacity: 1;
+
+    transform: none;
+  }
+
+  .member-gallery-content h3 {
+    font-size: 30px;
   }
 
   .members-bottom {
     align-items: flex-start;
+
     flex-direction: column;
+
+    gap: 20px;
   }
 
-  .members-bottom-actions {
+  .members-actions {
     width: 100%;
-    align-items: flex-start;
+
+    justify-content: space-between;
+  }
+}
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+  .members-preview {
+    padding: 75px 0 85px;
+  }
+
+  .members-container {
+    width: calc(100% - 28px);
+  }
+
+  .members-heading .section-eyebrow {
+    font-size: 7px;
+  }
+
+  .members-heading .section-eyebrow span {
+    width: 24px;
+  }
+
+  .members-heading h2 {
+    font-size: 43px;
+  }
+
+  .members-intro p {
+    font-size: 12px;
+  }
+
+  .member-gallery-card {
+    height: 390px;
+  }
+
+  .member-gallery-index {
+    top: 13px;
+    left: 13px;
+
+    width: 32px;
+    height: 32px;
+  }
+
+  .member-gallery-plus {
+    top: 13px;
+    right: 13px;
+
+    width: 37px;
+    height: 37px;
+  }
+
+  .member-gallery-content {
+    left: 16px;
+    right: 16px;
+    bottom: 17px;
+  }
+
+  .member-gallery-content h3 {
+    font-size: 27px;
+  }
+
+  .members-actions {
     flex-direction: column;
-    gap: 18px;
+
+    align-items: flex-start;
+
+    gap: 15px;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .member-gallery-image {
+    transition: none;
+  }
+
+  .member-gallery-card:hover .member-gallery-image {
+    transform: none;
   }
 }
