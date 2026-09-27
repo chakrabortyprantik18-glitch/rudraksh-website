@@ -1,20 +1,23 @@
 /* =========================================================
    MEMBERS PREVIEW
-   Gallery-style homepage section
+   Gallery-equivalent homepage structure
 ========================================================= */
 
 .members-preview {
   position: relative;
+
   overflow: hidden;
 
   padding: 135px 0 125px;
 
   background: var(--paper);
+
   color: var(--brown);
 }
 
 .members-container {
   width: min(1250px, calc(100% - 70px));
+
   margin: 0 auto;
 }
 
@@ -32,33 +35,6 @@
   align-items: end;
 
   margin-bottom: 60px;
-}
-
-.members-heading {
-  min-width: 0;
-}
-
-.members-heading .section-eyebrow {
-  display: flex;
-  align-items: center;
-
-  gap: 11px;
-
-  margin-bottom: 22px;
-
-  color: var(--orange);
-
-  font-size: 9px;
-  font-weight: 700;
-
-  letter-spacing: 0.2em;
-}
-
-.members-heading .section-eyebrow span {
-  width: 30px;
-  height: 1px;
-
-  background: var(--orange);
 }
 
 .members-heading h2 {
@@ -82,9 +58,9 @@
 }
 
 .members-intro {
-  max-width: 430px;
+  max-width: 420px;
 
-  padding-bottom: 5px;
+  padding-bottom: 4px;
 }
 
 .members-intro p {
@@ -98,22 +74,24 @@
 }
 
 /* =========================================================
-   VIEW FULL GALLERY LINK
+   VIEW ALL MEMBERS
 ========================================================= */
 
 .members-gallery-link {
   display: inline-flex;
+
   align-items: center;
 
-  gap: 13px;
+  gap: 12px;
 
-  margin-top: 25px;
+  margin-top: 28px;
 
   color: var(--brown);
 
   border-bottom: 1px solid var(--brown);
 
   font-size: 10px;
+
   font-weight: 700;
 
   text-decoration: none;
@@ -137,7 +115,8 @@
 }
 
 /* =========================================================
-   MEMBERS GALLERY GRID
+   MEMBERS GALLERY
+   EXACT SAME GEOMETRY AS GALLERY
 ========================================================= */
 
 .members-gallery-grid {
@@ -159,19 +138,24 @@
 
   display: block;
 
-  min-width: 0;
-
   overflow: hidden;
 
-  background: #ded3c8;
-
-  color: inherit;
-
   text-decoration: none;
+
+  background: #ded3c8;
+}
+
+/*
+   First card is the large Gallery-style card.
+   The grid itself already gives it the larger width.
+*/
+
+.member-gallery-card-large {
+  position: relative;
 }
 
 /* =========================================================
-   IMAGE
+   IMAGE WRAPPER
 ========================================================= */
 
 .member-gallery-image-wrap {
@@ -183,20 +167,44 @@
   overflow: hidden;
 }
 
+/* =========================================================
+   IMAGE
+========================================================= */
+
 .member-gallery-image {
   width: 100%;
   height: 108%;
 
-  object-fit: cover;
-
   display: block;
+
+  object-fit: cover;
 
   transition:
     transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.member-gallery-image-empty {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  background: #ded3c8;
+
+  color: var(--muted);
+
+  font-size: 10px;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.14em;
+}
+
 /* =========================================================
-   OVERLAY
+   IMAGE OVERLAY
 ========================================================= */
 
 .member-gallery-overlay {
@@ -207,14 +215,30 @@
   background:
     linear-gradient(
       180deg,
-      rgba(40, 20, 10, 0.04) 20%,
-      rgba(40, 20, 10, 0.12) 45%,
-      rgba(40, 20, 10, 0.78) 100%
+      rgba(40, 20, 10, 0.06) 25%,
+      rgba(40, 20, 10, 0.65) 100%
     );
+}
 
-  pointer-events: none;
+/* =========================================================
+   MEMBER POSITION / LABEL
+========================================================= */
 
-  z-index: 1;
+.member-gallery-label {
+  position: absolute;
+
+  left: 22px;
+  bottom: 21px;
+
+  color: #ffffff;
+
+  font-size: 9px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.18em;
+
+  text-transform: uppercase;
 }
 
 /* =========================================================
@@ -224,58 +248,55 @@
 .member-gallery-index {
   position: absolute;
 
+  right: 18px;
   top: 18px;
-  left: 18px;
 
-  z-index: 3;
+  width: 33px;
+  height: 33px;
 
   display: flex;
 
   align-items: center;
   justify-content: center;
 
-  width: 35px;
-  height: 35px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
 
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+
+  background: rgba(0, 0, 0, 0.1);
+
+  color: #ffffff;
+
+  font-size: 8px;
+
+  backdrop-filter: blur(7px);
+}
+
+/* =========================================================
+   PLUS
+========================================================= */
+
+.member-gallery-plus {
+  position: absolute;
+
+  right: 18px;
+  bottom: 18px;
+
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.42);
 
   border-radius: 50%;
 
   background: rgba(0, 0, 0, 0.12);
 
   color: #ffffff;
-
-  font-size: 9px;
-  font-weight: 700;
-
-  backdrop-filter: blur(7px);
-}
-
-/* =========================================================
-   PLUS BUTTON
-========================================================= */
-
-.member-gallery-plus {
-  position: absolute;
-
-  top: 18px;
-  right: 18px;
-
-  z-index: 3;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
-
-  width: 40px;
-  height: 40px;
-
-  border-radius: 50%;
-
-  background: #ffffff;
-
-  color: var(--brown);
 
   font-size: 18px;
 
@@ -286,6 +307,8 @@
   transition:
     opacity 0.3s ease,
     transform 0.3s ease;
+
+  backdrop-filter: blur(7px);
 }
 
 /* =========================================================
@@ -295,36 +318,29 @@
 .member-gallery-content {
   position: absolute;
 
-  left: 22px;
-  right: 22px;
-  bottom: 22px;
+  inset: 0;
 
-  z-index: 3;
+  z-index: 2;
 
-  color: #ffffff;
+  pointer-events: none;
 }
 
-.member-gallery-label {
-  display: inline-block;
+.member-gallery-content > div {
+  position: absolute;
 
-  margin-bottom: 8px;
-
-  font-size: 8px;
-  font-weight: 700;
-
-  letter-spacing: 0.17em;
-
-  text-transform: uppercase;
-
-  opacity: 0.82;
+  left: 22px;
+  right: 65px;
+  bottom: 20px;
 }
 
 .member-gallery-content h3 {
   margin: 0;
 
+  color: #ffffff;
+
   font-family: var(--font-display);
 
-  font-size: 28px;
+  font-size: 25px;
 
   font-weight: 500;
 
@@ -334,13 +350,13 @@
 }
 
 .member-gallery-content p {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
 
-  font-size: 11px;
+  color: rgba(255, 255, 255, 0.78);
 
-  line-height: 1.6;
+  font-size: 10px;
 
-  opacity: 0.82;
+  line-height: 1.5;
 }
 
 /* =========================================================
@@ -353,11 +369,9 @@
   right: 22px;
   bottom: 22px;
 
-  z-index: 4;
-
   color: #ffffff;
 
-  font-size: 18px;
+  font-size: 17px;
 
   opacity: 0;
 
@@ -389,7 +403,7 @@
 }
 
 /* =========================================================
-   BOTTOM ACTIONS
+   BOTTOM
 ========================================================= */
 
 .members-bottom {
@@ -403,22 +417,41 @@
   margin-top: 28px;
 }
 
-.members-total {
+.members-count {
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
   color: var(--muted);
 
   font-size: 9px;
+
   font-weight: 700;
 
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
 
   text-transform: uppercase;
 }
 
-.members-total strong {
+.members-count strong {
   color: var(--brown);
+
+  font-family: var(--font-display);
+
+  font-size: 38px;
+
+  font-weight: 500;
+
+  line-height: 1;
 }
 
-.members-actions {
+.members-count span {
+  line-height: 1.55;
+}
+
+.members-bottom-actions {
   display: flex;
 
   align-items: center;
@@ -427,16 +460,17 @@
 }
 
 .members-view-all,
-.members-join-link {
+.members-join {
   display: inline-flex;
 
   align-items: center;
 
-  gap: 10px;
+  gap: 12px;
 
   color: var(--brown);
 
-  font-size: 9px;
+  font-size: 10px;
+
   font-weight: 700;
 
   text-decoration: none;
@@ -447,15 +481,58 @@
 }
 
 .members-view-all span,
-.members-join-link span {
-  font-size: 14px;
+.members-join span {
+  font-size: 15px;
 }
 
 .members-view-all:hover,
-.members-join-link:hover {
-  gap: 14px;
+.members-join:hover {
+  gap: 17px;
 
   color: var(--orange);
+}
+
+/* =========================================================
+   EMPTY / LOADING
+========================================================= */
+
+.members-empty-state {
+  grid-column: 1 / -1;
+
+  min-height: 470px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  border: 1px dashed rgba(92, 61, 46, 0.25);
+
+  color: var(--muted);
+
+  text-align: center;
+}
+
+.members-empty-state strong {
+  color: var(--brown);
+
+  font-family: var(--font-display);
+
+  font-size: 26px;
+
+  font-weight: 500;
+}
+
+.members-empty-state span {
+  max-width: 380px;
+
+  font-size: 12px;
+
+  line-height: 1.7;
 }
 
 /* =========================================================
@@ -464,7 +541,7 @@
 
 @media (max-width: 900px) {
   .members-preview {
-    padding: 105px 0 115px;
+    padding: 105px 0 110px;
   }
 
   .members-container {
@@ -486,18 +563,42 @@
   }
 
   .members-gallery-grid {
-    gap: 15px;
+    grid-template-columns: 1.45fr 0.8fr 0.8fr;
 
-    grid-template-rows: 350px;
+    grid-template-rows: 380px;
+
+    gap: 10px;
+  }
+
+  .member-gallery-label {
+    left: 15px;
+    bottom: 15px;
+
+    font-size: 7px;
+  }
+
+  .member-gallery-index {
+    top: 13px;
+    right: 13px;
+
+    width: 30px;
+    height: 30px;
+  }
+
+  .member-gallery-content > div {
+    left: 15px;
+    right: 15px;
+    bottom: 15px;
   }
 
   .member-gallery-content h3 {
-    font-size: 25px;
+    font-size: 22px;
   }
 }
 
 /* =========================================================
    MOBILE
+   SAME GALLERY TRANSITION
 ========================================================= */
 
 @media (max-width: 760px) {
@@ -526,15 +627,30 @@
   }
 
   .members-gallery-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
 
-    grid-template-rows: none;
+    grid-template-rows: 380px 240px;
 
-    gap: 18px;
+    gap: 10px;
   }
 
-  .member-gallery-card {
-    height: min(520px, 125vw);
+  .member-gallery-card-large {
+    grid-column: 1 / -1;
+  }
+
+  .member-gallery-label {
+    left: 15px;
+    bottom: 15px;
+
+    font-size: 7px;
+  }
+
+  .member-gallery-index {
+    top: 13px;
+    right: 13px;
+
+    width: 30px;
+    height: 30px;
   }
 
   .member-gallery-plus,
@@ -544,19 +660,17 @@
     transform: none;
   }
 
-  .member-gallery-content h3 {
-    font-size: 30px;
-  }
-
   .members-bottom {
     align-items: flex-start;
 
     flex-direction: column;
 
-    gap: 20px;
+    gap: 27px;
+
+    margin-top: 45px;
   }
 
-  .members-actions {
+  .members-bottom-actions {
     width: 100%;
 
     justify-content: space-between;
@@ -576,14 +690,6 @@
     width: calc(100% - 28px);
   }
 
-  .members-heading .section-eyebrow {
-    font-size: 7px;
-  }
-
-  .members-heading .section-eyebrow span {
-    width: 24px;
-  }
-
   .members-heading h2 {
     font-size: 43px;
   }
@@ -592,37 +698,31 @@
     font-size: 12px;
   }
 
-  .member-gallery-card {
-    height: 390px;
+  .members-gallery-grid {
+    grid-template-rows: 320px 200px;
+
+    gap: 7px;
   }
 
-  .member-gallery-index {
-    top: 13px;
-    left: 13px;
-
-    width: 32px;
-    height: 32px;
+  .member-gallery-label {
+    font-size: 6px;
   }
 
-  .member-gallery-plus {
-    top: 13px;
-    right: 13px;
-
-    width: 37px;
-    height: 37px;
-  }
-
-  .member-gallery-content {
-    left: 16px;
-    right: 16px;
-    bottom: 17px;
+  .member-gallery-content > div {
+    left: 15px;
+    right: 15px;
+    bottom: 15px;
   }
 
   .member-gallery-content h3 {
-    font-size: 27px;
+    font-size: 20px;
   }
 
-  .members-actions {
+  .members-count strong {
+    font-size: 36px;
+  }
+
+  .members-bottom-actions {
     flex-direction: column;
 
     align-items: flex-start;

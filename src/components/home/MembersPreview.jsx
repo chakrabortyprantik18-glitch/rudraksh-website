@@ -8,7 +8,7 @@ import "./MembersPreview.css";
 import { BACKEND_URL } from "../../config/api";
 
 const API_URL =
-  `${BACKEND_URL}/api/members?limit=5`;
+  `${BACKEND_URL}/api/members?limit=3`;
 
 function MembersPreview() {
   const sectionRef = useRef(null);
@@ -50,7 +50,7 @@ function MembersPreview() {
 
         const previewMembers =
           Array.isArray(data.members)
-            ? data.members.slice(0, 5)
+            ? data.members.slice(0, 3)
             : [];
 
         setMembers(previewMembers);
@@ -104,7 +104,7 @@ function MembersPreview() {
 
       const elements =
         section.querySelectorAll(
-          ".members-heading, .members-intro, .member-card, .members-bottom, .members-empty-state"
+          ".members-heading, .members-intro, .member-gallery-card, .members-bottom, .members-empty-state"
         );
 
       gsap.set(elements, {
@@ -248,7 +248,7 @@ function MembersPreview() {
         </div>
 
         {/* =================================================
-            MEMBER GALLERY
+            MEMBERS GALLERY
         ================================================= */}
 
         {loading && (
@@ -311,10 +311,14 @@ function MembersPreview() {
                     <Link
                       key={member.id}
                       to="/members"
-                      className="member-gallery-card"
+                      className={
+                        `member-gallery-card ${
+                          index === 0
+                            ? "member-gallery-card-large"
+                            : ""
+                        }`
+                      }
                     >
-
-                      {/* IMAGE */}
 
                       <div className="member-gallery-image-wrap">
 
@@ -344,14 +348,10 @@ function MembersPreview() {
 
                         <div className="member-gallery-overlay" />
 
-                        {/* CATEGORY */}
-
                         <span className="member-gallery-label">
                           {member.position ||
                             "RUDRAKSH MEMBER"}
                         </span>
-
-                        {/* NUMBER */}
 
                         <span className="member-gallery-index">
                           {String(
@@ -359,15 +359,11 @@ function MembersPreview() {
                           ).padStart(2, "0")}
                         </span>
 
-                        {/* ARROW */}
-
                         <span className="member-gallery-plus">
                           +
                         </span>
 
                       </div>
-
-                      {/* MEMBER INFO */}
 
                       <div className="member-gallery-content">
 
