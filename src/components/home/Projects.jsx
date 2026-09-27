@@ -72,6 +72,8 @@ function Projects() {
     return `${API_URL}/${image}`;
   }
 
+  // Gallery-style homepage preview:
+  // Only the first 3 published projects are displayed.
   const previewProjects = projects.slice(0, 3);
 
   return (
@@ -159,7 +161,9 @@ function Projects() {
               Projects unavailable
             </h3>
 
-            <p>{error}</p>
+            <p>
+              {error}
+            </p>
 
           </div>
         )}
@@ -250,22 +254,27 @@ function Projects() {
                           </div>
                         )}
 
+                        {/* Same visual overlay treatment */}
                         <div className="project-image-overlay" />
 
+                        {/* Project status */}
                         <span className="project-label">
                           {project.status
                             ? project.status
                             : "PROJECT"}
                         </span>
 
+                        {/* 01 / 02 / 03 */}
                         <span className="project-index">
                           {number}
                         </span>
 
+                        {/* Hover button */}
                         <span className="project-plus">
                           +
                         </span>
 
+                        {/* Project information */}
                         <div className="project-overlay-content">
 
                           <h3>
