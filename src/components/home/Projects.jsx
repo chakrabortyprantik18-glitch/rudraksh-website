@@ -1,43 +1,57 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useGSAP } from "@gsap/react";
+
+import { gsap } from "../../services/gsap";
 import "./Projects.css";
+
 import { BACKEND_URL } from "../../config/api";
 
-const API_URL = BACKEND_URL;
+const API_URL = `${BACKEND_URL}/api/projects`;
 
 function Projects() {
+  const sectionRef = useRef(null);
+
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function loadProjects() {
-      try {
-        const response = await fetch(
-          `${API_URL}/api/projects`,
-          {
-            cache: "no-store",
-          }
-        );
+    let cancelled = false;
 
-        if (!response.ok) {
-          throw new Error(
-            `Projects API returned ${response.status}`
-          );
-        }
+    const loadProjects = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(API_URL, {
+          cache: "no-store",
+        });
 
         const data = await response.json();
 
-        if (!Array.isArray(data.projects)) {
+        if (
+          !response.ok ||
+          !Array.isArray(data.projects)
+        ) {
           throw new Error(
-            "Invalid projects response from server"
+            data.message ||
+              "Unable to load projects."
           );
+        }
+
+        if (cancelled) {
+          return;
         }
 
         setProjects(data.projects);
       } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
         console.error(
-          "PROJECTS LOAD ERROR:",
+          "PUBLIC PROJECTS LOAD ERROR:",
           err
         );
 
@@ -45,14 +59,97 @@ function Projects() {
           "Unable to load projects right now."
         );
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    }
+    };
 
     loadProjects();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  function getImageUrl(image) {
+  useGSAP(
+    () => {
+      const section = sectionRef.current;
+
+      if (!section) {
+        return;
+      }
+
+      const elements =
+        section.querySelectorAll(
+          ".projects-heading, .projects-intro, .project-item, .projects-view-all, .projects-empty"
+        );
+
+      gsap.set(elements, {
+        opacity: 1,
+        y: 0,
+        x: 0,
+      });
+
+      const prefersReducedMotion =
+        window.matchMedia(
+          "(prefers-reduced-motion: reduce)"
+        ).matches;
+
+      if (prefersReducedMotion) {
+        return;
+      }
+
+      const rect =
+        section.getBoundingClientRect();
+
+      const visible =
+        rect.top < window.innerHeight &&
+        rect.bottom > 0;
+
+      if (visible) {
+        gsap.fromTo(
+          elements,
+          {
+            y: 35,
+            opacity: 0,
+          },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.75,
+            stagger: 0.08,
+            ease: "power3.out",
+          }
+        );
+      } else {
+        gsap
+          .timeline({
+            scrollTrigger: {
+              trigger: section,
+              start: "top 78%",
+              once: true,
+            },
+          })
+          .from(elements, {
+            y: 35,
+            opacity: 0,
+            duration: 0.75,
+            stagger: 0.08,
+            ease: "power3.out",
+          });
+      }
+    },
+    {
+      scope: sectionRef,
+      dependencies: [
+        projects.length,
+        loading,
+      ],
+    }
+  );
+
+  const getImageUrl = (image) => {
     if (!image) {
       return "";
     }
@@ -66,26 +163,26 @@ function Projects() {
     }
 
     if (image.startsWith("/")) {
-      return `${API_URL}${image}`;
+      return `${BACKEND_URL}${image}`;
     }
 
-    return `${API_URL}/${image}`;
-  }
+    return `${BACKEND_URL}/${image}`;
+  };
 
-  // Gallery-style homepage preview:
-  // Only the first 3 published projects are displayed.
-  const previewProjects = projects.slice(0, 3);
+  const previewProjects =
+    projects.slice(0, 3);
 
   return (
     <section
+      ref={sectionRef}
       id="projects"
       className="projects-section"
     >
       <div className="projects-container">
 
-        {/* =================================================
+        {/* =========================
             HEADER
-        ================================================= */}
+        ========================== */}
 
         <div className="projects-header">
 
@@ -97,7 +194,7 @@ function Projects() {
             </div>
 
             <h2>
-              Turning intention
+              Turning intention,
               <br />
               into <em>impact.</em>
             </h2>
@@ -107,200 +204,159 @@ function Projects() {
           <div className="projects-intro">
 
             <p>
-              From community support to education and
-              health initiatives, our projects are built
-              around people and the needs of the communities
+              From community support to
+              education and health
+              initiatives, our projects
+              are built around people and
+              the needs of the communities
               we serve.
             </p>
-
-            <Link
-              to="/projects"
-              className="projects-view-all"
-            >
-              View All Projects
-              <span>↗</span>
-            </Link>
 
           </div>
 
         </div>
 
-        {/* =================================================
-            LOADING
-        ================================================= */}
+        {/* =========================
+            PROJECT GRID
+        ========================== */}
 
-        {loading && (
-          <div className="projects-grid">
+        <div className="projects-grid">
 
-            {[1, 2, 3].map((item) => (
-              <article
-                className="project-item"
-                key={item}
-              >
-                <div className="project-image-wrap">
-                  <div className="project-loading">
-                    Loading
-                  </div>
-                </div>
-              </article>
-            ))}
+          {/* LOADING */}
 
-          </div>
-        )}
-
-        {/* =================================================
-            ERROR
-        ================================================= */}
-
-        {!loading && error && (
-          <div className="projects-empty">
-
-            <span>ERROR</span>
-
-            <h3>
-              Projects unavailable
-            </h3>
-
-            <p>
-              {error}
-            </p>
-
-          </div>
-        )}
-
-        {/* =================================================
-            EMPTY
-        ================================================= */}
-
-        {!loading &&
-          !error &&
-          previewProjects.length === 0 && (
+          {loading && (
             <div className="projects-empty">
-
-              <span>OUR WORK</span>
-
-              <h3>
-                No projects published yet.
-              </h3>
-
-              <p>
-                Projects published from the Admin
-                Panel will appear here.
-              </p>
-
+              Loading projects...
             </div>
           )}
 
-        {/* =================================================
-            PROJECT PREVIEW
-        ================================================= */}
+          {/* ERROR */}
 
-        {!loading &&
-          !error &&
-          previewProjects.length > 0 && (
+          {!loading && error && (
+            <div className="projects-empty">
+              {error}
+            </div>
+          )}
 
-            <div className="projects-grid">
+          {/* EMPTY */}
 
-              {previewProjects.map(
-                (project, index) => {
+          {!loading &&
+            !error &&
+            previewProjects.length === 0 && (
+              <div className="projects-empty">
 
-                  const imageUrl =
-                    getImageUrl(
-                      project.cover_image
-                    );
+                <strong>
+                  No projects published
+                  yet.
+                </strong>
 
-                  const number = String(
-                    index + 1
-                  ).padStart(2, "0");
+                <span>
+                  Projects published from
+                  the Admin Panel will
+                  appear here.
+                </span>
 
-                  return (
-                    <Link
-                      key={
-                        project.id ||
-                        project.slug ||
-                        index
-                      }
-                      to={`/projects/${project.id}`}
-                      className={`project-item ${
-                        index === 0
-                          ? "project-item-large"
-                          : ""
-                      }`}
-                    >
+              </div>
+            )}
 
-                      <div className="project-image-wrap">
+          {/* PROJECTS */}
 
-                        {imageUrl ? (
-                          <img
-                            src={imageUrl}
-                            alt={
-                              project.title ||
-                              "Rudraksh project"
-                            }
-                            className="project-image"
-                            loading={
-                              index === 0
-                                ? "eager"
-                                : "lazy"
-                            }
-                            onError={(event) => {
-                              event.currentTarget.style.display =
-                                "none";
-                            }}
-                          />
-                        ) : (
-                          <div className="project-image-empty">
-                            PROJECT
-                          </div>
-                        )}
+          {!loading &&
+            !error &&
+            previewProjects.map(
+              (project, index) => {
 
-                        {/* Same visual overlay treatment */}
-                        <div className="project-image-overlay" />
-
-                        {/* Project status */}
-                        <span className="project-label">
-                          {project.status
-                            ? project.status
-                            : "PROJECT"}
-                        </span>
-
-                        {/* 01 / 02 / 03 */}
-                        <span className="project-index">
-                          {number}
-                        </span>
-
-                        {/* Hover button */}
-                        <span className="project-plus">
-                          +
-                        </span>
-
-                        {/* Project information */}
-                        <div className="project-overlay-content">
-
-                          <h3>
-                            {project.title ||
-                              "Rudraksh Project"}
-                          </h3>
-
-                          {project.short_description && (
-                            <p>
-                              {
-                                project.short_description
-                              }
-                            </p>
-                          )}
-
-                        </div>
-
-                      </div>
-
-                    </Link>
+                const imageUrl =
+                  getImageUrl(
+                    project.cover_image
                   );
-                }
-              )}
 
-            </div>
-          )}
+                return (
+                  <Link
+                    key={
+                      project.id ||
+                      project.slug ||
+                      index
+                    }
+                    to={`/projects/${project.id}`}
+                    className={`project-item ${
+                      index === 0
+                        ? "project-item-large"
+                        : ""
+                    }`}
+                  >
+
+                    <div className="project-image-wrap">
+
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={
+                            project.title ||
+                            "Rudraksh project"
+                          }
+                          className="project-image"
+                          loading={
+                            index === 0
+                              ? "eager"
+                              : "lazy"
+                          }
+                          onError={(
+                            event
+                          ) => {
+                            event.currentTarget.style.display =
+                              "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="project-image-empty">
+                          PROJECT
+                        </div>
+                      )}
+
+                      {/* SAME AS GALLERY */}
+
+                      <div className="project-image-overlay" />
+
+                      <span className="project-label">
+                        {project.title ||
+                          project.status ||
+                          "Rudraksh"}
+                      </span>
+
+                      <span className="project-index">
+                        {String(
+                          index + 1
+                        ).padStart(2, "0")}
+                      </span>
+
+                      <span className="project-card-arrow">
+                        ↗
+                      </span>
+
+                    </div>
+
+                  </Link>
+                );
+              }
+            )}
+
+        </div>
+
+        {/* =========================
+            VIEW ALL
+        ========================== */}
+
+        <Link
+          to="/projects"
+          className="projects-view-all"
+        >
+          View All Projects
+
+          <span>
+            ↗
+          </span>
+        </Link>
 
       </div>
     </section>
