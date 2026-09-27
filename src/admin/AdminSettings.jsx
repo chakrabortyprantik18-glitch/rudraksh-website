@@ -82,6 +82,12 @@ function AdminSettings() {
   });
   const [codeExpiryMinutes, setCodeExpiryMinutes] = useState(30);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [accessUnlocked, setAccessUnlocked] = useState(false);
+  const [accessPassword, setAccessPassword] = useState("");
+  const [accessUnlockToken, setAccessUnlockToken] = useState("");
+  const [showAccessLock, setShowAccessLock] = useState(false);
+  const [accessUnlocking, setAccessUnlocking] = useState(false);
+  const [accessAction, setAccessAction] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [accountsLoading, setAccountsLoading] =
@@ -147,7 +153,6 @@ function AdminSettings() {
     ) {
       loadAccounts();
       loadLogs();
-      loadAccessSecurity();
     }
   }, []);
 
@@ -281,12 +286,102 @@ function AdminSettings() {
     }
   };
 
-  const loadAccessSecurity = async () => {
+  const openAccessSecurity = () => {
+    if (accessUnlocked) {
+      return;
+    }
+
+    setAccessAction(null);
+    setAccessPassword("");
+    setShowAccessLock(true);
+  };
+
+  const unlockAccessSecurity = async () => {
+    if (!accessPassword) {
+      alert("Access password is required.");
+      return false;
+    }
+
+    const token = getToken();
+
+    if (!token) {
+      window.location.href = "/admin";
+      return false;
+    }
+
+    setAccessUnlocking(true);
+
+    try {
+      const response = await fetch(
+        `${API}/api/admin/security/access-settings/unlock`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            password: accessPassword,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message || "Invalid access password."
+        );
+      }
+
+      setAccessUnlockToken(data.access_token || "");
+      setAccessUnlocked(true);
+      setShowAccessLock(false);
+      setAccessPassword("");
+      setAccessAction(null);
+      await loadAccessSecurity(data.access_token || "");
+      setMessage("Admin access security unlocked.");
+      return true;
+    } catch (err) {
+      alert(err.message || "Invalid access password.");
+      return false;
+    } finally {
+      setAccessUnlocking(false);
+    }
+  };
+
+  const requestAccessPassword = (action) => {
+    setAccessAction(action);
+    setAccessPassword("");
+    setShowAccessLock(true);
+  };
+
+  const confirmAccessAction = async () => {
+    const unlocked = await unlockAccessSecurity();
+
+    if (!unlocked) {
+      return;
+    }
+
+    const action = accessAction;
+    setAccessAction(null);
+
+    if (typeof action === "function") {
+      await action();
+    }
+  };
+
+  const loadAccessSecurity = async (accessToken = accessUnlockToken) => {
     const token = getToken();
     if (!token) return;
     setAccessLoading(true);
     try {
-      const response = await fetch(`${API}/api/admin/security/access-settings`, { headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch(`${API}/api/admin/security/access-settings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "X-Access-Settings-Token": accessToken,
+        },
+      });
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.message || "Unable to load access security settings.");
       const s = data.settings || data.access_settings || data.accessSettings || {};
@@ -296,93 +391,455 @@ function AdminSettings() {
     finally { setAccessLoading(false); }
   };
 
-  const updateAccessSettings = async (changes) => {
+  const updateAccessSettings = async (changes, skipAccessPassword = false) => {
+    if (!skipAccessPassword) {
+      requestAccessPassword(() =>
+        updateAccessSettings(changes, true)
+      );
+      return;
+    }
+
     const token = getToken();
-    if (!token) { window.location.href = "/admin"; return; }
+    if (!token) {
+      window.location.href = "/admin";
+      return;
+    }
+
     setAccessSaving(true);
+
     try {
-      const response = await fetch(`${API}/api/admin/security/access-settings`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(changes) });
+      const response = await fetch(
+        `${API}/api/admin/security/access-settings`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            "X-Access-Settings-Token": accessUnlockToken,
+          },
+          body: JSON.stringify(changes),
+        }
+      );
+
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || "Unable to update access security settings.");
-      const s = data.settings || data.access_settings || data.accessSettings || {};
-      setAccessSettings({ mobile_access_enabled: Boolean(s.mobile_access_enabled), ip_restriction_enabled: Boolean(s.ip_restriction_enabled), mobile_access_code: s.mobile_access_code || "", mobile_access_code_expires_at: s.mobile_access_code_expires_at || null });
-      if (Array.isArray(data.allowed_ips)) setAllowedIps(data.allowed_ips);
-      else if (Array.isArray(data.allowedIps)) setAllowedIps(data.allowedIps);
-      setMessage(data.message || "Access security settings updated successfully.");
-    } catch (err) { alert(err.message || "Unable to update access security settings."); }
-    finally { setAccessSaving(false); }
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Unable to update access security settings."
+        );
+      }
+
+      const s =
+        data.settings ||
+        data.access_settings ||
+        data.accessSettings ||
+        {};
+
+      setAccessSettings({
+        mobile_access_enabled: Boolean(
+          s.mobile_access_enabled
+        ),
+        ip_restriction_enabled: Boolean(
+          s.ip_restriction_enabled
+        ),
+        mobile_access_code:
+          s.mobile_access_code || "",
+        mobile_access_code_expires_at:
+          s.mobile_access_code_expires_at || null,
+      });
+
+      if (Array.isArray(data.allowed_ips)) {
+        setAllowedIps(data.allowed_ips);
+      } else if (Array.isArray(data.allowedIps)) {
+        setAllowedIps(data.allowedIps);
+      }
+
+      setMessage(
+        data.message ||
+          "Access security settings updated successfully."
+      );
+    } catch (err) {
+      alert(
+        err.message ||
+          "Unable to update access security settings."
+      );
+    } finally {
+      setAccessSaving(false);
+    }
   };
 
-  const generateMobileAccessCode = async () => {
+  const generateMobileAccessCode = async (
+    skipAccessPassword = false
+  ) => {
+    if (!skipAccessPassword) {
+      requestAccessPassword(() =>
+        generateMobileAccessCode(true)
+      );
+      return;
+    }
+
     const token = getToken();
-    if (!token) { window.location.href = "/admin"; return; }
-    setAccessSaving(true); setCopiedCode(false);
+    if (!token) {
+      window.location.href = "/admin";
+      return;
+    }
+
+    setAccessSaving(true);
+    setCopiedCode(false);
+
     try {
-      const response = await fetch(`${API}/api/admin/security/access-settings/generate-code`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ expires_in_minutes: Number(codeExpiryMinutes) || 30, expires_minutes: Number(codeExpiryMinutes) || 30 }) });
+      const response = await fetch(
+        `${API}/api/admin/security/access-settings/generate-code`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            "X-Access-Settings-Token": accessUnlockToken,
+          },
+          body: JSON.stringify({
+            expires_in_minutes:
+              Number(codeExpiryMinutes) || 30,
+            expires_minutes:
+              Number(codeExpiryMinutes) || 30,
+          }),
+        }
+      );
+
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || "Unable to generate mobile access code.");
-      const s = data.settings || data.access_settings || data.accessSettings || {};
-      setAccessSettings(previous => ({ ...previous, mobile_access_code: s.mobile_access_code || data.code || "", mobile_access_code_expires_at: s.mobile_access_code_expires_at || data.expires_at || null }));
-      setMessage(data.message || "Mobile access code generated successfully.");
-    } catch (err) { alert(err.message || "Unable to generate mobile access code."); }
-    finally { setAccessSaving(false); }
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Unable to generate mobile access code."
+        );
+      }
+
+      const s =
+        data.settings ||
+        data.access_settings ||
+        data.accessSettings ||
+        {};
+
+      setAccessSettings((previous) => ({
+        ...previous,
+        mobile_access_code:
+          s.mobile_access_code ||
+          data.code ||
+          "",
+        mobile_access_code_expires_at:
+          s.mobile_access_code_expires_at ||
+          data.expires_at ||
+          null,
+      }));
+
+      setMessage(
+        data.message ||
+          "Mobile access code generated successfully."
+      );
+    } catch (err) {
+      alert(
+        err.message ||
+          "Unable to generate mobile access code."
+      );
+    } finally {
+      setAccessSaving(false);
+    }
   };
 
-  const clearMobileAccessCode = async () => {
+  const clearMobileAccessCode = async (
+    skipAccessPassword = false
+  ) => {
+    if (!skipAccessPassword) {
+      requestAccessPassword(() =>
+        clearMobileAccessCode(true)
+      );
+      return;
+    }
+
     const token = getToken();
-    if (!token) { window.location.href = "/admin"; return; }
-    if (!window.confirm("Clear the current mobile access code?")) return;
+    if (!token) {
+      window.location.href = "/admin";
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "Clear the current mobile access code?"
+      )
+    ) {
+      return;
+    }
+
     setAccessSaving(true);
+
     try {
-      const response = await fetch(`${API}/api/admin/security/access-settings/clear-code`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch(
+        `${API}/api/admin/security/access-settings/clear-code`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "X-Access-Settings-Token": accessUnlockToken,
+          },
+        }
+      );
+
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || "Unable to clear the mobile access code.");
-      setAccessSettings(previous => ({ ...previous, mobile_access_code: "", mobile_access_code_expires_at: null }));
-      setMessage(data.message || "Mobile access code cleared.");
-    } catch (err) { alert(err.message || "Unable to clear mobile access code."); }
-    finally { setAccessSaving(false); }
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Unable to clear the mobile access code."
+        );
+      }
+
+      setAccessSettings((previous) => ({
+        ...previous,
+        mobile_access_code: "",
+        mobile_access_code_expires_at: null,
+      }));
+
+      setMessage(
+        data.message ||
+          "Mobile access code cleared."
+      );
+    } catch (err) {
+      alert(
+        err.message ||
+          "Unable to clear mobile access code."
+      );
+    } finally {
+      setAccessSaving(false);
+    }
   };
 
   const copyMobileAccessCode = async () => {
-    if (!accessSettings.mobile_access_code) return;
-    try { await navigator.clipboard.writeText(accessSettings.mobile_access_code); setCopiedCode(true); window.setTimeout(() => setCopiedCode(false), 1800); }
-    catch (err) { alert("Unable to copy the access code."); }
+    if (!accessSettings.mobile_access_code) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        accessSettings.mobile_access_code
+      );
+      setCopiedCode(true);
+
+      window.setTimeout(() => {
+        setCopiedCode(false);
+      }, 1800);
+    } catch (err) {
+      alert("Unable to copy the access code.");
+    }
   };
 
-  const addAllowedIp = async (event) => {
-    event.preventDefault();
-    const token = getToken(); const ipAddress = newIpForm.ip_address.trim(); const label = newIpForm.label.trim();
-    if (!token) { window.location.href = "/admin"; return; }
-    if (!ipAddress) { alert("IP address is required."); return; }
+  const addAllowedIp = async (
+    event,
+    skipAccessPassword = false
+  ) => {
+    if (event?.preventDefault) {
+      event.preventDefault();
+    }
+
+    if (!skipAccessPassword) {
+      requestAccessPassword(() =>
+        addAllowedIp(null, true)
+      );
+      return;
+    }
+
+    const token = getToken();
+    const ipAddress = newIpForm.ip_address.trim();
+    const label = newIpForm.label.trim();
+
+    if (!token) {
+      window.location.href = "/admin";
+      return;
+    }
+
+    if (!ipAddress) {
+      alert("IP address is required.");
+      return;
+    }
+
     setIpSaving(true);
+
     try {
-      const response = await fetch(`${API}/api/admin/security/allowed-ips`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ip_address: ipAddress, label: label || null }) });
+      const response = await fetch(
+        `${API}/api/admin/security/allowed-ips`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            "X-Access-Settings-Token": accessUnlockToken,
+          },
+          body: JSON.stringify({
+            ip_address: ipAddress,
+            label: label || null,
+          }),
+        }
+      );
+
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || "Unable to add allowed IP address.");
-      setAllowedIps(data.allowed_ips || data.allowedIps || []); setNewIpForm({ ip_address: "", label: "" }); setMessage(data.message || "Allowed IP address added successfully.");
-    } catch (err) { alert(err.message || "Unable to add allowed IP address."); }
-    finally { setIpSaving(false); }
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Unable to add allowed IP address."
+        );
+      }
+
+      setAllowedIps(
+        data.allowed_ips ||
+          data.allowedIps ||
+          []
+      );
+
+      setNewIpForm({
+        ip_address: "",
+        label: "",
+      });
+
+      setMessage(
+        data.message ||
+          "Allowed IP address added successfully."
+      );
+    } catch (err) {
+      alert(
+        err.message ||
+          "Unable to add allowed IP address."
+      );
+    } finally {
+      setIpSaving(false);
+    }
   };
 
-  const toggleAllowedIp = async (ip) => {
-    const token = getToken(); if (!token) { window.location.href = "/admin"; return; }
+  const toggleAllowedIp = async (
+    ip,
+    skipAccessPassword = false
+  ) => {
+    if (!skipAccessPassword) {
+      requestAccessPassword(() =>
+        toggleAllowedIp(ip, true)
+      );
+      return;
+    }
+
+    const token = getToken();
+
+    if (!token) {
+      window.location.href = "/admin";
+      return;
+    }
+
     try {
-      const response = await fetch(`${API}/api/admin/security/allowed-ips/${ip.id}`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ is_active: !Boolean(ip.is_active) }) });
+      const response = await fetch(
+        `${API}/api/admin/security/allowed-ips/${ip.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            "X-Access-Settings-Token": accessUnlockToken,
+          },
+          body: JSON.stringify({
+            is_active: !Boolean(ip.is_active),
+          }),
+        }
+      );
+
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || "Unable to update allowed IP.");
-      setAllowedIps(data.allowed_ips || data.allowedIps || []); setMessage(data.message || "Allowed IP updated successfully.");
-    } catch (err) { alert(err.message || "Unable to update allowed IP."); }
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Unable to update allowed IP."
+        );
+      }
+
+      setAllowedIps(
+        data.allowed_ips ||
+          data.allowedIps ||
+          []
+      );
+
+      setMessage(
+        data.message ||
+          "Allowed IP updated successfully."
+      );
+    } catch (err) {
+      alert(
+        err.message ||
+          "Unable to update allowed IP."
+      );
+    }
   };
 
-  const deleteAllowedIp = async (ip) => {
-    if (!window.confirm(`Remove allowed IP "${ip.ip_address}"?`)) return;
-    const token = getToken(); if (!token) { window.location.href = "/admin"; return; }
+  const deleteAllowedIp = async (
+    ip,
+    skipAccessPassword = false
+  ) => {
+    if (!skipAccessPassword) {
+      requestAccessPassword(() =>
+        deleteAllowedIp(ip, true)
+      );
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Remove allowed IP "${ip.ip_address}"?`
+      )
+    ) {
+      return;
+    }
+
+    const token = getToken();
+
+    if (!token) {
+      window.location.href = "/admin";
+      return;
+    }
+
     try {
-      const response = await fetch(`${API}/api/admin/security/allowed-ips/${ip.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      const response = await fetch(
+        `${API}/api/admin/security/allowed-ips/${ip.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "X-Access-Settings-Token": accessUnlockToken,
+          },
+        }
+      );
+
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || "Unable to remove allowed IP.");
-      setAllowedIps(data.allowed_ips || data.allowedIps || []); setMessage(data.message || "Allowed IP removed successfully.");
-    } catch (err) { alert(err.message || "Unable to remove allowed IP."); }
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Unable to remove allowed IP."
+        );
+      }
+
+      setAllowedIps(
+        data.allowed_ips ||
+          data.allowedIps ||
+          []
+      );
+
+      setMessage(
+        data.message ||
+          "Allowed IP removed successfully."
+      );
+    } catch (err) {
+      alert(
+        err.message ||
+          "Unable to remove allowed IP."
+      );
+    }
   };
 
   const formatExpiry = (date) => {
@@ -1427,6 +1884,91 @@ function AdminSettings() {
 
       </section>
 
+
+      {/* Admin Access Security Lock */}
+
+      {showAccessLock && (
+        <div className="admin-modal-overlay">
+          <div className="admin-modal admin-access-lock-modal">
+            <div className="admin-modal-header">
+              <div>
+                <span className="admin-modal-kicker">
+                  RESTRICTED SECURITY AREA
+                </span>
+                <h2>Enter Access Password</h2>
+                <p>
+                  This password is required to access or modify
+                  the admin access security controls.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAccessLock(false);
+                  setAccessPassword("");
+                  setAccessAction(null);
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="admin-access-lock-warning">
+              <ShieldAlert size={18} />
+              <span>
+                Never store this password in localStorage or in
+                frontend source code.
+              </span>
+            </div>
+
+            <label>
+              Access Password
+              <input
+                type="password"
+                value={accessPassword}
+                onChange={(event) =>
+                  setAccessPassword(event.target.value)
+                }
+                placeholder="Enter security password"
+                autoComplete="current-password"
+                autoFocus
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    confirmAccessAction();
+                  }
+                }}
+              />
+            </label>
+
+            <div className="admin-modal-actions">
+              <button
+                type="button"
+                className="admin-modal-cancel"
+                onClick={() => {
+                  setShowAccessLock(false);
+                  setAccessPassword("");
+                  setAccessAction(null);
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="admin-modal-submit"
+                onClick={confirmAccessAction}
+                disabled={accessUnlocking}
+              >
+                <Unlock size={16} />
+                {accessUnlocking
+                  ? "Verifying..."
+                  : "Unlock"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Account Details Modal */}
 
