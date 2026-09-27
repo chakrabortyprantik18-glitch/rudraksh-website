@@ -1,7 +1,15 @@
+/* =========================================================
+   RUDRAKSH ADMIN — NEW MEMBER APPLICATIONS
+========================================================= */
+
 .admin-memberships-page {
   width: 100%;
   color: #f5f5f5;
 }
+
+/* =========================================================
+   HEADER
+========================================================= */
 
 .admin-memberships-header {
   display: flex;
@@ -21,6 +29,7 @@
 
 .admin-memberships-header h1 {
   margin: 0;
+  color: #111;
   font-size: 32px;
   line-height: 1.1;
 }
@@ -28,25 +37,40 @@
 .admin-memberships-header span {
   display: block;
   margin-top: 9px;
-  color: #8e8e8e;
+  color: #707070;
   font-size: 13px;
 }
+
+/* =========================================================
+   REFRESH
+========================================================= */
 
 .admin-memberships-refresh {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #303030;
-  border-radius: 10px;
+
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+
   padding: 11px 16px;
-  background: #151515;
-  color: #ddd;
+
+  background: #ffffff;
+  color: #222;
+
   cursor: pointer;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .admin-memberships-refresh:hover {
   border-color: #e87917;
-  color: #fff;
+  background: #fffaf5;
 }
 
 .admin-memberships-refresh:disabled {
@@ -54,45 +78,61 @@
   cursor: not-allowed;
 }
 
-/* ALERTS */
+/* =========================================================
+   ALERTS
+========================================================= */
 
 .admin-memberships-alert {
   display: flex;
   align-items: center;
   gap: 10px;
+
   margin-bottom: 18px;
   padding: 12px 14px;
-  border-radius: 10px;
+
+  border-radius: 8px;
+
   font-size: 13px;
 }
 
 .admin-memberships-alert button {
   margin-left: auto;
+
   display: flex;
+
   border: 0;
+
   background: transparent;
+
   color: inherit;
+
   cursor: pointer;
 }
 
 .admin-memberships-alert.error {
-  border: 1px solid rgba(255, 75, 75, 0.25);
-  background: rgba(255, 75, 75, 0.08);
-  color: #ff8d8d;
+  border: 1px solid rgba(220, 60, 60, 0.25);
+  background: rgba(220, 60, 60, 0.06);
+  color: #c94242;
 }
 
 .admin-memberships-alert.success {
-  border: 1px solid rgba(70, 200, 120, 0.25);
-  background: rgba(70, 200, 120, 0.08);
-  color: #7be0a4;
+  border: 1px solid rgba(40, 160, 90, 0.25);
+  background: rgba(40, 160, 90, 0.06);
+  color: #2d9860;
 }
 
-/* STATS */
+/* =========================================================
+   STATISTICS
+========================================================= */
 
 .admin-memberships-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
   gap: 14px;
+
   margin-bottom: 22px;
 }
 
@@ -100,20 +140,28 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid #292929;
-  border-radius: 12px;
+
+  border: 1px solid #e2e2e2;
+  border-radius: 10px;
+
   padding: 18px;
-  background: #111;
-  color: #aaa;
+
+  background: #ffffff;
+  color: #777;
+
   text-align: left;
+
   cursor: pointer;
-  transition: 0.2s ease;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .admin-memberships-stats button:hover,
 .admin-memberships-stats button.active {
   border-color: #e87917;
-  background: #17120e;
+  background: #fffaf5;
 }
 
 .admin-memberships-stats span {
@@ -121,17 +169,21 @@
 }
 
 .admin-memberships-stats strong {
-  color: #fff;
+  color: #111;
   font-size: 24px;
 }
 
-/* TOOLBAR */
+/* =========================================================
+   TOOLBAR
+========================================================= */
 
 .admin-memberships-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 15px;
+
   margin-bottom: 16px;
 }
 
@@ -139,26 +191,34 @@
   display: flex;
   align-items: center;
   gap: 9px;
+
   width: min(430px, 100%);
-  border: 1px solid #2b2b2b;
-  border-radius: 10px;
+
+  border: 1px solid #dedede;
+  border-radius: 8px;
+
   padding: 0 13px;
-  background: #111;
+
+  background: #ffffff;
   color: #777;
 }
 
 .admin-memberships-search input {
   width: 100%;
   height: 43px;
+
   border: 0;
   outline: 0;
+
   background: transparent;
-  color: #fff;
+
+  color: #222;
+
   font-size: 13px;
 }
 
 .admin-memberships-search input::placeholder {
-  color: #666;
+  color: #999;
 }
 
 .admin-memberships-result-count {
@@ -166,262 +226,478 @@
   font-size: 12px;
 }
 
-/* TABLE */
+/* =========================================================
+   APPLICATION TABLE
+========================================================= */
 
 .admin-memberships-table-wrap {
   overflow-x: auto;
-  border: 1px solid #292929;
-  border-radius: 14px;
-  background: #101010;
+
+  border: 1px solid #dedede;
+  border-radius: 10px;
+
+  background: #ffffff;
 }
 
 .admin-memberships-table {
   width: 100%;
-  min-width: 850px;
+  min-width: 900px;
+
   border-collapse: collapse;
 }
 
 .admin-memberships-table th {
   padding: 14px 16px;
-  border-bottom: 1px solid #292929;
+
+  border-bottom: 1px solid #e4e4e4;
+
   color: #777;
+
   font-size: 9px;
   font-weight: 800;
+
   letter-spacing: 0.13em;
+
   text-align: left;
   text-transform: uppercase;
+
+  background: #fafafa;
 }
 
 .admin-memberships-table td {
   padding: 15px 16px;
-  border-bottom: 1px solid #202020;
-  color: #bbb;
+
+  border-bottom: 1px solid #eeeeee;
+
+  color: #555;
+
   font-size: 12px;
+
+  vertical-align: middle;
 }
 
 .admin-memberships-table tbody tr:last-child td {
   border-bottom: 0;
 }
 
-.admin-memberships-table tbody tr:hover {
-  background: #151515;
+.admin-memberships-table tbody tr {
+  transition:
+    background 0.2s ease;
 }
+
+.admin-memberships-table tbody tr:hover {
+  background: #fffaf5;
+}
+
+/* =========================================================
+   APPLICANT
+========================================================= */
 
 .admin-membership-applicant {
   display: flex;
   align-items: center;
+
   gap: 11px;
 }
 
+.admin-membership-avatar,
+.admin-membership-avatar-image {
+  width: 40px;
+  height: 40px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+}
+
 .admin-membership-avatar {
-  width: 35px;
-  height: 35px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: #24170d;
+
+  background: #fff1e4;
+
   color: #e87917;
+
+  font-size: 14px;
   font-weight: 800;
 }
 
-.admin-membership-applicant div:last-child {
+.admin-membership-avatar-image {
+  display: block;
+
+  object-fit: cover;
+
+  border: 1px solid #dedede;
+
+  background: #f2f2f2;
+}
+
+.admin-membership-applicant > div:last-child {
   display: flex;
   flex-direction: column;
+
   gap: 3px;
+
+  min-width: 0;
 }
 
 .admin-membership-applicant strong {
-  color: #eee;
+  color: #222;
+
   font-size: 12px;
+  font-weight: 700;
 }
 
 .admin-membership-applicant span {
-  color: #666;
+  color: #999;
+
   font-size: 10px;
 }
+
+/* =========================================================
+   CONTACT
+========================================================= */
 
 .admin-membership-contact {
   display: flex;
   flex-direction: column;
+
   gap: 5px;
 }
 
 .admin-membership-contact span {
   display: flex;
   align-items: center;
+
   gap: 6px;
+
+  color: #666;
+
+  white-space: nowrap;
 }
 
 .admin-membership-contact svg {
   color: #e87917;
 }
 
+/* =========================================================
+   DATE
+========================================================= */
+
+.admin-membership-date {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 6px;
+
+  color: #777;
+
+  white-space: nowrap;
+}
+
+.admin-membership-date svg {
+  color: #e87917;
+}
+
+/* =========================================================
+   STATUS
+========================================================= */
+
 .admin-membership-status {
   display: inline-flex;
   align-items: center;
+
   border-radius: 20px;
+
   padding: 5px 9px;
+
   font-size: 9px;
   font-weight: 800;
+
   letter-spacing: 0.08em;
+
   text-transform: uppercase;
 }
 
 .admin-membership-status.pending {
-  background: rgba(255, 184, 77, 0.1);
-  color: #ffbf66;
+  background: #fff5df;
+  color: #bd7b16;
 }
 
 .admin-membership-status.approved {
-  background: rgba(70, 200, 120, 0.1);
-  color: #71d99c;
+  background: #e9f8ef;
+  color: #278653;
 }
 
 .admin-membership-status.rejected {
-  background: rgba(255, 75, 75, 0.1);
-  color: #ff8585;
+  background: #fdecec;
+  color: #c44949;
 }
+
+/* =========================================================
+   VIEW BUTTON
+========================================================= */
 
 .admin-membership-view {
   display: inline-flex;
   align-items: center;
+
   gap: 6px;
-  border: 1px solid #303030;
-  border-radius: 8px;
+
+  border: 1px solid #dcdcdc;
+  border-radius: 7px;
+
   padding: 7px 10px;
-  background: #181818;
-  color: #ccc;
+
+  background: #ffffff;
+  color: #555;
+
   cursor: pointer;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease;
 }
 
 .admin-membership-view:hover {
   border-color: #e87917;
-  color: #fff;
+
+  background: #fffaf5;
+
+  color: #e87917;
 }
 
-/* LOADING / EMPTY */
+/* =========================================================
+   LOADING / EMPTY
+========================================================= */
 
 .admin-memberships-loading,
 .admin-memberships-empty {
   min-height: 300px;
+
   display: flex;
   flex-direction: column;
+
   align-items: center;
   justify-content: center;
+
   gap: 12px;
-  border: 1px dashed #292929;
-  border-radius: 14px;
-  background: #101010;
-  color: #777;
+
+  border: 1px dashed #d8d8d8;
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  color: #888;
 }
 
 .admin-memberships-empty-icon {
   width: 58px;
   height: 58px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   border-radius: 50%;
-  background: #20160e;
+
+  background: #fff1e4;
+
   color: #e87917;
 }
 
 .admin-memberships-empty h2 {
   margin: 0;
-  color: #ddd;
+
+  color: #222;
+
   font-size: 18px;
 }
 
 .admin-memberships-empty p {
   margin: 0;
+
+  color: #888;
+
   font-size: 12px;
 }
 
-/* MODAL */
+/* =========================================================
+   MODAL OVERLAY
+========================================================= */
 
 .admin-membership-modal-overlay {
   position: fixed;
+
   inset: 0;
+
   z-index: 9999;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   padding: 25px;
-  background: rgba(0, 0, 0, 0.78);
+
+  background: rgba(0, 0, 0, 0.72);
+
   backdrop-filter: blur(8px);
 }
 
+/* =========================================================
+   MODAL
+========================================================= */
+
 .admin-membership-modal {
-  width: min(760px, 100%);
+  width: min(800px, 100%);
+
   max-height: 90vh;
+
   overflow-y: auto;
-  border: 1px solid #303030;
-  border-radius: 16px;
-  background: #111;
-  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.6);
+
+  border: 1px solid #dedede;
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 30px 100px
+    rgba(0, 0, 0, 0.35);
 }
+
+/* =========================================================
+   MODAL HEADER
+========================================================= */
 
 .admin-membership-modal-header {
   display: flex;
+
   align-items: flex-start;
   justify-content: space-between;
+
   gap: 20px;
+
   padding: 22px 24px;
-  border-bottom: 1px solid #292929;
+
+  border-bottom: 1px solid #e6e6e6;
 }
 
 .admin-membership-modal-header p {
   margin: 0 0 6px;
+
   color: #e87917;
+
   font-size: 9px;
   font-weight: 800;
+
   letter-spacing: 0.15em;
 }
 
 .admin-membership-modal-header h2 {
   margin: 0;
-  color: #fff;
+
+  color: #111;
+
   font-size: 23px;
+}
+
+.admin-membership-modal-header span {
+  display: block;
+
+  margin-top: 6px;
+
+  color: #888;
+
+  font-size: 11px;
 }
 
 .admin-membership-modal-header button {
   display: flex;
+
   border: 0;
+
   background: transparent;
+
   color: #777;
+
   cursor: pointer;
 }
 
 .admin-membership-modal-header button:hover {
-  color: #fff;
+  color: #111;
 }
 
-/* DETAILS */
+/* =========================================================
+   PROFILE PHOTO
+========================================================= */
+
+.admin-membership-profile-photo {
+  display: flex;
+
+  justify-content: center;
+
+  padding: 24px 24px 5px;
+}
+
+.admin-membership-profile-photo img {
+  width: 150px;
+  height: 150px;
+
+  object-fit: cover;
+
+  border: 1px solid #dedede;
+  border-radius: 10px;
+
+  background: #f4f4f4;
+}
+
+/* =========================================================
+   DETAILS
+========================================================= */
 
 .admin-membership-details {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
   gap: 1px;
+
   margin: 20px 24px;
+
   overflow: hidden;
-  border: 1px solid #292929;
-  border-radius: 12px;
-  background: #292929;
+
+  border: 1px solid #e1e1e1;
+  border-radius: 10px;
+
+  background: #e1e1e1;
 }
 
 .admin-membership-detail {
   display: flex;
+
   align-items: flex-start;
+
   gap: 11px;
+
   min-width: 0;
+
   padding: 14px;
-  background: #151515;
+
+  background: #fafafa;
 }
 
 .admin-membership-detail > svg {
   flex-shrink: 0;
+
+  margin-top: 1px;
+
   color: #e87917;
 }
 
@@ -431,116 +707,135 @@
 
 .admin-membership-detail span {
   display: block;
+
   margin-bottom: 4px;
-  color: #666;
+
+  color: #888;
+
   font-size: 9px;
+
   text-transform: uppercase;
+
   letter-spacing: 0.08em;
 }
 
 .admin-membership-detail strong {
   display: block;
+
   overflow-wrap: anywhere;
-  color: #ddd;
+
+  color: #222;
+
   font-size: 12px;
 }
 
-/* TEXT */
+/* =========================================================
+   TEXT SECTION
+========================================================= */
 
 .admin-membership-text-section {
   margin: 0 24px 20px;
+
   padding: 16px;
-  border: 1px solid #292929;
-  border-radius: 12px;
-  background: #151515;
+
+  border: 1px solid #e1e1e1;
+  border-radius: 10px;
+
+  background: #fafafa;
 }
 
 .admin-membership-text-heading {
   display: flex;
+
   align-items: center;
+
   gap: 7px;
+
   margin-bottom: 10px;
+
   color: #e87917;
+
   font-size: 11px;
   font-weight: 800;
+
   text-transform: uppercase;
 }
 
 .admin-membership-text-section p {
   margin: 0;
-  color: #aaa;
+
+  color: #555;
+
   font-size: 12px;
+
   line-height: 1.7;
+
   white-space: pre-wrap;
 }
 
-/* PHOTO */
-
-.admin-membership-photo {
-  margin: 0 24px 20px;
-}
-
-.admin-membership-photo > span {
-  display: block;
-  margin-bottom: 9px;
-  color: #777;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.admin-membership-photo img {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 10px;
-  border: 1px solid #303030;
-}
-
-/* REVIEW */
+/* =========================================================
+   REVIEW
+========================================================= */
 
 .admin-membership-review {
   display: grid;
-  grid-template-columns: 220px 1fr;
+
+  grid-template-columns:
+    220px 1fr;
+
   gap: 15px;
+
   margin: 0 24px 20px;
 }
 
 .admin-membership-form-group {
   display: flex;
+
   flex-direction: column;
+
   gap: 7px;
 }
 
 .admin-membership-form-group label {
   color: #777;
+
   font-size: 10px;
   font-weight: 800;
+
   letter-spacing: 0.08em;
+
   text-transform: uppercase;
 }
 
 .admin-membership-form-group select,
 .admin-membership-form-group textarea {
   width: 100%;
-  border: 1px solid #303030;
-  border-radius: 9px;
+
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+
   outline: 0;
-  background: #181818;
-  color: #ddd;
+
+  background: #ffffff;
+
+  color: #222;
+
   font-family: inherit;
+
   font-size: 12px;
 }
 
 .admin-membership-form-group select {
   height: 42px;
+
   padding: 0 11px;
 }
 
 .admin-membership-form-group textarea {
   min-height: 90px;
+
   resize: vertical;
+
   padding: 11px;
 }
 
@@ -549,50 +844,82 @@
   border-color: #e87917;
 }
 
-/* ACTIONS */
+/* =========================================================
+   ACTIONS
+========================================================= */
 
 .admin-membership-modal-actions {
   display: flex;
+
   justify-content: flex-end;
+
   gap: 10px;
+
   padding: 17px 24px;
-  border-top: 1px solid #292929;
+
+  border-top: 1px solid #e6e6e6;
+
+  background: #fafafa;
 }
 
 .admin-membership-cancel,
 .admin-membership-save {
   display: inline-flex;
+
   align-items: center;
+
   gap: 7px;
-  border-radius: 8px;
+
+  border-radius: 7px;
+
   padding: 10px 15px;
+
   font-size: 12px;
+
   cursor: pointer;
 }
 
 .admin-membership-cancel {
-  border: 1px solid #303030;
-  background: #181818;
-  color: #aaa;
+  border: 1px solid #d7d7d7;
+
+  background: #ffffff;
+
+  color: #666;
 }
 
 .admin-membership-save {
   border: 1px solid #e87917;
+
   background: #e87917;
-  color: #111;
+
+  color: #ffffff;
+
   font-weight: 800;
+}
+
+.admin-membership-cancel:hover {
+  border-color: #aaa;
+}
+
+.admin-membership-save:hover {
+  background: #d96d10;
 }
 
 .admin-membership-save:disabled,
 .admin-membership-cancel:disabled {
   opacity: 0.6;
+
   cursor: not-allowed;
 }
 
-/* SPIN */
+/* =========================================================
+   SPIN
+========================================================= */
 
 .admin-memberships-spin {
-  animation: adminMembershipSpin 0.8s linear infinite;
+  animation:
+    adminMembershipSpin
+    0.8s linear infinite;
 }
 
 @keyframes adminMembershipSpin {
@@ -601,25 +928,38 @@
   }
 }
 
-/* RESPONSIVE */
+/* =========================================================
+   RESPONSIVE
+========================================================= */
 
 @media (max-width: 850px) {
+
   .admin-memberships-stats {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns:
+      repeat(2, 1fr);
   }
 
   .admin-membership-details {
-    grid-template-columns: 1fr;
+    grid-template-columns:
+      1fr;
   }
 
   .admin-membership-review {
-    grid-template-columns: 1fr;
+    grid-template-columns:
+      1fr;
   }
+
 }
 
+/* =========================================================
+   MOBILE
+========================================================= */
+
 @media (max-width: 600px) {
+
   .admin-memberships-header {
     align-items: flex-start;
+
     flex-direction: column;
   }
 
@@ -629,6 +969,7 @@
 
   .admin-memberships-toolbar {
     align-items: stretch;
+
     flex-direction: column;
   }
 
@@ -652,9 +993,24 @@
 
   .admin-membership-details,
   .admin-membership-text-section,
-  .admin-membership-photo,
+  .admin-membership-profile-photo,
   .admin-membership-review {
     margin-left: 17px;
     margin-right: 17px;
   }
+
+  .admin-membership-profile-photo {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .admin-membership-profile-photo img {
+    width: 130px;
+    height: 130px;
+  }
+
+  .admin-memberships-stats strong {
+    font-size: 20px;
+  }
+
 }

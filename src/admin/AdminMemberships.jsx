@@ -1,41 +1,29 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Users,
-  Plus,
+  UserPlus,
   Search,
-  Pencil,
-  Trash2,
-  X,
+  RefreshCw,
+  Eye,
   Check,
-  UserRound,
+  X,
+  AlertCircle,
+  User,
   Mail,
   Phone,
+  MapPin,
+  Briefcase,
   CalendarDays,
-  RefreshCw,
-  AlertCircle,
+  FileText,
+  Clock,
 } from "lucide-react";
 
-import "./AdminMembers.css";
-import ImageCropper from "./ImageCropper";
+import "./AdminMemberships.css";
 import { BACKEND_URL } from "../config/api";
 
-const API_URL = `${BACKEND_URL}/api/members`;
+const API_URL = `${BACKEND_URL}/api/membership`;
 
-const emptyForm = {
-  name: "",
-  position: "",
-  bio: "",
-  photo_url: "",
-  phone: "",
-  email: "",
-  joined_date: "",
-  is_active: true,
-  display_order: 0,
-};
-
-function AdminMembers() {
-  const [members, setMembers] = useState([]);
-
+function AdminMemberships() {
+  const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -43,22 +31,21 @@ function AdminMembers() {
   const [success, setSuccess] = useState("");
 
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingMember, setEditingMember] =
+  const [selectedApplication, setSelectedApplication] =
     useState(null);
 
-  const [form, setForm] = useState(emptyForm);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [cropSourceFile, setCropSourceFile] = useState(null);
-  const [newImageFile, setNewImageFile] = useState(null);
-  const [newImagePreview, setNewImagePreview] = useState("");
-  const fileInputRef = useRef(null);
+  const [reviewStatus, setReviewStatus] =
+    useState("pending");
 
-  /* =========================================================
-     TOKEN
-  ========================================================= */
+  const [adminNotes, setAdminNotes] = useState("");
+
+  // ==========================================================
+  // TOKEN
+  // ==========================================================
 
   const getToken = () => {
     return localStorage.getItem(
@@ -66,15 +53,56 @@ function AdminMembers() {
     );
   };
 
-  /* =========================================================
-     LOAD MEMBERS
-  ========================================================= */
+  // ==========================================================
+  // AUTH
+  // ==========================================================
 
-  const loadMembers = async () => {
+  const handleUnauthorized = () => {
+    localStorage.removeItem(
+      "rudraksh_admin_token"
+    );
+
+    localStorage.removeItem(
+      "rudraksh_admin"
+    );
+
+    window.location.href = "/admin";
+  };
+
+  // ==========================================================
+  // IMAGE URL
+  // ==========================================================
+
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) {
+      return "";
+    }
+
+    if (
+      imageUrl.startsWith("http://") ||
+      imageUrl.startsWith("https://") ||
+      imageUrl.startsWith("data:") ||
+      imageUrl.startsWith("blob:")
+    ) {
+      return imageUrl;
+    }
+
+    if (imageUrl.startsWith("/")) {
+      return `${BACKEND_URL}${imageUrl}`;
+    }
+
+    return `${BACKEND_URL}/${imageUrl}`;
+  };
+
+  // ==========================================================
+  // LOAD APPLICATIONS
+  // ==========================================================
+
+  const loadApplications = async () => {
     const token = getToken();
 
     if (!token) {
-      window.location.href = "/admin";
+      handleUnauthorized();
       return;
     }
 
@@ -83,9 +111,11 @@ function AdminMembers() {
       setError("");
 
       const response = await fetch(API_URL, {
+        method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        cache: "no-store",
       });
 
       const data = await response.json();
@@ -94,29 +124,25 @@ function AdminMembers() {
         response.status === 401 ||
         response.status === 403
       ) {
-        localStorage.removeItem(
-          "rudraksh_admin_token"
-        );
-
-        localStorage.removeItem(
-          "rudraksh_admin"
-        );
-
-        window.location.href = "/admin";
+        handleUnauthorized();
         return;
       }
 
       if (!response.ok || !data.success) {
         throw new Error(
           data.message ||
-            "Unable to load members."
+            "Unable to load member applications."
         );
       }
 
-      setMembers(data.members || []);
+      setApplications(
+        Array.isArray(data.applications)
+          ? data.applications
+          : []
+      );
     } catch (err) {
       console.error(
-        "LOAD MEMBERS ERROR:",
+        "LOAD MEMBER APPLICATIONS ERROR:",
         err
       );
 
@@ -129,148 +155,79 @@ function AdminMembers() {
     }
   };
 
+  // ==========================================================
+  // INITIAL LOAD
+  // ==========================================================
+
   useEffect(() => {
-    loadMembers();
+    loadApplications();
   }, []);
 
-  /* =========================================================
-     SEARCH
-  ========================================================= */
+  // ==========================================================
+  // FILTER APPLICATIONS
+  // ==========================================================
 
-  const filteredMembers = useMemo(() => {
+  const filteredApplications = useMemo(() => {
     const query = search
       .trim()
       .toLowerCase();
 
-    if (!query) {
-      return members;
-    }
+    return applications.filter(
+      (application) => {
+        const matchesSearch =
+          !query ||
+          application.full_name
+            ?.toLowerCase()
+            .includes(query) ||
+          application.email
+            ?.toLowerCase()
+            .includes(query) ||
+          application.phone
+            ?.toLowerCase()
+            .includes(query) ||
+          application.occupation
+            ?.toLowerCase()
+            .includes(query) ||
+          String(application.id)
+            .toLowerCase()
+            .includes(query);
 
-    return members.filter((member) => {
-      return (
-        member.name
-          ?.toLowerCase()
-          .includes(query) ||
-        member.position
-          ?.toLowerCase()
-          .includes(query) ||
-        member.email
-          ?.toLowerCase()
-          .includes(query) ||
-        member.phone
-          ?.toLowerCase()
-          .includes(query)
-      );
-    });
-  }, [members, search]);
+        const matchesStatus =
+          statusFilter === "all" ||
+          application.status === statusFilter;
 
-  /* =========================================================
-     FORM HANDLING
-  ========================================================= */
+        return (
+          matchesSearch &&
+          matchesStatus
+        );
+      }
+    );
+  }, [
+    applications,
+    search,
+    statusFilter,
+  ]);
 
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
+  // ==========================================================
+  // OPEN APPLICATION
+  // ==========================================================
 
-    setForm((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
-  };
+  const openApplication = (
+    application
+  ) => {
+    setSelectedApplication(
+      application
+    );
 
-  /* =========================================================
-     IMAGE HELPERS
-  ========================================================= */
+    setReviewStatus(
+      application.status ||
+        "pending"
+    );
 
-  const getImageUrl = (imageUrl) => {
-    if (!imageUrl) return "";
-
-    if (
-      imageUrl.startsWith("http://") ||
-      imageUrl.startsWith("https://") ||
-      imageUrl.startsWith("blob:")
-    ) {
-      return imageUrl;
-    }
-
-    return `${BACKEND_URL}${imageUrl}`;
-  };
-
-  const clearNewImage = () => {
-    if (newImagePreview) {
-      URL.revokeObjectURL(newImagePreview);
-    }
-
-    setNewImageFile(null);
-    setNewImagePreview("");
-  };
-
-  const handleImageSelect = (event) => {
-    const file = event.target.files?.[0];
-
-    event.target.value = "";
-
-    if (!file) return;
-
-    const allowedTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-      setError("Please choose a JPG, PNG or WEBP image.");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be smaller than 5MB.");
-      return;
-    }
-
-    setError("");
-    setCropSourceFile(file);
-    setCropperOpen(true);
-  };
-
-  const handleCropApply = (result) => {
-    if (!result?.file) {
-      setError("Unable to prepare the cropped image.");
-      return;
-    }
-
-    if (newImagePreview) {
-      URL.revokeObjectURL(newImagePreview);
-    }
-
-    const previewUrl =
-      result.preview ||
-      URL.createObjectURL(result.file);
-
-    setNewImageFile(result.file);
-    setNewImagePreview(previewUrl);
-
-    setCropperOpen(false);
-    setCropSourceFile(null);
-    setError("");
-  };
-
-  const handleCropCancel = () => {
-    setCropperOpen(false);
-    setCropSourceFile(null);
-  };
-
-  /* =========================================================
-     OPEN ADD MODAL
-  ========================================================= */
-
-  const openAddModal = () => {
-    setEditingMember(null);
-
-    clearNewImage();
-
-    setForm({
-      ...emptyForm,
-    });
+    setAdminNotes(
+      application.admin_notes ||
+        ""
+    );
 
     setError("");
     setSuccess("");
@@ -278,72 +235,47 @@ function AdminMembers() {
     setModalOpen(true);
   };
 
-  /* =========================================================
-     OPEN EDIT MODAL
-  ========================================================= */
-
-  const openEditModal = (member) => {
-    setEditingMember(member);
-    clearNewImage();
-
-    setForm({
-      name: member.name || "",
-      position: member.position || "",
-      bio: member.bio || "",
-      photo_url: member.photo_url || "",
-      phone: member.phone || "",
-      email: member.email || "",
-      joined_date: member.joined_date
-        ? String(member.joined_date).slice(0, 10)
-        : "",
-      is_active:
-        member.is_active === undefined
-          ? true
-          : Boolean(member.is_active),
-      display_order:
-        member.display_order ?? 0,
-    });
-
-    setError("");
-    setSuccess("");
-
-    setModalOpen(true);
-  };
-
-  /* =========================================================
-     CLOSE MODAL
-  ========================================================= */
+  // ==========================================================
+  // CLOSE APPLICATION
+  // ==========================================================
 
   const closeModal = () => {
-    if (saving) return;
+    if (saving) {
+      return;
+    }
 
     setModalOpen(false);
-    setEditingMember(null);
-    setCropperOpen(false);
-    setCropSourceFile(null);
-    clearNewImage();
-
-    setForm({
-      ...emptyForm,
-    });
+    setSelectedApplication(null);
+    setAdminNotes("");
+    setReviewStatus("pending");
   };
 
-  /* =========================================================
-     SAVE MEMBER
-  ========================================================= */
+  // ==========================================================
+  // REVIEW APPLICATION
+  // ==========================================================
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
+  const handleReview = async () => {
     const token = getToken();
 
     if (!token) {
-      window.location.href = "/admin";
+      handleUnauthorized();
       return;
     }
 
-    if (!form.name.trim()) {
-      setError("Member name is required.");
+    if (!selectedApplication) {
+      return;
+    }
+
+    if (
+      ![
+        "pending",
+        "approved",
+        "rejected",
+      ].includes(reviewStatus)
+    ) {
+      setError(
+        "Invalid application status."
+      );
       return;
     }
 
@@ -352,383 +284,241 @@ function AdminMembers() {
       setError("");
       setSuccess("");
 
-      const isEditing =
-        Boolean(editingMember);
+      const response = await fetch(
+        `${API_URL}/${selectedApplication.id}`,
+        {
+          method: "PUT",
 
-      const url = isEditing
-        ? `${API_URL}/${editingMember.id}`
-        : API_URL;
+          headers: {
+            "Content-Type":
+              "application/json",
 
-      const method = isEditing
-        ? "PUT"
-        : "POST";
+            Authorization:
+              `Bearer ${token}`,
+          },
 
-      const formData = new FormData();
+          body: JSON.stringify({
+            status: reviewStatus,
 
-      formData.append(
-        "name",
-        form.name.trim()
+            admin_notes:
+              adminNotes.trim() ||
+              null,
+          }),
+        }
       );
 
-      formData.append(
-        "position",
-        form.position.trim()
-      );
-
-      formData.append(
-        "bio",
-        form.bio.trim()
-      );
-
-      formData.append(
-        "photo_url",
-        form.photo_url.trim()
-      );
-
-      formData.append(
-        "phone",
-        form.phone.trim()
-      );
-
-      formData.append(
-        "email",
-        form.email.trim()
-      );
-
-      formData.append(
-        "joined_date",
-        form.joined_date || ""
-      );
-
-      formData.append(
-        "is_active",
-        String(Boolean(form.is_active))
-      );
-
-      formData.append(
-        "display_order",
-        String(Number(form.display_order) || 0)
-      );
-
-      if (newImageFile) {
-        formData.append(
-          "image",
-          newImageFile,
-          newImageFile.name || "member-photo.jpg"
-        );
-      }
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (
         response.status === 401 ||
         response.status === 403
       ) {
-        localStorage.removeItem(
-          "rudraksh_admin_token"
-        );
-
-        localStorage.removeItem(
-          "rudraksh_admin"
-        );
-
-        window.location.href = "/admin";
+        handleUnauthorized();
         return;
       }
 
-      if (!response.ok || !data.success) {
+      if (
+        !response.ok ||
+        !data.success
+      ) {
         throw new Error(
           data.message ||
-            "Unable to save member."
+            "Unable to update member application."
         );
       }
 
       setSuccess(
-        isEditing
-          ? "Member updated successfully."
-          : "Member added successfully."
+        "Member application updated successfully."
       );
 
       setModalOpen(false);
-      setEditingMember(null);
+      setSelectedApplication(null);
 
-      clearNewImage();
-
-      setForm({
-        ...emptyForm,
-      });
-
-      await loadMembers();
+      await loadApplications();
 
       setTimeout(() => {
         setSuccess("");
       }, 3000);
     } catch (err) {
       console.error(
-        "SAVE MEMBER ERROR:",
+        "REVIEW MEMBER APPLICATION ERROR:",
         err
       );
 
       setError(
         err.message ||
-          "Unable to save member."
+          "Unable to update member application."
       );
     } finally {
       setSaving(false);
     }
   };
 
-  /* =========================================================
-     DELETE MEMBER
-  ========================================================= */
+  // ==========================================================
+  // STATUS COUNTS
+  // ==========================================================
 
-  const handleDelete = async (member) => {
-    const confirmed = window.confirm(
-      `Delete "${member.name}" permanently?`
+  const pendingCount =
+    applications.filter(
+      (item) =>
+        item.status === "pending"
+    ).length;
+
+  const approvedCount =
+    applications.filter(
+      (item) =>
+        item.status === "approved"
+    ).length;
+
+  const rejectedCount =
+    applications.filter(
+      (item) =>
+        item.status === "rejected"
+    ).length;
+
+  // ==========================================================
+  // DATE FORMAT
+  // ==========================================================
+
+  const formatDate = (value) => {
+    if (!value) {
+      return "—";
+    }
+
+    const date =
+      new Date(value);
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return value;
+    }
+
+    return date.toLocaleDateString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
     );
-
-    if (!confirmed) return;
-
-    const token = getToken();
-
-    if (!token) {
-      window.location.href = "/admin";
-      return;
-    }
-
-    try {
-      setError("");
-      setSuccess("");
-
-      const response = await fetch(
-        `${API_URL}/${member.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (
-        response.status === 401 ||
-        response.status === 403
-      ) {
-        localStorage.removeItem(
-          "rudraksh_admin_token"
-        );
-
-        localStorage.removeItem(
-          "rudraksh_admin"
-        );
-
-        window.location.href = "/admin";
-        return;
-      }
-
-      if (!response.ok || !data.success) {
-        throw new Error(
-          data.message ||
-            "Unable to delete member."
-        );
-      }
-
-      setSuccess(
-        "Member deleted successfully."
-      );
-
-      await loadMembers();
-
-      setTimeout(() => {
-        setSuccess("");
-      }, 3000);
-    } catch (err) {
-      console.error(
-        "DELETE MEMBER ERROR:",
-        err
-      );
-
-      setError(
-        err.message ||
-          "Unable to delete member."
-      );
-    }
   };
 
-  /* =========================================================
-     TOGGLE ACTIVE STATUS
-  ========================================================= */
-
-  const toggleMemberStatus = async (
-    member
+  const formatDateTime = (
+    value
   ) => {
-    const token = getToken();
-
-    if (!token) {
-      window.location.href = "/admin";
-      return;
+    if (!value) {
+      return "—";
     }
 
-    try {
-      setError("");
-      setSuccess("");
+    const date =
+      new Date(value);
 
-      const response = await fetch(
-        `${API_URL}/${member.id}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: (() => {
-            const formData = new FormData();
-
-            formData.append(
-              "name",
-              member.name || ""
-            );
-            formData.append(
-              "position",
-              member.position || ""
-            );
-            formData.append(
-              "bio",
-              member.bio || ""
-            );
-            formData.append(
-              "photo_url",
-              member.photo_url || ""
-            );
-            formData.append(
-              "phone",
-              member.phone || ""
-            );
-            formData.append(
-              "email",
-              member.email || ""
-            );
-            formData.append(
-              "joined_date",
-              member.joined_date
-                ? String(member.joined_date).slice(0, 10)
-                : ""
-            );
-            formData.append(
-              "is_active",
-              String(!Boolean(member.is_active))
-            );
-            formData.append(
-              "display_order",
-              String(member.display_order ?? 0)
-            );
-
-            return formData;
-          })(),
-        }
-      );
-
-      const data = await response.json();
-
-      if (
-        response.status === 401 ||
-        response.status === 403
-      ) {
-        localStorage.removeItem(
-          "rudraksh_admin_token"
-        );
-
-        localStorage.removeItem(
-          "rudraksh_admin"
-        );
-
-        window.location.href = "/admin";
-        return;
-      }
-
-      if (!response.ok || !data.success) {
-        throw new Error(
-          data.message ||
-            "Unable to update member status."
-        );
-      }
-
-      await loadMembers();
-
-      setSuccess(
-        member.is_active
-          ? "Member deactivated."
-          : "Member activated."
-      );
-
-      setTimeout(() => {
-        setSuccess("");
-      }, 2500);
-    } catch (err) {
-      console.error(
-        "STATUS UPDATE ERROR:",
-        err
-      );
-
-      setError(
-        err.message ||
-          "Unable to update member status."
-      );
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return value;
     }
+
+    return date.toLocaleString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }
+    );
   };
 
-  /* =========================================================
-     RENDER
-  ========================================================= */
+  // ==========================================================
+  // STATUS LABEL
+  // ==========================================================
+
+  const getStatusLabel = (
+    status
+  ) => {
+    if (status === "approved") {
+      return "Approved";
+    }
+
+    if (status === "rejected") {
+      return "Rejected";
+    }
+
+    return "Pending";
+  };
+
+  // ==========================================================
+  // RENDER
+  // ==========================================================
 
   return (
-    <div className="admin-members-page">
+    <div className="admin-memberships-page">
 
-      {/* PAGE HEADER */}
+      {/* ======================================================
+          HEADER
+      ====================================================== */}
 
-      <div className="admin-members-header">
+      <div className="admin-memberships-header">
 
         <div>
-          <p className="admin-members-kicker">
-            MEMBERS MANAGEMENT
+
+          <p className="admin-memberships-kicker">
+            JOINING REQUESTS
           </p>
 
           <h1>
-            Organization Members
+            New Member Applications
           </h1>
 
           <span>
-            Add, edit and manage
-            Rudraksh organization
-            members.
+            Review and manage people
+            who have requested to join
+            Rudraksh.
           </span>
+
         </div>
 
         <button
-          className="admin-members-add-button"
-          onClick={openAddModal}
+          className="admin-memberships-refresh"
+          onClick={
+            loadApplications
+          }
+          disabled={loading}
         >
-          <Plus size={17} />
-          Add Member
+          <RefreshCw
+            size={16}
+            className={
+              loading
+                ? "admin-memberships-spin"
+                : ""
+            }
+          />
+
+          Refresh
         </button>
+
       </div>
 
-      {/* ALERTS */}
+      {/* ======================================================
+          ALERTS
+      ====================================================== */}
 
       {error && (
-        <div className="admin-members-alert error">
+        <div className="admin-memberships-alert error">
+
           <AlertCircle size={17} />
 
-          <span>{error}</span>
+          <span>
+            {error}
+          </span>
 
           <button
             onClick={() =>
@@ -737,617 +527,788 @@ function AdminMembers() {
           >
             <X size={15} />
           </button>
+
         </div>
       )}
 
       {success && (
-        <div className="admin-members-alert success">
+        <div className="admin-memberships-alert success">
+
           <Check size={17} />
 
-          <span>{success}</span>
+          <span>
+            {success}
+          </span>
+
         </div>
       )}
 
-      {/* TOOLBAR */}
+      {/* ======================================================
+          STATISTICS
+      ====================================================== */}
 
-      <div className="admin-members-toolbar">
+      <div className="admin-memberships-stats">
 
-        <div className="admin-members-search">
+        <button
+          className={
+            statusFilter === "all"
+              ? "active"
+              : ""
+          }
+          onClick={() =>
+            setStatusFilter("all")
+          }
+        >
+          <span>
+            Total
+          </span>
+
+          <strong>
+            {applications.length}
+          </strong>
+        </button>
+
+        <button
+          className={
+            statusFilter === "pending"
+              ? "active"
+              : ""
+          }
+          onClick={() =>
+            setStatusFilter("pending")
+          }
+        >
+          <span>
+            Pending
+          </span>
+
+          <strong>
+            {pendingCount}
+          </strong>
+        </button>
+
+        <button
+          className={
+            statusFilter === "approved"
+              ? "active"
+              : ""
+          }
+          onClick={() =>
+            setStatusFilter("approved")
+          }
+        >
+          <span>
+            Approved
+          </span>
+
+          <strong>
+            {approvedCount}
+          </strong>
+        </button>
+
+        <button
+          className={
+            statusFilter === "rejected"
+              ? "active"
+              : ""
+          }
+          onClick={() =>
+            setStatusFilter("rejected")
+          }
+        >
+          <span>
+            Rejected
+          </span>
+
+          <strong>
+            {rejectedCount}
+          </strong>
+        </button>
+
+      </div>
+
+      {/* ======================================================
+          TOOLBAR
+      ====================================================== */}
+
+      <div className="admin-memberships-toolbar">
+
+        <div className="admin-memberships-search">
+
           <Search size={16} />
 
           <input
             type="text"
-            placeholder="Search members..."
+            placeholder="Search name, email, phone or ID..."
             value={search}
             onChange={(event) =>
-              setSearch(event.target.value)
-            }
-          />
-        </div>
-
-        <button
-          className="admin-members-refresh"
-          onClick={loadMembers}
-          disabled={loading}
-        >
-          <RefreshCw
-            size={15}
-            className={
-              loading
-                ? "admin-members-spin"
-                : ""
+              setSearch(
+                event.target.value
+              )
             }
           />
 
-          Refresh
-        </button>
-
-        <div className="admin-members-count">
-          <Users size={15} />
-
-          <span>
-            {filteredMembers.length} member
-            {filteredMembers.length !== 1
-              ? "s"
-              : ""}
-          </span>
         </div>
+
+        <div className="admin-memberships-result-count">
+          {filteredApplications.length} application
+          {filteredApplications.length !==
+          1
+            ? "s"
+            : ""}
+        </div>
+
       </div>
 
-      {/* CONTENT */}
+      {/* ======================================================
+          CONTENT
+      ====================================================== */}
 
       {loading ? (
-        <div className="admin-members-loading">
+        <div className="admin-memberships-loading">
+
           <RefreshCw
-            size={25}
-            className="admin-members-spin"
+            size={26}
+            className="admin-memberships-spin"
           />
 
           <span>
-            Loading members...
+            Loading member applications...
           </span>
-        </div>
-      ) : filteredMembers.length === 0 ? (
-        <div className="admin-members-empty">
 
-          <div className="admin-members-empty-icon">
-            <Users size={28} />
+        </div>
+      ) : filteredApplications.length ===
+        0 ? (
+        <div className="admin-memberships-empty">
+
+          <div className="admin-memberships-empty-icon">
+            <UserPlus size={28} />
           </div>
 
           <h2>
-            {search
-              ? "No members found"
-              : "No members yet"}
+            {search ||
+            statusFilter !==
+              "all"
+              ? "No applications found"
+              : "No joining requests yet"}
           </h2>
 
           <p>
-            {search
-              ? "Try a different search."
-              : "Add your first organization member to get started."}
+            {search ||
+            statusFilter !==
+              "all"
+              ? "Try changing your search or filter."
+              : "New member applications will appear here."}
           </p>
 
-          {!search && (
-            <button
-              onClick={openAddModal}
-              className="admin-members-add-button"
-            >
-              <Plus size={17} />
-              Add First Member
-            </button>
-          )}
         </div>
       ) : (
-        <div className="admin-members-table-wrap">
+        <div className="admin-memberships-table-wrap">
 
-          <table className="admin-members-table">
+          <table className="admin-memberships-table">
 
             <thead>
+
               <tr>
-                <th>MEMBER</th>
-                <th>POSITION</th>
-                <th>CONTACT</th>
-                <th>JOINED</th>
-                <th>STATUS</th>
-                <th>ACTIONS</th>
+
+                <th>
+                  APPLICANT
+                </th>
+
+                <th>
+                  CONTACT
+                </th>
+
+                <th>
+                  OCCUPATION
+                </th>
+
+                <th>
+                  APPLIED
+                </th>
+
+                <th>
+                  STATUS
+                </th>
+
+                <th>
+                  ACTION
+                </th>
+
               </tr>
+
             </thead>
 
             <tbody>
-              {filteredMembers.map(
-                (member) => (
-                  <tr key={member.id}>
 
-                    {/* MEMBER */}
+              {filteredApplications.map(
+                (application) => {
 
-                    <td>
-                      <div className="admin-member-info">
+                  const photo =
+                    getImageUrl(
+                      application.photo_url
+                    );
 
-                        {member.photo_url ? (
-                          <img
-                            src={getImageUrl(member.photo_url)}
-                            alt={member.name}
-                            className="admin-member-photo"
-                          />
-                        ) : (
-                          <div className="admin-member-photo-placeholder">
-                            <UserRound
-                              size={18}
+                  return (
+                    <tr
+                      key={
+                        application.id
+                      }
+                    >
+
+                      {/* APPLICANT */}
+
+                      <td>
+
+                        <div className="admin-membership-applicant">
+
+                          {photo ? (
+                            <img
+                              src={photo}
+                              alt={
+                                application.full_name ||
+                                "Applicant"
+                              }
+                              className="admin-membership-avatar-image"
                             />
+                          ) : (
+                            <div className="admin-membership-avatar">
+                              {application.full_name
+                                ?.charAt(
+                                  0
+                                )
+                                .toUpperCase() || (
+                                <User size={16} />
+                              )}
+                            </div>
+                          )}
+
+                          <div>
+
+                            <strong>
+                              {application.full_name ||
+                                "Unnamed Applicant"}
+                            </strong>
+
+                            <span>
+                              Application #
+                              {application.id}
+                            </span>
+
                           </div>
-                        )}
 
-                        <div>
-                          <strong>
-                            {member.name}
-                          </strong>
-
-                          <span>
-                            ID #{member.id}
-                          </span>
                         </div>
 
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* POSITION */}
+                      {/* CONTACT */}
 
-                    <td>
-                      <span className="admin-member-position">
-                        {member.position ||
-                          "Not specified"}
-                      </span>
-                    </td>
+                      <td>
 
-                    {/* CONTACT */}
+                        <div className="admin-membership-contact">
 
-                    <td>
-                      <div className="admin-member-contact">
-
-                        {member.email && (
-                          <span>
-                            <Mail size={12} />
-                            {member.email}
-                          </span>
-                        )}
-
-                        {member.phone && (
-                          <span>
-                            <Phone size={12} />
-                            {member.phone}
-                          </span>
-                        )}
-
-                        {!member.email &&
-                          !member.phone && (
+                          {application.phone && (
                             <span>
-                              No contact
+                              <Phone
+                                size={12}
+                              />
+                              {
+                                application.phone
+                              }
                             </span>
                           )}
 
-                      </div>
-                    </td>
-
-                    {/* JOINED */}
-
-                    <td>
-                      <span className="admin-member-date">
-                        <CalendarDays
-                          size={12}
-                        />
-
-                        {member.joined_date
-                          ? new Date(
-                              member.joined_date
-                            ).toLocaleDateString(
-                              "en-IN",
+                          {application.email && (
+                            <span>
+                              <Mail
+                                size={12}
+                              />
                               {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
+                                application.email
                               }
-                            )
-                          : "—"}
-                      </span>
-                    </td>
+                            </span>
+                          )}
 
-                    {/* STATUS */}
+                          {!application.phone &&
+                            !application.email && (
+                              <span>
+                                No contact
+                              </span>
+                            )}
 
-                    <td>
-                      <button
-                        className={`admin-member-status ${
-                          member.is_active
-                            ? "active"
-                            : "inactive"
-                        }`}
-                        onClick={() =>
-                          toggleMemberStatus(
-                            member
-                          )
-                        }
-                      >
-                        <span />
+                        </div>
 
-                        {member.is_active
-                          ? "Active"
-                          : "Inactive"}
-                      </button>
-                    </td>
+                      </td>
 
-                    {/* ACTIONS */}
+                      {/* OCCUPATION */}
 
-                    <td>
-                      <div className="admin-member-actions">
+                      <td>
+                        {application.occupation ||
+                          "—"}
+                      </td>
+
+                      {/* APPLIED */}
+
+                      <td>
+
+                        <div className="admin-membership-date">
+
+                          <Clock
+                            size={12}
+                          />
+
+                          {formatDate(
+                            application.created_at
+                          )}
+
+                        </div>
+
+                      </td>
+
+                      {/* STATUS */}
+
+                      <td>
+
+                        <span
+                          className={`admin-membership-status ${
+                            application.status ||
+                            "pending"
+                          }`}
+                        >
+                          {getStatusLabel(
+                            application.status
+                          )}
+                        </span>
+
+                      </td>
+
+                      {/* ACTION */}
+
+                      <td>
 
                         <button
-                          className="admin-member-edit"
+                          className="admin-membership-view"
                           onClick={() =>
-                            openEditModal(
-                              member
+                            openApplication(
+                              application
                             )
                           }
-                          title="Edit member"
                         >
-                          <Pencil
+                          <Eye
                             size={15}
                           />
+
+                          View
                         </button>
 
-                        <button
-                          className="admin-member-delete"
-                          onClick={() =>
-                            handleDelete(
-                              member
-                            )
-                          }
-                          title="Delete member"
-                        >
-                          <Trash2
-                            size={15}
-                          />
-                        </button>
+                      </td>
 
-                      </div>
-                    </td>
-
-                  </tr>
-                )
+                    </tr>
+                  );
+                }
               )}
+
             </tbody>
 
           </table>
+
         </div>
       )}
 
-      {cropperOpen && cropSourceFile && (
-        <ImageCropper
-          file={cropSourceFile}
-          initialRatio="1:1"
-          onApply={handleCropApply}
-          onCancel={handleCropCancel}
-        />
-      )}
+      {/* ======================================================
+          APPLICATION DETAILS
+      ====================================================== */}
 
-      {/* =====================================================
-          ADD / EDIT MODAL
-      ===================================================== */}
+      {modalOpen &&
+        selectedApplication && (
+          <div
+            className="admin-membership-modal-overlay"
+            onMouseDown={(
+              event
+            ) => {
+              if (
+                event.target ===
+                event.currentTarget
+              ) {
+                closeModal();
+              }
+            }}
+          >
 
-      {modalOpen && (
-        <div
-          className="admin-member-modal-overlay"
-          onMouseDown={(event) => {
-            if (
-              event.target ===
-              event.currentTarget
-            ) {
-              closeModal();
-            }
-          }}
-        >
+            <div className="admin-membership-modal">
 
-          <div className="admin-member-modal">
+              {/* HEADER */}
 
-            <div className="admin-member-modal-header">
+              <div className="admin-membership-modal-header">
 
-              <div>
+                <div>
+
+                  <p>
+                    JOINING REQUEST
+                  </p>
+
+                  <h2>
+                    {selectedApplication.full_name ||
+                      "Member Application"}
+                  </h2>
+
+                  <span>
+                    Application #
+                    {
+                      selectedApplication.id
+                    }
+                  </span>
+
+                </div>
+
+                <button
+                  onClick={
+                    closeModal
+                  }
+                  disabled={saving}
+                  aria-label="Close"
+                >
+                  <X size={19} />
+                </button>
+
+              </div>
+
+              {/* =================================================
+                  APPLICANT PHOTO
+              ================================================= */}
+
+              {selectedApplication.photo_url && (
+                <div className="admin-membership-profile-photo">
+
+                  <img
+                    src={getImageUrl(
+                      selectedApplication.photo_url
+                    )}
+                    alt={
+                      selectedApplication.full_name ||
+                      "Applicant"
+                    }
+                  />
+
+                </div>
+              )}
+
+              {/* =================================================
+                  APPLICATION DETAILS
+              ================================================= */}
+
+              <div className="admin-membership-details">
+
+                <div className="admin-membership-detail">
+
+                  <User size={16} />
+
+                  <div>
+
+                    <span>
+                      Full Name
+                    </span>
+
+                    <strong>
+                      {selectedApplication.full_name ||
+                        "—"}
+                    </strong>
+
+                  </div>
+
+                </div>
+
+                <div className="admin-membership-detail">
+
+                  <Mail size={16} />
+
+                  <div>
+
+                    <span>
+                      Email
+                    </span>
+
+                    <strong>
+                      {selectedApplication.email ||
+                        "—"}
+                    </strong>
+
+                  </div>
+
+                </div>
+
+                <div className="admin-membership-detail">
+
+                  <Phone size={16} />
+
+                  <div>
+
+                    <span>
+                      Phone Number
+                    </span>
+
+                    <strong>
+                      {selectedApplication.phone ||
+                        "—"}
+                    </strong>
+
+                  </div>
+
+                </div>
+
+                <div className="admin-membership-detail">
+
+                  <CalendarDays
+                    size={16}
+                  />
+
+                  <div>
+
+                    <span>
+                      Date of Birth
+                    </span>
+
+                    <strong>
+                      {formatDate(
+                        selectedApplication.date_of_birth
+                      )}
+                    </strong>
+
+                  </div>
+
+                </div>
+
+                <div className="admin-membership-detail">
+
+                  <Briefcase
+                    size={16}
+                  />
+
+                  <div>
+
+                    <span>
+                      Occupation
+                    </span>
+
+                    <strong>
+                      {selectedApplication.occupation ||
+                        "—"}
+                    </strong>
+
+                  </div>
+
+                </div>
+
+                <div className="admin-membership-detail">
+
+                  <MapPin size={16} />
+
+                  <div>
+
+                    <span>
+                      Address
+                    </span>
+
+                    <strong>
+                      {selectedApplication.address ||
+                        "—"}
+                    </strong>
+
+                  </div>
+
+                </div>
+
+                <div className="admin-membership-detail">
+
+                  <Clock size={16} />
+
+                  <div>
+
+                    <span>
+                      Applied On
+                    </span>
+
+                    <strong>
+                      {formatDateTime(
+                        selectedApplication.created_at
+                      )}
+                    </strong>
+
+                  </div>
+
+                </div>
+
+                <div className="admin-membership-detail">
+
+                  <FileText
+                    size={16}
+                  />
+
+                  <div>
+
+                    <span>
+                      Current Status
+                    </span>
+
+                    <strong>
+                      {getStatusLabel(
+                        selectedApplication.status
+                      )}
+                    </strong>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* =================================================
+                  REASON
+              ================================================= */}
+
+              <div className="admin-membership-text-section">
+
+                <div className="admin-membership-text-heading">
+
+                  <FileText
+                    size={16}
+                  />
+
+                  <span>
+                    Why do you want to join?
+                  </span>
+
+                </div>
+
                 <p>
-                  {editingMember
-                    ? "EDIT MEMBER"
-                    : "NEW MEMBER"}
+                  {selectedApplication.reason ||
+                    "No reason provided."}
                 </p>
 
-                <h2>
-                  {editingMember
-                    ? "Edit Member"
-                    : "Add Member"}
-                </h2>
               </div>
 
-              <button
-                onClick={closeModal}
-                disabled={saving}
-              >
-                <X size={19} />
-              </button>
+              {/* =================================================
+                  REVIEW
+              ================================================= */}
 
-            </div>
+              <div className="admin-membership-review">
 
-            <form
-              onSubmit={handleSubmit}
-              className="admin-member-form"
-            >
+                <div className="admin-membership-form-group">
 
-              {/* NAME */}
-
-              <div className="admin-form-group">
-                <label>
-                  Full Name *
-                </label>
-
-                <input
-                  name="name"
-                  value={form.name}
-                  onChange={
-                    handleInputChange
-                  }
-                  placeholder="Enter member name"
-                  required
-                />
-              </div>
-
-              {/* POSITION */}
-
-              <div className="admin-form-group">
-                <label>
-                  Position
-                </label>
-
-                <input
-                  name="position"
-                  value={form.position}
-                  onChange={
-                    handleInputChange
-                  }
-                  placeholder="e.g. President, Secretary"
-                />
-              </div>
-
-              {/* EMAIL + PHONE */}
-
-              <div className="admin-form-row">
-
-                <div className="admin-form-group">
                   <label>
-                    Email
+                    Application Status
                   </label>
 
-                  <input
-                    type="email"
-                    name="email"
-                    value={form.email}
-                    onChange={
-                      handleInputChange
-                    }
-                    placeholder="member@email.com"
-                  />
-                </div>
-
-                <div className="admin-form-group">
-                  <label>
-                    Phone
-                  </label>
-
-                  <input
-                    name="phone"
-                    value={form.phone}
-                    onChange={
-                      handleInputChange
-                    }
-                    placeholder="+91..."
-                  />
-                </div>
-
-              </div>
-
-              {/* JOINED DATE + ORDER */}
-
-              <div className="admin-form-row">
-
-                <div className="admin-form-group">
-                  <label>
-                    Joined Date
-                  </label>
-
-                  <input
-                    type="date"
-                    name="joined_date"
+                  <select
                     value={
-                      form.joined_date
+                      reviewStatus
                     }
-                    onChange={
-                      handleInputChange
+                    onChange={(
+                      event
+                    ) =>
+                      setReviewStatus(
+                        event.target.value
+                      )
                     }
-                  />
+                  >
+
+                    <option value="pending">
+                      Pending
+                    </option>
+
+                    <option value="approved">
+                      Approved
+                    </option>
+
+                    <option value="rejected">
+                      Rejected
+                    </option>
+
+                  </select>
+
                 </div>
 
-                <div className="admin-form-group">
+                <div className="admin-membership-form-group">
+
                   <label>
-                    Display Order
+                    Admin Notes
                   </label>
 
-                  <input
-                    type="number"
-                    name="display_order"
+                  <textarea
                     value={
-                      form.display_order
+                      adminNotes
                     }
-                    onChange={
-                      handleInputChange
+                    onChange={(
+                      event
+                    ) =>
+                      setAdminNotes(
+                        event.target.value
+                      )
                     }
-                    min="0"
+                    placeholder="Add internal notes about this joining request..."
+                    rows="4"
                   />
+
                 </div>
 
               </div>
 
-              {/* MEMBER PHOTO */}
+              {/* =================================================
+                  ACTIONS
+              ================================================= */}
 
-              <div className="admin-form-group">
-                <label>
-                  Member Photo
-                </label>
-
-                <div className="admin-member-image-upload">
-                  <div className="admin-member-image-preview">
-                    {newImagePreview ? (
-                      <img
-                        src={newImagePreview}
-                        alt="New member preview"
-                      />
-                    ) : form.photo_url ? (
-                      <img
-                        src={getImageUrl(form.photo_url)}
-                        alt={form.name || "Member"}
-                      />
-                    ) : (
-                      <div className="admin-member-image-empty">
-                        <UserRound size={28} />
-                        <span>No photo selected</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="admin-member-image-controls">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={handleImageSelect}
-                      style={{ display: "none" }}
-                    />
-
-                    <button
-                      type="button"
-                      className="admin-form-upload-button"
-                      onClick={() =>
-                        fileInputRef.current?.click()
-                      }
-                      disabled={saving}
-                    >
-                      Choose Photo
-                    </button>
-
-                    <p>
-                      JPG, PNG or WEBP · Max 5MB
-                    </p>
-
-                    <p>
-                      Crop options: 1:1, 4:3 or 16:9
-                    </p>
-                  </div>
-                </div>
-
-                <input
-                  name="photo_url"
-                  value={form.photo_url}
-                  onChange={handleInputChange}
-                  placeholder="Optional external image URL"
-                />
-              </div>
-
-              {/* BIO */}
-
-              <div className="admin-form-group">
-                <label>
-                  Biography
-                </label>
-
-                <textarea
-                  name="bio"
-                  value={form.bio}
-                  onChange={
-                    handleInputChange
-                  }
-                  placeholder="Short member biography..."
-                  rows="4"
-                />
-              </div>
-
-              {/* ACTIVE */}
-
-              <label className="admin-form-checkbox">
-
-                <input
-                  type="checkbox"
-                  checked={
-                    Boolean(
-                      form.is_active
-                    )
-                  }
-                  onChange={(event) =>
-                    setForm(
-                      (previous) => ({
-                        ...previous,
-                        is_active:
-                          event.target
-                            .checked,
-                      })
-                    )
-                  }
-                />
-
-                <span>
-                  Member is active
-                </span>
-
-              </label>
-
-              {/* ACTIONS */}
-
-              <div className="admin-member-form-actions">
+              <div className="admin-membership-modal-actions">
 
                 <button
                   type="button"
-                  className="admin-form-cancel"
-                  onClick={closeModal}
+                  className="admin-membership-cancel"
+                  onClick={
+                    closeModal
+                  }
                   disabled={saving}
                 >
                   Cancel
                 </button>
 
                 <button
-                  type="submit"
-                  className="admin-form-save"
+                  type="button"
+                  className="admin-membership-save"
+                  onClick={
+                    handleReview
+                  }
                   disabled={saving}
                 >
+
                   {saving ? (
                     <>
                       <RefreshCw
                         size={15}
-                        className="admin-members-spin"
+                        className="admin-memberships-spin"
                       />
 
                       Saving...
                     </>
                   ) : (
                     <>
-                      <Check size={15} />
+                      <Check
+                        size={15}
+                      />
 
-                      {editingMember
-                        ? "Update Member"
-                        : "Add Member"}
+                      Save Review
                     </>
                   )}
+
                 </button>
 
               </div>
 
-            </form>
+            </div>
 
           </div>
-        </div>
-      )}
+        )}
+
     </div>
   );
 }
 
-export default AdminMembers;
+export default AdminMemberships;
