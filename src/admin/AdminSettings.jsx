@@ -17,6 +17,11 @@ import {
   Unlock,
   ShieldAlert,
   RefreshCw,
+  Smartphone,
+  Globe,
+  Copy,
+  Check,
+  PlusCircle,
 } from "lucide-react";
 import "./AdminSettings.css";
 import { BACKEND_URL } from "../config/api";
@@ -60,6 +65,23 @@ function AdminSettings() {
   const [settings, setSettings] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [logs, setLogs] = useState([]);
+
+  const [accessSettings, setAccessSettings] = useState({
+    mobile_access_enabled: false,
+    ip_restriction_enabled: false,
+    mobile_access_code: "",
+    mobile_access_code_expires_at: null,
+  });
+  const [allowedIps, setAllowedIps] = useState([]);
+  const [accessLoading, setAccessLoading] = useState(false);
+  const [accessSaving, setAccessSaving] = useState(false);
+  const [ipSaving, setIpSaving] = useState(false);
+  const [newIpForm, setNewIpForm] = useState({
+    ip_address: "",
+    label: "",
+  });
+  const [codeExpiryMinutes, setCodeExpiryMinutes] = useState(30);
+  const [copiedCode, setCopiedCode] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [accountsLoading, setAccountsLoading] =
@@ -125,6 +147,7 @@ function AdminSettings() {
     ) {
       loadAccounts();
       loadLogs();
+      loadAccessSecurity();
     }
   }, []);
 
@@ -256,6 +279,117 @@ function AdminSettings() {
     } finally {
       setLogsLoading(false);
     }
+  };
+
+  const loadAccessSecurity = async () => {
+    const token = getToken();
+    if (!token) return;
+    setAccessLoading(true);
+    try {
+      const response = await fetch(`${API}/api/admin/security/access-settings`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to load access security settings.");
+      const s = data.settings || data.access_settings || data.accessSettings || {};
+      setAccessSettings({ mobile_access_enabled: Boolean(s.mobile_access_enabled), ip_restriction_enabled: Boolean(s.ip_restriction_enabled), mobile_access_code: s.mobile_access_code || "", mobile_access_code_expires_at: s.mobile_access_code_expires_at || null });
+      setAllowedIps(data.allowed_ips || data.allowedIps || []);
+    } catch (err) { console.error("ACCESS SECURITY ERROR:", err); alert(err.message || "Unable to load access security settings."); }
+    finally { setAccessLoading(false); }
+  };
+
+  const updateAccessSettings = async (changes) => {
+    const token = getToken();
+    if (!token) { window.location.href = "/admin"; return; }
+    setAccessSaving(true);
+    try {
+      const response = await fetch(`${API}/api/admin/security/access-settings`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(changes) });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to update access security settings.");
+      const s = data.settings || data.access_settings || data.accessSettings || {};
+      setAccessSettings({ mobile_access_enabled: Boolean(s.mobile_access_enabled), ip_restriction_enabled: Boolean(s.ip_restriction_enabled), mobile_access_code: s.mobile_access_code || "", mobile_access_code_expires_at: s.mobile_access_code_expires_at || null });
+      if (Array.isArray(data.allowed_ips)) setAllowedIps(data.allowed_ips);
+      else if (Array.isArray(data.allowedIps)) setAllowedIps(data.allowedIps);
+      setMessage(data.message || "Access security settings updated successfully.");
+    } catch (err) { alert(err.message || "Unable to update access security settings."); }
+    finally { setAccessSaving(false); }
+  };
+
+  const generateMobileAccessCode = async () => {
+    const token = getToken();
+    if (!token) { window.location.href = "/admin"; return; }
+    setAccessSaving(true); setCopiedCode(false);
+    try {
+      const response = await fetch(`${API}/api/admin/security/access-settings/generate-code`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ expires_in_minutes: Number(codeExpiryMinutes) || 30, expires_minutes: Number(codeExpiryMinutes) || 30 }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to generate mobile access code.");
+      const s = data.settings || data.access_settings || data.accessSettings || {};
+      setAccessSettings(previous => ({ ...previous, mobile_access_code: s.mobile_access_code || data.code || "", mobile_access_code_expires_at: s.mobile_access_code_expires_at || data.expires_at || null }));
+      setMessage(data.message || "Mobile access code generated successfully.");
+    } catch (err) { alert(err.message || "Unable to generate mobile access code."); }
+    finally { setAccessSaving(false); }
+  };
+
+  const clearMobileAccessCode = async () => {
+    const token = getToken();
+    if (!token) { window.location.href = "/admin"; return; }
+    if (!window.confirm("Clear the current mobile access code?")) return;
+    setAccessSaving(true);
+    try {
+      const response = await fetch(`${API}/api/admin/security/access-settings/clear-code`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to clear the mobile access code.");
+      setAccessSettings(previous => ({ ...previous, mobile_access_code: "", mobile_access_code_expires_at: null }));
+      setMessage(data.message || "Mobile access code cleared.");
+    } catch (err) { alert(err.message || "Unable to clear mobile access code."); }
+    finally { setAccessSaving(false); }
+  };
+
+  const copyMobileAccessCode = async () => {
+    if (!accessSettings.mobile_access_code) return;
+    try { await navigator.clipboard.writeText(accessSettings.mobile_access_code); setCopiedCode(true); window.setTimeout(() => setCopiedCode(false), 1800); }
+    catch (err) { alert("Unable to copy the access code."); }
+  };
+
+  const addAllowedIp = async (event) => {
+    event.preventDefault();
+    const token = getToken(); const ipAddress = newIpForm.ip_address.trim(); const label = newIpForm.label.trim();
+    if (!token) { window.location.href = "/admin"; return; }
+    if (!ipAddress) { alert("IP address is required."); return; }
+    setIpSaving(true);
+    try {
+      const response = await fetch(`${API}/api/admin/security/allowed-ips`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ ip_address: ipAddress, label: label || null }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to add allowed IP address.");
+      setAllowedIps(data.allowed_ips || data.allowedIps || []); setNewIpForm({ ip_address: "", label: "" }); setMessage(data.message || "Allowed IP address added successfully.");
+    } catch (err) { alert(err.message || "Unable to add allowed IP address."); }
+    finally { setIpSaving(false); }
+  };
+
+  const toggleAllowedIp = async (ip) => {
+    const token = getToken(); if (!token) { window.location.href = "/admin"; return; }
+    try {
+      const response = await fetch(`${API}/api/admin/security/allowed-ips/${ip.id}`, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ is_active: !Boolean(ip.is_active) }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to update allowed IP.");
+      setAllowedIps(data.allowed_ips || data.allowedIps || []); setMessage(data.message || "Allowed IP updated successfully.");
+    } catch (err) { alert(err.message || "Unable to update allowed IP."); }
+  };
+
+  const deleteAllowedIp = async (ip) => {
+    if (!window.confirm(`Remove allowed IP "${ip.ip_address}"?`)) return;
+    const token = getToken(); if (!token) { window.location.href = "/admin"; return; }
+    try {
+      const response = await fetch(`${API}/api/admin/security/allowed-ips/${ip.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to remove allowed IP.");
+      setAllowedIps(data.allowed_ips || data.allowedIps || []); setMessage(data.message || "Allowed IP removed successfully.");
+    } catch (err) { alert(err.message || "Unable to remove allowed IP."); }
+  };
+
+  const formatExpiry = (date) => {
+    if (!date) return "No active code";
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) return "Unknown expiry";
+    return parsed.toLocaleString("en-IN");
   };
 
   const handleCreateAdmin =
@@ -828,6 +962,76 @@ function AdminSettings() {
 
       </section>
 
+
+      {/* Admin Access Security */}
+
+      {isSuperAdmin && (
+        <section className="admin-settings-section">
+          <div className="admin-settings-section-title">
+            <ShieldAlert size={19} />
+            <div>
+              <h2>Admin Access Security</h2>
+              <p>Control mobile access, temporary mobile codes and IP-based administrator restrictions.</p>
+            </div>
+            <button type="button" className="admin-settings-secondary-button" onClick={loadAccessSecurity} disabled={accessLoading || accessSaving}>
+              <RefreshCw size={15} className={accessLoading ? "admin-settings-spin" : ""} /> Refresh
+            </button>
+          </div>
+
+          {accessLoading ? (
+            <div className="admin-settings-loading">Loading access security settings...</div>
+          ) : (
+            <div className="admin-access-security-grid">
+              <div className="admin-access-card">
+                <div className="admin-access-card-header">
+                  <div className="admin-access-card-icon"><Smartphone size={20} /></div>
+                  <div><h3>Mobile Access</h3><p>Allow administrators to use the admin panel from mobile devices.</p></div>
+                </div>
+                <div className="admin-access-toggle-row">
+                  <div><strong>Mobile access</strong><span>{accessSettings.mobile_access_enabled ? "Enabled" : "Disabled"}</span></div>
+                  <button type="button" className={`admin-access-switch ${accessSettings.mobile_access_enabled ? "active" : ""}`} onClick={() => updateAccessSettings({ mobile_access_enabled: !accessSettings.mobile_access_enabled })} disabled={accessSaving} aria-label="Toggle mobile access"><span /></button>
+                </div>
+                <div className="admin-access-divider" />
+                <label className="admin-access-field"><span>Code expiry</span><select value={codeExpiryMinutes} onChange={(event) => setCodeExpiryMinutes(Number(event.target.value))} disabled={accessSaving}><option value={15}>15 minutes</option><option value={30}>30 minutes</option><option value={60}>1 hour</option><option value={120}>2 hours</option><option value={360}>6 hours</option><option value={720}>12 hours</option><option value={1440}>24 hours</option></select></label>
+                <div className="admin-access-code-box">
+                  <div><span>Current mobile access code</span><strong>{accessSettings.mobile_access_code || "No active code"}</strong>{accessSettings.mobile_access_code && <small>Expires: {formatExpiry(accessSettings.mobile_access_code_expires_at)}</small>}</div>
+                  <div className="admin-access-code-actions">
+                    {accessSettings.mobile_access_code && <button type="button" onClick={copyMobileAccessCode} disabled={accessSaving}>{copiedCode ? <Check size={15} /> : <Copy size={15} />}{copiedCode ? "Copied" : "Copy"}</button>}
+                    <button type="button" className="admin-access-generate-button" onClick={generateMobileAccessCode} disabled={accessSaving}><KeyRound size={15} />Generate Code</button>
+                    {accessSettings.mobile_access_code && <button type="button" className="admin-access-danger-button" onClick={clearMobileAccessCode} disabled={accessSaving}>Clear</button>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="admin-access-card">
+                <div className="admin-access-card-header">
+                  <div className="admin-access-card-icon"><Globe size={20} /></div>
+                  <div><h3>IP Restriction</h3><p>Limit administrator access to approved public IP addresses.</p></div>
+                </div>
+                <div className="admin-access-toggle-row">
+                  <div><strong>IP restriction</strong><span>{accessSettings.ip_restriction_enabled ? "Enabled" : "Disabled"}</span></div>
+                  <button type="button" className={`admin-access-switch ${accessSettings.ip_restriction_enabled ? "active" : ""}`} onClick={() => updateAccessSettings({ ip_restriction_enabled: !accessSettings.ip_restriction_enabled })} disabled={accessSaving} aria-label="Toggle IP restriction"><span /></button>
+                </div>
+                <div className="admin-access-divider" />
+                <form className="admin-allowed-ip-form" onSubmit={addAllowedIp}>
+                  <div className="admin-access-field"><span>IP address</span><input type="text" value={newIpForm.ip_address} onChange={(event) => setNewIpForm(previous => ({ ...previous, ip_address: event.target.value }))} placeholder="e.g. 103.25.120.10" autoComplete="off" /></div>
+                  <div className="admin-access-field"><span>Label</span><input type="text" value={newIpForm.label} onChange={(event) => setNewIpForm(previous => ({ ...previous, label: event.target.value }))} placeholder="Office / Laptop / Home" autoComplete="off" /></div>
+                  <button type="submit" className="admin-access-generate-button" disabled={ipSaving}><PlusCircle size={15} />{ipSaving ? "Adding..." : "Add IP"}</button>
+                </form>
+                <div className="admin-allowed-ip-list">
+                  <div className="admin-allowed-ip-list-title"><strong>Allowed IP addresses</strong><span>{allowedIps.length}</span></div>
+                  {allowedIps.length === 0 ? <div className="admin-access-empty">No allowed IP addresses added yet.</div> : allowedIps.map(ip => (
+                    <div className="admin-allowed-ip-item" key={ip.id}>
+                      <div><strong>{ip.ip_address}</strong><span>{ip.label || "No label"}</span></div>
+                      <div className="admin-allowed-ip-actions"><button type="button" onClick={() => toggleAllowedIp(ip)} title={ip.is_active ? "Disable IP" : "Enable IP"}>{ip.is_active ? "Active" : "Inactive"}</button><button type="button" className="admin-account-delete" onClick={() => deleteAllowedIp(ip)} title="Remove IP"><Trash2 size={15} /></button></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Admin Accounts */}
 
