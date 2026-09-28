@@ -30,6 +30,10 @@ const CROP_RATIOS = [
     label: "1:1",
     value: 1,
   },
+  {
+    label: "CUSTOM",
+    value: null,
+  },
 ];
 
 const MIN_ZOOM = 1;
@@ -56,6 +60,15 @@ function ImageCropper({
     startOffsetY: 0,
   });
 
+  const cropInteractionRef = useRef({
+    active: false,
+    mode: null,
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    startCrop: null,
+  });
+
   const [imageUrl, setImageUrl] = useState("");
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -75,6 +88,8 @@ function ImageCropper({
     width: 0,
     height: 0,
   });
+
+  const [customCrop, setCustomCrop] = useState(null);
 
   const currentRatio = useMemo(() => {
     return (
@@ -103,6 +118,7 @@ function ImageCropper({
     setRotation(0);
     setOffsetX(0);
     setOffsetY(0);
+    setCustomCrop(null);
 
     const url = URL.createObjectURL(file);
 
@@ -173,10 +189,8 @@ function ImageCropper({
       };
     }
 
-    const padding = Math.min(
-      width,
-      height
-    ) * 0.04;
+    const padding =
+      Math.min(width, height) * 0.04;
 
     const availableWidth =
       Math.max(
@@ -189,6 +203,40 @@ function ImageCropper({
         20,
         height - padding * 2
       );
+
+    /*
+      CUSTOM MODE
+      Completely free crop area.
+    */
+
+    if (selectedRatio === "CUSTOM") {
+      if (customCrop) {
+        return customCrop;
+      }
+
+      const customWidth =
+        availableWidth * 0.82;
+
+      const customHeight =
+        availableHeight * 0.82;
+
+      return {
+        x:
+          (width - customWidth) /
+          2,
+
+        y:
+          (height - customHeight) /
+          2,
+
+        width: customWidth,
+        height: customHeight,
+      };
+    }
+
+    /*
+      FIXED RATIO MODES
+    */
 
     let cropWidth =
       availableWidth;
@@ -224,11 +272,12 @@ function ImageCropper({
   }, [
     previewSize,
     currentRatio.value,
+    selectedRatio,
+    customCrop,
   ]);
 
   /* =========================================================
      CALCULATE BASE SCALE
-     Ensures rotated image covers the crop area.
   ========================================================= */
 
   const getBaseScale = useCallback(
@@ -240,7 +289,8 @@ function ImageCropper({
       angle
     ) => {
       const radians =
-        (angle * Math.PI) / 180;
+        (angle * Math.PI) /
+        180;
 
       const cos =
         Math.abs(
@@ -251,11 +301,6 @@ function ImageCropper({
         Math.abs(
           Math.sin(radians)
         );
-
-      /*
-        Determine the scale needed so every crop
-        corner remains inside the source image.
-      */
 
       const halfCropWidth =
         cropWidth / 2;
@@ -324,7 +369,7 @@ function ImageCropper({
   );
 
   /* =========================================================
-     CLAMP OFFSET
+     CLAMP IMAGE OFFSET
   ========================================================= */
 
   const clampOffset = useCallback(
@@ -387,19 +432,19 @@ function ImageCropper({
 
       const rotatedWidth =
         imageWidth *
-        renderScale *
-        cos +
+          renderScale *
+          cos +
         imageHeight *
-        renderScale *
-        sin;
+          renderScale *
+          sin;
 
       const rotatedHeight =
         imageWidth *
-        renderScale *
-        sin +
+          renderScale *
+          sin +
         imageHeight *
-        renderScale *
-        cos;
+          renderScale *
+          cos;
 
       const maxX = Math.max(
         0,
@@ -568,7 +613,8 @@ function ImageCropper({
     );
 
     context.rotate(
-      (rotation * Math.PI) /
+      (rotation *
+        Math.PI) /
         180
     );
 
@@ -715,67 +761,84 @@ function ImageCropper({
     context.lineWidth = 3;
 
     /* top-left */
+
     context.beginPath();
+
     context.moveTo(
       crop.x,
       crop.y +
         cornerLength
     );
+
     context.lineTo(
       crop.x,
       crop.y
     );
+
     context.lineTo(
       crop.x +
         cornerLength,
       crop.y
     );
+
     context.stroke();
 
     /* top-right */
+
     context.beginPath();
+
     context.moveTo(
       crop.x +
         crop.width -
         cornerLength,
       crop.y
     );
+
     context.lineTo(
       crop.x +
         crop.width,
       crop.y
     );
+
     context.lineTo(
       crop.x +
         crop.width,
       crop.y +
         cornerLength
     );
+
     context.stroke();
 
     /* bottom-left */
+
     context.beginPath();
+
     context.moveTo(
       crop.x,
       crop.y +
         crop.height -
         cornerLength
     );
+
     context.lineTo(
       crop.x,
       crop.y +
         crop.height
     );
+
     context.lineTo(
       crop.x +
         cornerLength,
       crop.y +
         crop.height
     );
+
     context.stroke();
 
     /* bottom-right */
+
     context.beginPath();
+
     context.moveTo(
       crop.x +
         crop.width -
@@ -783,12 +846,14 @@ function ImageCropper({
       crop.y +
         crop.height
     );
+
     context.lineTo(
       crop.x +
         crop.width,
       crop.y +
         crop.height
     );
+
     context.lineTo(
       crop.x +
         crop.width,
@@ -796,7 +861,80 @@ function ImageCropper({
         crop.height -
         cornerLength
     );
+
     context.stroke();
+
+    /*
+      CUSTOM MODE HANDLE DOTS
+    */
+
+    if (
+      selectedRatio ===
+      "CUSTOM"
+    ) {
+      const handleSize = 7;
+
+      context.fillStyle =
+        "#e87917";
+
+      const handles = [
+        [
+          crop.x,
+          crop.y,
+        ],
+        [
+          crop.x +
+            crop.width,
+          crop.y,
+        ],
+        [
+          crop.x,
+          crop.y +
+            crop.height,
+        ],
+        [
+          crop.x +
+            crop.width,
+          crop.y +
+            crop.height,
+        ],
+        [
+          crop.x +
+            crop.width / 2,
+          crop.y,
+        ],
+        [
+          crop.x +
+            crop.width / 2,
+          crop.y +
+            crop.height,
+        ],
+        [
+          crop.x,
+          crop.y +
+            crop.height / 2,
+        ],
+        [
+          crop.x +
+            crop.width,
+          crop.y +
+            crop.height / 2,
+        ],
+      ];
+
+      handles.forEach(
+        ([x, y]) => {
+          context.fillRect(
+            x -
+              handleSize / 2,
+            y -
+              handleSize / 2,
+            handleSize,
+            handleSize
+          );
+        }
+      );
+    }
   }, [
     imageLoaded,
     previewSize,
@@ -806,6 +944,7 @@ function ImageCropper({
     rotation,
     offsetX,
     offsetY,
+    selectedRatio,
   ]);
 
   /* =========================================================
@@ -860,6 +999,72 @@ function ImageCropper({
     setOffsetX(0);
     setOffsetY(0);
 
+    if (
+      ratio.label ===
+      "CUSTOM"
+    ) {
+      const width =
+        previewSize.width;
+
+      const height =
+        previewSize.height;
+
+      if (
+        width &&
+        height
+      ) {
+        const padding =
+          Math.min(
+            width,
+            height
+          ) * 0.04;
+
+        const availableWidth =
+          Math.max(
+            20,
+            width -
+              padding * 2
+          );
+
+        const availableHeight =
+          Math.max(
+            20,
+            height -
+              padding * 2
+          );
+
+        const customWidth =
+          availableWidth *
+          0.82;
+
+        const customHeight =
+          availableHeight *
+          0.82;
+
+        setCustomCrop({
+          x:
+            (width -
+              customWidth) /
+            2,
+
+          y:
+            (height -
+              customHeight) /
+            2,
+
+          width:
+            customWidth,
+
+          height:
+            customHeight,
+        });
+      } else {
+        setCustomCrop(null);
+      }
+    } else {
+      setCustomCrop(null);
+    }
+
     setError("");
   };
 
@@ -879,7 +1084,9 @@ function ImageCropper({
         )
       );
 
-    setZoom(safeZoom);
+    setZoom(
+      safeZoom
+    );
 
     const clamped =
       clampOffset(
@@ -900,13 +1107,15 @@ function ImageCropper({
 
   const zoomOut = () => {
     updateZoom(
-      zoom - ZOOM_STEP
+      zoom -
+        ZOOM_STEP
     );
   };
 
   const zoomIn = () => {
     updateZoom(
-      zoom + ZOOM_STEP
+      zoom +
+        ZOOM_STEP
     );
   };
 
@@ -916,7 +1125,9 @@ function ImageCropper({
 
   const rotateLeft = () => {
     const nextRotation =
-      (rotation - 90 + 360) %
+      (rotation -
+        90 +
+        360) %
       360;
 
     const clamped =
@@ -942,7 +1153,8 @@ function ImageCropper({
 
   const rotateRight = () => {
     const nextRotation =
-      (rotation + 90) %
+      (rotation +
+        90) %
       360;
 
     const clamped =
@@ -967,6 +1179,244 @@ function ImageCropper({
   };
 
   /* =========================================================
+     CUSTOM CROP POINTER HELPERS
+  ========================================================= */
+
+  const getCustomPointerMode = (
+    x,
+    y,
+    crop
+  ) => {
+    const edge = 18;
+
+    const nearLeft =
+      Math.abs(
+        x - crop.x
+      ) <= edge;
+
+    const nearRight =
+      Math.abs(
+        x -
+          (crop.x +
+            crop.width)
+      ) <= edge;
+
+    const nearTop =
+      Math.abs(
+        y - crop.y
+      ) <= edge;
+
+    const nearBottom =
+      Math.abs(
+        y -
+          (crop.y +
+            crop.height)
+      ) <= edge;
+
+    if (
+      nearTop &&
+      nearLeft
+    ) {
+      return "nw";
+    }
+
+    if (
+      nearTop &&
+      nearRight
+    ) {
+      return "ne";
+    }
+
+    if (
+      nearBottom &&
+      nearLeft
+    ) {
+      return "sw";
+    }
+
+    if (
+      nearBottom &&
+      nearRight
+    ) {
+      return "se";
+    }
+
+    if (nearTop) {
+      return "n";
+    }
+
+    if (nearBottom) {
+      return "s";
+    }
+
+    if (nearLeft) {
+      return "w";
+    }
+
+    if (nearRight) {
+      return "e";
+    }
+
+    if (
+      x >= crop.x &&
+      x <=
+        crop.x +
+          crop.width &&
+      y >= crop.y &&
+      y <=
+        crop.y +
+          crop.height
+    ) {
+      return "moveCrop";
+    }
+
+    return null;
+  };
+
+  const updateCustomCrop = (
+    mode,
+    deltaX,
+    deltaY,
+    startCrop
+  ) => {
+    const width =
+      previewSize.width;
+
+    const height =
+      previewSize.height;
+
+    const padding =
+      Math.min(
+        width,
+        height
+      ) * 0.04;
+
+    const minSize = 40;
+
+    const minX =
+      padding;
+
+    const minY =
+      padding;
+
+    const maxX =
+      width - padding;
+
+    const maxY =
+      height - padding;
+
+    let left =
+      startCrop.x;
+
+    let top =
+      startCrop.y;
+
+    let right =
+      startCrop.x +
+      startCrop.width;
+
+    let bottom =
+      startCrop.y +
+      startCrop.height;
+
+    if (
+      mode ===
+      "moveCrop"
+    ) {
+      const nextLeft =
+        Math.max(
+          minX,
+          Math.min(
+            maxX -
+              startCrop.width,
+            startCrop.x +
+              deltaX
+          )
+        );
+
+      const nextTop =
+        Math.max(
+          minY,
+          Math.min(
+            maxY -
+              startCrop.height,
+            startCrop.y +
+              deltaY
+          )
+        );
+
+      setCustomCrop({
+        ...startCrop,
+        x: nextLeft,
+        y: nextTop,
+      });
+
+      return;
+    }
+
+    if (
+      mode.includes("w")
+    ) {
+      left =
+        Math.max(
+          minX,
+          Math.min(
+            right - minSize,
+            left + deltaX
+          )
+        );
+    }
+
+    if (
+      mode.includes("e")
+    ) {
+      right =
+        Math.min(
+          maxX,
+          Math.max(
+            left + minSize,
+            right + deltaX
+          )
+        );
+    }
+
+    if (
+      mode.includes("n")
+    ) {
+      top =
+        Math.max(
+          minY,
+          Math.min(
+            bottom - minSize,
+            top + deltaY
+          )
+        );
+    }
+
+    if (
+      mode.includes("s")
+    ) {
+      bottom =
+        Math.min(
+          maxY,
+          Math.max(
+            top + minSize,
+            bottom + deltaY
+          )
+        );
+    }
+
+    setCustomCrop({
+      x: left,
+      y: top,
+      width:
+        right - left,
+      height:
+        bottom - top,
+    });
+  };
+
+  /* =========================================================
      POINTER DRAG
   ========================================================= */
 
@@ -982,14 +1432,77 @@ function ImageCropper({
 
     event.preventDefault();
 
+    /*
+      CUSTOM MODE:
+      Check whether the user grabbed
+      a crop edge/corner first.
+    */
+
+    if (
+      selectedRatio ===
+      "CUSTOM"
+    ) {
+      const rect =
+        event.currentTarget.getBoundingClientRect();
+
+      const pointerX =
+        event.clientX -
+        rect.left;
+
+      const pointerY =
+        event.clientY -
+        rect.top;
+
+      const crop =
+        getCropRect();
+
+      const mode =
+        getCustomPointerMode(
+          pointerX,
+          pointerY,
+          crop
+        );
+
+      if (mode) {
+        cropInteractionRef.current =
+          {
+            active: true,
+            mode,
+            pointerId:
+              event.pointerId,
+            startX:
+              event.clientX,
+            startY:
+              event.clientY,
+            startCrop: {
+              ...crop,
+            },
+          };
+
+        event.currentTarget.setPointerCapture?.(
+          event.pointerId
+        );
+
+        return;
+      }
+    }
+
+    /*
+      NORMAL IMAGE DRAG
+    */
+
     dragRef.current = {
       active: true,
       pointerId:
         event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      startOffsetX: offsetX,
-      startOffsetY: offsetY,
+      startX:
+        event.clientX,
+      startY:
+        event.clientY,
+      startOffsetX:
+        offsetX,
+      startOffsetY:
+        offsetY,
     };
 
     event.currentTarget.setPointerCapture?.(
@@ -1000,6 +1513,30 @@ function ImageCropper({
   const handlePointerMove = (
     event
   ) => {
+    const customInteraction =
+      cropInteractionRef.current;
+
+    if (
+      selectedRatio ===
+        "CUSTOM" &&
+      customInteraction.active &&
+      customInteraction.pointerId ===
+        event.pointerId
+    ) {
+      event.preventDefault();
+
+      updateCustomCrop(
+        customInteraction.mode,
+        event.clientX -
+          customInteraction.startX,
+        event.clientY -
+          customInteraction.startY,
+        customInteraction.startCrop
+      );
+
+      return;
+    }
+
     const drag =
       dragRef.current;
 
@@ -1047,6 +1584,30 @@ function ImageCropper({
   const handlePointerUp = (
     event
   ) => {
+    const customInteraction =
+      cropInteractionRef.current;
+
+    if (
+      customInteraction.pointerId ===
+      event.pointerId
+    ) {
+      cropInteractionRef.current =
+        {
+          active: false,
+          mode: null,
+          pointerId: null,
+          startX: 0,
+          startY: 0,
+          startCrop: null,
+        };
+
+      event.currentTarget.releasePointerCapture?.(
+        event.pointerId
+      );
+
+      return;
+    }
+
     const drag =
       dragRef.current;
 
@@ -1141,6 +1702,7 @@ function ImageCropper({
     setRotation(0);
     setOffsetX(0);
     setOffsetY(0);
+    setCustomCrop(null);
 
     setError("");
   };
@@ -1212,19 +1774,6 @@ function ImageCropper({
       const renderScale =
         baseScale * zoom;
 
-      let outputWidth =
-        MAX_OUTPUT_SIZE;
-
-      let outputHeight =
-        Math.round(
-          outputWidth /
-            currentRatio.value
-        );
-
-      /*
-        Avoid unnecessary upscaling for small images.
-      */
-
       const estimatedVisibleWidth =
         crop.width /
         renderScale;
@@ -1233,44 +1782,116 @@ function ImageCropper({
         crop.height /
         renderScale;
 
-      const sourceLimit =
-        Math.max(
-          estimatedVisibleWidth,
-          estimatedVisibleHeight
-        );
+      let outputWidth;
+      let outputHeight;
+
+      /*
+        CUSTOM:
+        Preserve the manually selected
+        crop dimensions.
+      */
 
       if (
-        sourceLimit <
-        MAX_OUTPUT_SIZE
+        selectedRatio ===
+        "CUSTOM"
       ) {
-        outputWidth =
-          Math.min(
-            MAX_OUTPUT_SIZE,
-            Math.max(
-              800,
-              Math.round(
-                estimatedVisibleWidth *
-                  renderScale
-              )
+        const naturalWidth =
+          Math.max(
+            1,
+            Math.round(
+              estimatedVisibleWidth
             )
           );
+
+        const naturalHeight =
+          Math.max(
+            1,
+            Math.round(
+              estimatedVisibleHeight
+            )
+          );
+
+        const scaleDown =
+          Math.min(
+            1,
+            MAX_OUTPUT_SIZE /
+              naturalWidth,
+            MAX_OUTPUT_SIZE /
+              naturalHeight
+          );
+
+        outputWidth =
+          Math.max(
+            1,
+            Math.round(
+              naturalWidth *
+                scaleDown
+            )
+          );
+
+        outputHeight =
+          Math.max(
+            1,
+            Math.round(
+              naturalHeight *
+                scaleDown
+            )
+          );
+      } else {
+        /*
+          EXISTING FIXED RATIO
+          BEHAVIOUR
+        */
+
+        outputWidth =
+          MAX_OUTPUT_SIZE;
 
         outputHeight =
           Math.round(
             outputWidth /
               currentRatio.value
           );
-      }
 
-      if (
-        currentRatio.value === 1
-      ) {
-        outputWidth =
-          outputHeight =
+        const sourceLimit =
+          Math.max(
+            estimatedVisibleWidth,
+            estimatedVisibleHeight
+          );
+
+        if (
+          sourceLimit <
+          MAX_OUTPUT_SIZE
+        ) {
+          outputWidth =
             Math.min(
               MAX_OUTPUT_SIZE,
-              2400
+              Math.max(
+                800,
+                Math.round(
+                  estimatedVisibleWidth *
+                    renderScale
+                )
+              )
             );
+
+          outputHeight =
+            Math.round(
+              outputWidth /
+                currentRatio.value
+            );
+        }
+
+        if (
+          currentRatio.value ===
+          1
+        ) {
+          outputWidth =
+            outputHeight =
+              Math.min(
+                MAX_OUTPUT_SIZE,
+                2400
+              );
+        }
       }
 
       const outputCanvas =
@@ -1322,7 +1943,8 @@ function ImageCropper({
       );
 
       /*
-        Convert preview coordinates into output coordinates.
+        Convert preview coordinates
+        into output coordinates.
       */
 
       const outputScale =
@@ -1428,17 +2050,22 @@ function ImageCropper({
         "gallery-image";
 
       const ratioName =
-        selectedRatio.replace(
-          ":",
-          "x"
-        );
+        selectedRatio ===
+        "CUSTOM"
+          ? "custom"
+          : selectedRatio.replace(
+              ":",
+              "x"
+            );
 
       const croppedFile =
         new File(
           [blob],
           `${baseName}-${ratioName}.jpg`,
           {
-            type: "image/jpeg",
+            type:
+              "image/jpeg",
+
             lastModified:
               Date.now(),
           }
@@ -1566,7 +2193,9 @@ function ImageCropper({
                     processing
                   }
                 >
-                  {ratio.label}
+                  {
+                    ratio.label
+                  }
                 </button>
               )
             )}
@@ -1583,16 +2212,24 @@ function ImageCropper({
           style={{
             position:
               "relative",
+
             touchAction:
               "none",
+
             userSelect:
               "none",
+
             WebkitUserSelect:
               "none",
+
             cursor:
               processing
                 ? "wait"
+                : selectedRatio ===
+                  "CUSTOM"
+                ? "crosshair"
                 : "grab",
+
             overflow:
               "hidden",
           }}
@@ -1631,16 +2268,24 @@ function ImageCropper({
             style={{
               display:
                 "block",
+
               width:
                 "100%",
+
               height:
                 "100%",
+
               touchAction:
                 "none",
+
               cursor:
                 processing
                   ? "wait"
-                  : dragRef.current.active
+                  : selectedRatio ===
+                    "CUSTOM"
+                  ? "crosshair"
+                  : dragRef.current
+                      .active
                   ? "grabbing"
                   : "grab",
             }}
@@ -1667,38 +2312,56 @@ function ImageCropper({
                 style={{
                   position:
                     "absolute",
+
                   left:
                     "50%",
+
                   bottom:
                     "14px",
+
                   transform:
                     "translateX(-50%)",
+
                   zIndex: 3,
+
                   padding:
                     "7px 12px",
+
                   border:
                     "1px solid rgba(255,255,255,0.18)",
+
                   background:
                     "rgba(0,0,0,0.5)",
+
                   color:
                     "rgba(255,255,255,0.82)",
+
                   fontSize:
                     "10px",
+
                   fontWeight:
                     700,
+
                   letterSpacing:
                     "0.08em",
+
                   textTransform:
                     "uppercase",
+
                   pointerEvents:
                     "none",
+
                   backdropFilter:
                     "blur(8px)",
+
                   WebkitBackdropFilter:
                     "blur(8px)",
                 }}
               >
-                Drag image to reposition
+                {selectedRatio ===
+                "CUSTOM"
+                  ? "Drag edges or corners to crop"
+                  : "Drag image to reposition"}
               </div>
             )}
         </div>
@@ -1712,14 +2375,19 @@ function ImageCropper({
           style={{
             display:
               "flex",
+
             alignItems:
               "center",
+
             justifyContent:
               "space-between",
+
             gap:
               "14px",
+
             flexWrap:
               "wrap",
+
             marginTop:
               "14px",
           }}
@@ -1730,10 +2398,13 @@ function ImageCropper({
             style={{
               display:
                 "flex",
+
               alignItems:
                 "center",
+
               gap:
                 "8px",
+
               flex:
                 "1 1 260px",
             }}
@@ -1766,16 +2437,12 @@ function ImageCropper({
                 MAX_ZOOM
               }
               step="0.01"
-              value={
-                zoom
-              }
+              value={zoom}
               onChange={(
                 event
               ) =>
                 updateZoom(
-                  event
-                    .target
-                    .value
+                  event.target.value
                 )
               }
               disabled={
@@ -1783,8 +2450,7 @@ function ImageCropper({
               }
               aria-label="Image zoom"
               style={{
-                flex:
-                  1,
+                flex: 1,
               }}
             />
 
@@ -1810,12 +2476,16 @@ function ImageCropper({
               style={{
                 minWidth:
                   "48px",
+
                 textAlign:
                   "right",
+
                 fontSize:
                   "11px",
+
                 fontWeight:
                   700,
+
                 color:
                   "rgba(255,255,255,0.65)",
               }}
@@ -1833,8 +2503,10 @@ function ImageCropper({
             style={{
               display:
                 "flex",
+
               alignItems:
                 "center",
+
               gap:
                 "8px",
             }}
@@ -1983,7 +2655,9 @@ function ImageCropper({
                   />
 
                   Apply{" "}
-                  {selectedRatio}{" "}
+                  {
+                    selectedRatio
+                  }{" "}
                   Crop
                 </>
               )}
