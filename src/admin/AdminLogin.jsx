@@ -6,6 +6,11 @@ import { ADMIN_API_URL } from "../config/api";
 function AdminLogin() {
   const navigate = useNavigate();
 
+  const isMobileDevice =
+    /android|iphone|ipad|ipod|windows phone|mobile|tablet/i.test(
+      navigator.userAgent
+    );
+
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -45,7 +50,10 @@ function AdminLogin() {
       return;
     }
 
-    if (formData.mobile_access_code.length !== 6) {
+    if (
+      isMobileDevice &&
+      formData.mobile_access_code.length !== 6
+    ) {
       setError("Please enter the 6-digit mobile access code.");
       return;
     }
@@ -57,19 +65,33 @@ function AdminLogin() {
       const requestBody = {
         username: formData.username.trim(),
         password: formData.password,
-        mobile_access_code: formData.mobile_access_code,
       };
 
-      const response = await fetch(`${ADMIN_API_URL}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
+      /*
+       * Only send the mobile access code
+       * when this is a mobile/tablet device.
+       */
+      if (isMobileDevice) {
+        requestBody.mobile_access_code =
+          formData.mobile_access_code;
+      }
+
+      const response = await fetch(
+        `${ADMIN_API_URL}/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
 
       const data = await response.json();
 
+      /*
+       * Mobile Access Code required
+       */
       if (
         response.status === 401 &&
         data.code === "MOBILE_ACCESS_CODE_REQUIRED"
@@ -80,14 +102,22 @@ function AdminLogin() {
         return;
       }
 
+      /*
+       * Invalid mobile access code
+       */
       if (
         response.status === 401 &&
         data.code === "INVALID_MOBILE_ACCESS_CODE"
       ) {
-        setError("The mobile access code is incorrect.");
+        setError(
+          "The mobile access code is incorrect."
+        );
         return;
       }
 
+      /*
+       * Expired mobile access code
+       */
       if (
         response.status === 403 &&
         data.code === "MOBILE_ACCESS_CODE_EXPIRED"
@@ -98,6 +128,9 @@ function AdminLogin() {
         return;
       }
 
+      /*
+       * Mobile access disabled
+       */
       if (
         response.status === 403 &&
         data.code === "MOBILE_ACCESS_DISABLED"
@@ -108,6 +141,9 @@ function AdminLogin() {
         return;
       }
 
+      /*
+       * Mobile access enabled but no code exists
+       */
       if (
         response.status === 503 &&
         data.code === "MOBILE_ACCESS_CODE_NOT_CONFIGURED"
@@ -118,6 +154,9 @@ function AdminLogin() {
         return;
       }
 
+      /*
+       * IP restriction
+       */
       if (
         response.status === 403 &&
         data.code === "IP_ACCESS_DENIED"
@@ -128,12 +167,19 @@ function AdminLogin() {
         return;
       }
 
+      /*
+       * Normal login / other errors
+       */
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || "Unable to login. Please try again."
+          data.message ||
+            "Unable to login. Please try again."
         );
       }
 
+      /*
+       * Successful authentication
+       */
       localStorage.setItem(
         "rudraksh_admin_token",
         data.token
@@ -146,7 +192,10 @@ function AdminLogin() {
 
       navigate("/admin/dashboard");
     } catch (loginError) {
-      console.error("ADMIN LOGIN ERROR:", loginError);
+      console.error(
+        "ADMIN LOGIN ERROR:",
+        loginError
+      );
 
       setError(
         loginError.message ||
@@ -161,8 +210,11 @@ function AdminLogin() {
     <div className="admin-login-page">
 
       <div className="admin-login-background">
+
         <div className="admin-glow admin-glow-one"></div>
+
         <div className="admin-glow admin-glow-two"></div>
+
       </div>
 
       <main className="admin-login-container">
@@ -249,7 +301,8 @@ function AdminLogin() {
                   className="admin-password-toggle"
                   onClick={() =>
                     setShowPassword(
-                      (previous) => !previous
+                      (previous) =>
+                        !previous
                     )
                   }
                   disabled={loading}
@@ -270,41 +323,45 @@ function AdminLogin() {
 
             {/* Mobile Access Code */}
 
-            <div className="admin-form-group">
+            {isMobileDevice && (
+              <div className="admin-form-group">
 
-              <label htmlFor="mobile_access_code">
-                Mobile Access Code
-              </label>
+                <label htmlFor="mobile_access_code">
+                  Mobile Access Code
+                </label>
 
-              <input
-                id="mobile_access_code"
-                name="mobile_access_code"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={6}
-                value={formData.mobile_access_code}
-                onChange={handleChange}
-                placeholder="Enter 6-digit code"
-                autoComplete="one-time-code"
-                disabled={loading}
-              />
+                <input
+                  id="mobile_access_code"
+                  name="mobile_access_code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={
+                    formData.mobile_access_code
+                  }
+                  onChange={handleChange}
+                  placeholder="Enter 6-digit code"
+                  autoComplete="one-time-code"
+                  disabled={loading}
+                />
 
-              <small
-                style={{
-                  display: "block",
-                  marginTop: "7px",
-                  fontSize: "11px",
-                  lineHeight: "1.5",
-                  opacity: 0.65,
-                }}
-              >
-                Enter the temporary mobile access
-                code generated by the Super
-                Administrator.
-              </small>
+                <small
+                  style={{
+                    display: "block",
+                    marginTop: "7px",
+                    fontSize: "11px",
+                    lineHeight: "1.5",
+                    opacity: 0.65,
+                  }}
+                >
+                  Enter the temporary mobile
+                  access code generated by the
+                  Super Administrator.
+                </small>
 
-            </div>
+              </div>
+            )}
 
             {/* Error */}
 
