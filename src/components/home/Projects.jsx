@@ -35,8 +35,7 @@ function Projects() {
           !Array.isArray(data.projects)
         ) {
           throw new Error(
-            data.message ||
-              "Unable to load projects."
+            data.message || "Unable to load projects."
           );
         }
 
@@ -72,6 +71,13 @@ function Projects() {
     };
   }, []);
 
+  /* =========================================================
+     GSAP
+     IMPORTANT:
+     No opacity animation.
+     Content stays visible on first load.
+  ========================================================= */
+
   useGSAP(
     () => {
       const section = sectionRef.current;
@@ -80,49 +86,59 @@ function Projects() {
         return;
       }
 
-      const elements =
-        section.querySelectorAll(
-          ".projects-heading, .projects-intro, .project-item, .projects-view-all, .projects-empty"
-        );
+      const elements = section.querySelectorAll(
+        ".projects-heading, .projects-intro, .project-item, .projects-view-all, .projects-empty"
+      );
 
+      /*
+       * Always keep content visible.
+       * Only reset position for the animation.
+       */
       gsap.set(elements, {
         opacity: 1,
         y: 0,
         x: 0,
       });
 
-      const prefersReducedMotion =
-        window.matchMedia(
-          "(prefers-reduced-motion: reduce)"
-        ).matches;
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
 
       if (prefersReducedMotion) {
         return;
       }
 
-      const rect =
-        section.getBoundingClientRect();
+      const rect = section.getBoundingClientRect();
 
       const visible =
         rect.top < window.innerHeight &&
         rect.bottom > 0;
 
       if (visible) {
+        /*
+         * The section is already visible on page load.
+         * Animate movement only.
+         */
         gsap.fromTo(
           elements,
           {
-            y: 35,
-            opacity: 0,
+            y: 18,
+            opacity: 1,
           },
           {
             y: 0,
             opacity: 1,
-            duration: 0.75,
-            stagger: 0.08,
+            duration: 0.55,
+            stagger: 0.06,
             ease: "power3.out",
+            clearProps: "transform",
           }
         );
       } else {
+        /*
+         * When scrolling into the section,
+         * use movement only — never fade out.
+         */
         gsap
           .timeline({
             scrollTrigger: {
@@ -131,13 +147,21 @@ function Projects() {
               once: true,
             },
           })
-          .from(elements, {
-            y: 35,
-            opacity: 0,
-            duration: 0.75,
-            stagger: 0.08,
-            ease: "power3.out",
-          });
+          .fromTo(
+            elements,
+            {
+              y: 18,
+              opacity: 1,
+            },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.55,
+              stagger: 0.06,
+              ease: "power3.out",
+              clearProps: "transform",
+            }
+          );
       }
     },
     {
@@ -148,6 +172,10 @@ function Projects() {
       ],
     }
   );
+
+  /* =========================================================
+     IMAGE URL
+  ========================================================= */
 
   const getImageUrl = (image) => {
     if (!image) {
@@ -169,8 +197,7 @@ function Projects() {
     return `${BACKEND_URL}/${image}`;
   };
 
-  const previewProjects =
-    projects.slice(0, 3);
+  const previewProjects = projects.slice(0, 3);
 
   return (
     <section
@@ -301,9 +328,7 @@ function Projects() {
                               ? "eager"
                               : "lazy"
                           }
-                          onError={(
-                            event
-                          ) => {
+                          onError={(event) => {
                             event.currentTarget.style.display =
                               "none";
                           }}
@@ -313,8 +338,6 @@ function Projects() {
                           PROJECT
                         </div>
                       )}
-
-                      {/* SAME AS GALLERY */}
 
                       <div className="project-image-overlay" />
 

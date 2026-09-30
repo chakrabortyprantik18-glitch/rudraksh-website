@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useGSAP } from "@gsap/react";
-
 import { gsap } from "../../services/gsap";
 import "./MembersPreview.css";
-
 import { BACKEND_URL } from "../../config/api";
 
-const API_URL =
-  `${BACKEND_URL}/api/members?limit=3`;
+const API_URL = `${BACKEND_URL}/api/members?limit=3`;
 
 function MembersPreview() {
   const sectionRef = useRef(null);
@@ -39,8 +36,7 @@ function MembersPreview() {
 
         if (!response.ok || !data.success) {
           throw new Error(
-            data.message ||
-              "Unable to load members."
+            data.message || "Unable to load members."
           );
         }
 
@@ -48,10 +44,9 @@ function MembersPreview() {
           return;
         }
 
-        const previewMembers =
-          Array.isArray(data.members)
-            ? data.members.slice(0, 3)
-            : [];
+        const previewMembers = Array.isArray(data.members)
+          ? data.members.slice(0, 3)
+          : [];
 
         setMembers(previewMembers);
 
@@ -68,14 +63,9 @@ function MembersPreview() {
           return;
         }
 
-        console.error(
-          "PUBLIC MEMBERS LOAD ERROR:",
-          err
-        );
+        console.error("PUBLIC MEMBERS LOAD ERROR:", err);
 
-        setError(
-          "Unable to load members right now."
-        );
+        setError("Unable to load members right now.");
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -92,6 +82,9 @@ function MembersPreview() {
 
   /* =========================================================
      GSAP
+     IMPORTANT:
+     No opacity animation.
+     Content stays visible on first load.
   ========================================================= */
 
   useGSAP(
@@ -102,49 +95,59 @@ function MembersPreview() {
         return;
       }
 
-      const elements =
-        section.querySelectorAll(
-          ".members-heading, .members-intro, .member-gallery-card, .members-bottom, .members-empty-state"
-        );
+      const elements = section.querySelectorAll(
+        ".members-heading, .members-intro, .member-gallery-card, .members-bottom, .members-empty-state"
+      );
 
+      /*
+       * Always keep content visible.
+       * Only reset position for the animation.
+       */
       gsap.set(elements, {
         opacity: 1,
         y: 0,
         x: 0,
       });
 
-      const prefersReducedMotion =
-        window.matchMedia(
-          "(prefers-reduced-motion: reduce)"
-        ).matches;
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
 
       if (prefersReducedMotion) {
         return;
       }
 
-      const rect =
-        section.getBoundingClientRect();
+      const rect = section.getBoundingClientRect();
 
       const visible =
         rect.top < window.innerHeight &&
         rect.bottom > 0;
 
       if (visible) {
+        /*
+         * Section is already visible when the page loads.
+         * Animate position only — never fade it out.
+         */
         gsap.fromTo(
           elements,
           {
-            y: 35,
-            opacity: 0,
+            y: 18,
+            opacity: 1,
           },
           {
             y: 0,
             opacity: 1,
-            duration: 0.75,
-            stagger: 0.08,
+            duration: 0.55,
+            stagger: 0.06,
             ease: "power3.out",
+            clearProps: "transform",
           }
         );
       } else {
+        /*
+         * When scrolling into the section,
+         * use movement only.
+         */
         gsap
           .timeline({
             scrollTrigger: {
@@ -153,21 +156,26 @@ function MembersPreview() {
               once: true,
             },
           })
-          .from(elements, {
-            y: 35,
-            opacity: 0,
-            duration: 0.75,
-            stagger: 0.08,
-            ease: "power3.out",
-          });
+          .fromTo(
+            elements,
+            {
+              y: 18,
+              opacity: 1,
+            },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.55,
+              stagger: 0.06,
+              ease: "power3.out",
+              clearProps: "transform",
+            }
+          );
       }
     },
     {
       scope: sectionRef,
-      dependencies: [
-        members.length,
-        loading,
-      ],
+      dependencies: [members.length, loading],
     }
   );
 
@@ -299,98 +307,91 @@ function MembersPreview() {
 
             <div className="members-gallery-grid">
 
-              {members.map(
-                (member, index) => {
+              {members.map((member, index) => {
 
-                  const imageUrl =
-                    getImageUrl(
-                      member.photo_url
-                    );
+                const imageUrl = getImageUrl(
+                  member.photo_url
+                );
 
-                  return (
-                    <Link
-                      key={member.id}
-                      to="/members"
-                      className={
-                        `member-gallery-card ${
-                          index === 0
-                            ? "member-gallery-card-large"
-                            : ""
-                        }`
-                      }
-                    >
+                return (
+                  <Link
+                    key={member.id}
+                    to="/members"
+                    className={`member-gallery-card ${
+                      index === 0
+                        ? "member-gallery-card-large"
+                        : ""
+                    }`}
+                  >
 
-                      <div className="member-gallery-image-wrap">
+                    <div className="member-gallery-image-wrap">
 
-                        {imageUrl ? (
-                          <img
-                            src={imageUrl}
-                            alt={
-                              member.name ||
-                              "Rudraksh member"
-                            }
-                            className="member-gallery-image"
-                            loading={
-                              index === 0
-                                ? "eager"
-                                : "lazy"
-                            }
-                            onError={(event) => {
-                              event.currentTarget.style.display =
-                                "none";
-                            }}
-                          />
-                        ) : (
-                          <div className="member-gallery-image-empty">
-                            No photo
-                          </div>
-                        )}
-
-                        <div className="member-gallery-overlay" />
-
-                        <span className="member-gallery-label">
-                          {member.position ||
-                            "RUDRAKSH MEMBER"}
-                        </span>
-
-                        <span className="member-gallery-index">
-                          {String(
-                            index + 1
-                          ).padStart(2, "0")}
-                        </span>
-
-                        <span className="member-gallery-plus">
-                          +
-                        </span>
-
-                      </div>
-
-                      <div className="member-gallery-content">
-
-                        <div>
-
-                          <h3>
-                            {member.name ||
-                              "Rudraksh Member"}
-                          </h3>
-
-                          <p>
-                            {member.position ||
-                              "Rudraksh Member"}
-                          </p>
-
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={
+                            member.name ||
+                            "Rudraksh member"
+                          }
+                          className="member-gallery-image"
+                          loading={
+                            index === 0
+                              ? "eager"
+                              : "lazy"
+                          }
+                          onError={(event) => {
+                            event.currentTarget.style.display =
+                              "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="member-gallery-image-empty">
+                          No photo
                         </div>
+                      )}
 
-                        <span className="member-gallery-arrow">
-                          ↗
-                        </span>
+                      <div className="member-gallery-overlay" />
+
+                      <span className="member-gallery-label">
+                        {member.position ||
+                          "RUDRAKSH MEMBER"}
+                      </span>
+
+                      <span className="member-gallery-index">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+
+                      <span className="member-gallery-plus">
+                        +
+                      </span>
+
+                    </div>
+
+                    <div className="member-gallery-content">
+
+                      <div>
+
+                        <h3>
+                          {member.name ||
+                            "Rudraksh Member"}
+                        </h3>
+
+                        <p>
+                          {member.position ||
+                            "Rudraksh Member"}
+                        </p>
 
                       </div>
 
-                    </Link>
-                  );
-                }
-              )}
+                      <span className="member-gallery-arrow">
+                        ↗
+                      </span>
+
+                    </div>
+
+                  </Link>
+                );
+              })}
 
             </div>
           )}

@@ -43,11 +43,9 @@ function Impact() {
   const { content } =
     useWebsiteContent("impact");
 
-  /*
-   * ============================================================
-   * CMS CONTENT
-   * ============================================================
-   */
+  /* ============================================================
+     CMS CONTENT
+  ============================================================ */
 
   const heading =
     content?.heading ||
@@ -97,18 +95,13 @@ function Impact() {
     parsed: parseStatValue(stat.value),
   }));
 
-  /*
-   * ============================================================
-   * GSAP
-   * ============================================================
-   *
-   * IMPORTANT:
-   * The CMS content loads asynchronously.
-   *
-   * The dependency below makes GSAP run again after the
-   * actual CMS content has arrived.
-   * ============================================================
-   */
+  /* ============================================================
+     GSAP
+
+     IMPORTANT:
+     No opacity animation is used.
+     Content remains visible during first load.
+  ============================================================ */
 
   useGSAP(
     () => {
@@ -132,7 +125,6 @@ function Impact() {
       /*
        * Always keep content visible.
        */
-
       gsap.set(
         [
           ".impact-heading",
@@ -149,7 +141,6 @@ function Impact() {
       /*
        * Initial counter values.
        */
-
       numbers.forEach(
         (element, index) => {
           const stat = stats[index];
@@ -166,7 +157,6 @@ function Impact() {
       /*
        * Reduced motion.
        */
-
       const prefersReducedMotion =
         window.matchMedia(
           "(prefers-reduced-motion: reduce)"
@@ -192,7 +182,6 @@ function Impact() {
       /*
        * Check whether section is already visible.
        */
-
       const rect =
         section.getBoundingClientRect();
 
@@ -201,6 +190,11 @@ function Impact() {
         rect.bottom > 0;
 
       if (isVisible) {
+        /*
+         * The section is already visible.
+         * Keep all content visible and do not
+         * run an opacity animation.
+         */
         numbers.forEach(
           (element, index) => {
             const stat = stats[index];
@@ -214,13 +208,37 @@ function Impact() {
           }
         );
 
+        /*
+         * Small movement only.
+         */
+        gsap.fromTo(
+          [
+            ".impact-heading",
+            ".impact-description",
+            ".impact-item",
+            ".impact-bottom-line",
+          ],
+          {
+            y: 18,
+            opacity: 1,
+          },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.55,
+            stagger: 0.06,
+            ease: "power3.out",
+            clearProps: "transform",
+          }
+        );
+
         return;
       }
 
       /*
        * Heading + description animation.
+       * Movement only — no opacity fade.
        */
-
       gsap
         .timeline({
           scrollTrigger: {
@@ -229,47 +247,64 @@ function Impact() {
             once: true,
           },
         })
-        .from(
+        .fromTo(
           ".impact-heading",
           {
-            y: 20,
-            opacity: 0,
-            duration: 0.65,
+            y: 18,
+            opacity: 1,
+          },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.55,
             ease: "power3.out",
+            clearProps: "transform",
           }
         )
-        .from(
+        .fromTo(
           ".impact-description",
           {
-            y: 20,
-            opacity: 0,
-            duration: 0.6,
-            ease: "power3.out",
+            y: 18,
+            opacity: 1,
           },
-          "-=0.35"
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.5,
+            ease: "power3.out",
+            clearProps: "transform",
+          },
+          "-=0.3"
         );
 
       /*
        * Statistics animation.
+       * Movement only.
        */
-
-      gsap.from(items, {
-        y: 45,
-        opacity: 0,
-        duration: 0.9,
-        stagger: 0.14,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: section,
-          start: "top 82%",
-          once: true,
+      gsap.fromTo(
+        items,
+        {
+          y: 18,
+          opacity: 1,
         },
-      });
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.6,
+          stagger: 0.08,
+          ease: "power3.out",
+          clearProps: "transform",
+          scrollTrigger: {
+            trigger: section,
+            start: "top 82%",
+            once: true,
+          },
+        }
+      );
 
       /*
        * Animated counters.
        */
-
       stats.forEach(
         (stat, index) => {
           const counter = {
@@ -286,7 +321,6 @@ function Impact() {
           /*
            * Don't animate text-only values.
            */
-
           if (
             !Number.isFinite(
               stat.parsed.number
@@ -333,16 +367,20 @@ function Impact() {
 
       /*
        * Bottom statement.
+       * Movement only — no opacity fade.
        */
-
-      gsap.from(
+      gsap.fromTo(
         ".impact-bottom-line",
         {
-          y: 20,
-          opacity: 0,
-          duration: 0.7,
+          y: 18,
+          opacity: 1,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.55,
           ease: "power3.out",
-
+          clearProps: "transform",
           scrollTrigger: {
             trigger: section,
             start: "top 72%",
@@ -355,17 +393,13 @@ function Impact() {
       scope: sectionRef,
 
       /*
-       * CRITICAL FIX:
        * Re-run GSAP whenever CMS content changes.
        */
-
       dependencies: [content],
 
       /*
-       * Clean up the previous GSAP animations
-       * before rebuilding them with fresh CMS data.
+       * Clean up previous GSAP animations.
        */
-
       revertOnUpdate: true,
     }
   );
@@ -381,7 +415,9 @@ function Impact() {
       ====================================================== */}
 
       <div className="impact-heading">
-        <span>{heading}</span>
+        <span>
+          {heading}
+        </span>
       </div>
 
       {/* ======================================================
