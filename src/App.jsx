@@ -8,6 +8,7 @@ import Impact from "./components/home/Impact";
 import About from "./components/home/About";
 import Projects from "./components/home/Projects";
 import GalleryPreview from "./components/home/GalleryPreview";
+import Founder from "./components/home/Founder";
 import MembersPreview from "./components/home/MembersPreview";
 import Membership from "./components/home/Membership";
 import Donate from "./components/home/Donate";
@@ -33,6 +34,8 @@ function App() {
         <Projects />
 
         <GalleryPreview />
+
+        <Founder />
 
         <MembersPreview />
 
