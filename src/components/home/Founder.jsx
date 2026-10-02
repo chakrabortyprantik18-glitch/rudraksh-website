@@ -13,7 +13,7 @@ function Founder() {
       title: "Founding Member",
       description:
         "A founding member of Rudraksh Social & Cultural Organization, helping shape its journey and commitment toward community development.",
-      image: "/images/founder.jpg",
+      image: "/images/founder.jpeg",
     },
   ];
 
@@ -29,16 +29,14 @@ function Founder() {
         ".founder-eyebrow, .founder-title, .founder-intro, .founder-card"
       );
 
-      // Keep content visible at all times.
       gsap.set(elements, {
         opacity: 1,
         y: 0,
       });
 
-      const prefersReducedMotion =
-        window.matchMedia(
-          "(prefers-reduced-motion: reduce)"
-        ).matches;
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
 
       if (prefersReducedMotion) {
         return;
@@ -102,10 +100,6 @@ function Founder() {
     >
       <div className="founder-container">
 
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
         <div className="founder-header">
 
           <div className="founder-eyebrow">
@@ -127,10 +121,6 @@ function Founder() {
 
         </div>
 
-        {/* =================================================
-            FOUNDERS
-        ================================================= */}
-
         <div className="founder-list">
 
           {founders.map((founder, index) => (
@@ -138,10 +128,6 @@ function Founder() {
               className="founder-card"
               key={`${founder.name}-${index}`}
             >
-
-              {/* =================================================
-                  PHOTO
-              ================================================= */}
 
               <div className="founder-photo-area">
 
@@ -163,10 +149,6 @@ function Founder() {
                 </span>
 
               </div>
-
-              {/* =================================================
-                  INFORMATION
-              ================================================= */}
 
               <div className="founder-info">
 
