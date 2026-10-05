@@ -13,7 +13,7 @@ function Founder() {
       title: "Founding Member",
       description:
         "A founding member of Rudraksh Social & Cultural Organization, helping shape its journey and commitment toward community development.",
-      image: "/images/founder.jpeg",
+      image: "/founder.jpeg",
     },
   ];
 
@@ -53,7 +53,7 @@ function Founder() {
           elements,
           {
             y: 18,
-            opacity: 1,
+            opacity: 0,
           },
           {
             y: 0,
@@ -69,7 +69,7 @@ function Founder() {
           elements,
           {
             y: 18,
-            opacity: 1,
+            opacity: 0,
           },
           {
             y: 0,
@@ -140,6 +140,13 @@ function Founder() {
                     alt={founder.name}
                     className="founder-photo"
                     loading="eager"
+                    decoding="async"
+                    onError={(event) => {
+                      console.error(
+                        "Founder image failed to load:",
+                        event.currentTarget.src
+                      );
+                    }}
                   />
 
                 </div>
