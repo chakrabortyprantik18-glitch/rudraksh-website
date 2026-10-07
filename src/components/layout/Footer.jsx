@@ -226,9 +226,14 @@ function Footer() {
 
           <p className="footer-credit">
             Designed &amp; Developed by{" "}
-            <strong>
+            <a
+              href="https://prantik.online"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-developer-link"
+            >
               Prantik Chakrabarty
-            </strong>
+            </a>
           </p>
 
         </div>
