@@ -13,7 +13,8 @@ function Founder() {
       title: "Founding Member",
       description:
         "A founding member of Rudraksh Social & Cultural Organization, helping shape its journey and commitment toward community development.",
-      image: "/founder.jpeg",
+      image:
+        "https://www.rudrakshsocialculturalorganization.online/images/founder.jpeg",
     },
   ];
 
@@ -21,75 +22,50 @@ function Founder() {
     () => {
       const section = sectionRef.current;
 
-      if (!section) {
-        return;
-      }
+      if (!section) return;
 
       const elements = section.querySelectorAll(
         ".founder-eyebrow, .founder-title, .founder-intro, .founder-card"
       );
+
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
 
       gsap.set(elements, {
         opacity: 1,
         y: 0,
       });
 
-      const prefersReducedMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
-
-      if (prefersReducedMotion) {
-        return;
-      }
+      if (prefersReducedMotion) return;
 
       const rect = section.getBoundingClientRect();
-
       const visible =
-        rect.top < window.innerHeight &&
-        rect.bottom > 0;
+        rect.top < window.innerHeight && rect.bottom > 0;
 
-      if (visible) {
-        gsap.fromTo(
-          elements,
-          {
-            y: 18,
-            opacity: 0,
-          },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.6,
-            stagger: 0.08,
-            ease: "power3.out",
-            clearProps: "transform",
-          }
-        );
-      } else {
-        gsap.fromTo(
-          elements,
-          {
-            y: 18,
-            opacity: 0,
-          },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.6,
-            stagger: 0.08,
-            ease: "power3.out",
-            clearProps: "transform",
-            scrollTrigger: {
-              trigger: section,
-              start: "top 82%",
-              once: true,
-            },
-          }
-        );
-      }
+      gsap.fromTo(
+        elements,
+        { y: 18, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.6,
+          stagger: 0.08,
+          ease: "power3.out",
+          clearProps: "transform",
+          ...(visible
+            ? {}
+            : {
+                scrollTrigger: {
+                  trigger: section,
+                  start: "top 82%",
+                  once: true,
+                },
+              }),
+        }
+      );
     },
-    {
-      scope: sectionRef,
-    }
+    { scope: sectionRef }
   );
 
   return (
@@ -99,9 +75,7 @@ function Founder() {
       id="founders"
     >
       <div className="founder-container">
-
         <div className="founder-header">
-
           <div className="founder-eyebrow">
             <span />
             THE FOUNDERS
@@ -118,21 +92,16 @@ function Founder() {
             and behind that vision are people who
             choose to take the first step.
           </p>
-
         </div>
 
         <div className="founder-list">
-
           {founders.map((founder, index) => (
             <article
               className="founder-card"
               key={`${founder.name}-${index}`}
             >
-
               <div className="founder-photo-area">
-
                 <div className="founder-photo-circle">
-
                   <div className="founder-photo-ring" />
 
                   <img
@@ -148,24 +117,19 @@ function Founder() {
                       );
                     }}
                   />
-
                 </div>
 
                 <span className="founder-number">
                   {String(index + 1).padStart(2, "0")}
                 </span>
-
               </div>
 
               <div className="founder-info">
-
                 <div className="founder-role">
                   {founder.title}
                 </div>
 
-                <h3>
-                  {founder.name}
-                </h3>
+                <h3>{founder.name}</h3>
 
                 <p className="founder-position">
                   {founder.role}
@@ -179,14 +143,10 @@ function Founder() {
                   <span />
                   <span>RUDRAKSH</span>
                 </div>
-
               </div>
-
             </article>
           ))}
-
         </div>
-
       </div>
     </section>
   );
