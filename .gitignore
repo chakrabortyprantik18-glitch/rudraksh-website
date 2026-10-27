@@ -29,3 +29,18 @@ dist-ssr
 
 # Uploaded files
 backend/uploads/
+
+.env
+.env.*
+!.env.example
+backend/.env
+backend/ca.pem
+ca.pem
+rudraksh-db-backup.sql
+rudraksh-db-backup.json
+backend/backup-db.js
+rudraksh-backup.sql
+rudraksh-db-backup.json
+backend/ca.pem
+ca.pem
+
