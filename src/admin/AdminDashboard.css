@@ -1,0 +1,82 @@
+.admin-refresh-button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 8px 12px;
+
+  border: 1px solid #292929;
+  border-radius: 7px;
+
+  background: #111111;
+  color: #999999;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.admin-refresh-button:hover {
+  color: #ffffff;
+  border-color: #3a3a3a;
+  background: #151515;
+}
+
+.admin-refresh-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-refresh-spin {
+  animation: adminRefreshSpin 0.8s linear infinite;
+}
+
+@keyframes adminRefreshSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.admin-stats-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+
+  margin-bottom: 14px;
+  padding: 12px 14px;
+
+  border: 1px solid rgba(255, 80, 80, 0.2);
+  border-radius: 8px;
+
+  background: rgba(255, 50, 50, 0.05);
+
+  color: #e97979;
+
+  font-size: 11px;
+}
+
+.admin-stats-error button {
+  flex-shrink: 0;
+
+  border: none;
+
+  background: transparent;
+
+  color: #e87917;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.admin-stats-error button:hover {
+  color: #ffffff;
+}

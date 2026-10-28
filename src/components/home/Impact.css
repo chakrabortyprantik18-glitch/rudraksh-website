@@ -1,0 +1,306 @@
+/* =========================================
+   RUDRAKSH — IMPACT SECTION
+========================================= */
+
+.impact {
+  position: relative;
+  width: 100%;
+
+  padding: 105px 5% 90px;
+
+  background: #f7f5f1;
+  color: #171717;
+
+  overflow: hidden;
+}
+
+/* =========================================
+   TOP LABEL
+========================================= */
+
+.impact-heading {
+  width: min(1250px, 90%);
+  margin: 0 auto 60px;
+
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.impact-heading::after {
+  content: "";
+
+  flex: 1;
+
+  height: 1px;
+
+  background: #d9d5ce;
+}
+
+.impact-heading span {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+
+  color: #e87917;
+}
+
+/* =========================================
+   STAT GRID
+========================================= */
+
+.impact-inner {
+  width: min(1250px, 90%);
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+
+  border-top: 1px solid #d9d5ce;
+  border-bottom: 1px solid #d9d5ce;
+}
+
+.impact-item {
+  position: relative;
+
+  min-height: 230px;
+  padding: 45px 35px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  /* IMPORTANT:
+     Content stays visible even if GSAP
+     doesn't trigger correctly. */
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.impact-item:not(:last-child)::after {
+  content: "";
+
+  position: absolute;
+
+  top: 35px;
+  right: 0;
+
+  width: 1px;
+  height: calc(100% - 70px);
+
+  background: #d9d5ce;
+}
+
+/* =========================================
+   NUMBERS
+========================================= */
+
+.impact-number {
+  margin-bottom: 12px;
+
+  font-size: clamp(58px, 6vw, 86px);
+  line-height: 0.9;
+
+  font-weight: 700;
+  letter-spacing: -0.06em;
+
+  color: #171717;
+
+  white-space: nowrap;
+}
+
+.impact-item:nth-child(2) .impact-number {
+  color: #e87917;
+}
+
+.impact-item:nth-child(3) .impact-number {
+  color: #454545;
+}
+
+.impact-item:nth-child(4) .impact-number {
+  color: #e87917;
+}
+
+/* =========================================
+   LABEL
+========================================= */
+
+.impact-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+
+  color: #68645e;
+}
+
+/* =========================================
+   BOTTOM STATEMENT
+========================================= */
+
+.impact-bottom-line {
+  width: min(900px, 90%);
+  margin: 48px auto 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.impact-bottom-line span {
+  width: 45px;
+  height: 1px;
+
+  background: #e87917;
+}
+
+.impact-bottom-line p {
+  margin: 0;
+
+  text-align: center;
+
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+
+  color: #68645e;
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 900px) {
+  .impact {
+    padding: 85px 5% 75px;
+  }
+
+  .impact-heading {
+    margin-bottom: 45px;
+  }
+
+  .impact-inner {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .impact-item {
+    min-height: 200px;
+    padding: 35px 28px;
+  }
+
+  /* Remove vertical line from item 2 */
+  .impact-item:nth-child(2)::after {
+    display: none;
+  }
+
+  /* Horizontal line between rows */
+  .impact-item:nth-child(-n + 2) {
+    border-bottom: 1px solid #d9d5ce;
+  }
+
+  /* Vertical line on left column */
+  .impact-item:nth-child(odd)::after {
+    display: block;
+  }
+
+  /* No vertical line on right column */
+  .impact-item:nth-child(even)::after {
+    display: none;
+  }
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+  .impact {
+    padding: 75px 6% 65px;
+  }
+
+  .impact-heading {
+    width: 100%;
+    margin-bottom: 35px;
+  }
+
+  .impact-heading span {
+    font-size: 9px;
+  }
+
+  .impact-inner {
+    width: 100%;
+
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .impact-item {
+    min-height: 165px;
+
+    padding: 25px 18px;
+  }
+
+  .impact-item:not(:last-child)::after {
+    top: 25px;
+    height: calc(100% - 50px);
+  }
+
+  .impact-number {
+    margin-bottom: 10px;
+
+    font-size: clamp(43px, 13vw, 60px);
+  }
+
+  .impact-label {
+    font-size: 9px;
+    line-height: 1.4;
+    letter-spacing: 0.1em;
+  }
+
+  .impact-bottom-line {
+    width: 100%;
+
+    margin-top: 35px;
+
+    gap: 10px;
+  }
+
+  .impact-bottom-line span {
+    width: 25px;
+  }
+
+  .impact-bottom-line p {
+    font-size: 10px;
+    line-height: 1.5;
+  }
+}
+
+/* =========================================
+   VERY SMALL PHONES
+========================================= */
+
+@media (max-width: 380px) {
+  .impact-item {
+    min-height: 145px;
+    padding: 22px 14px;
+  }
+
+  .impact-number {
+    font-size: 40px;
+  }
+
+  .impact-label {
+    font-size: 8px;
+  }
+}
+
+/* =========================================
+   REDUCED MOTION
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .impact-item {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

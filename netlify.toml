@@ -1,0 +1,29 @@
+﻿
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = [
+    "express",
+    "cors",
+    "helmet",
+    "dotenv",
+    "bcryptjs",
+    "jsonwebtoken",
+    "multer",
+    "mysql2",
+    "razorpay",
+    "@google/genai",
+    "serverless-http"
+  ]
+
+[functions.api]
+  included_files = ["backend/**"]
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200

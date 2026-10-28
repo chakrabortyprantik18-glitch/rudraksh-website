@@ -1,0 +1,557 @@
+/* =========================================================
+   FOUNDING MEMBERS
+========================================================= */
+
+.founder-section {
+  width: 100%;
+  position: relative;
+  background: #f7f4ee;
+  overflow: hidden;
+  padding: 120px 0;
+}
+
+.founder-container {
+  width: min(1280px, calc(100% - 48px));
+  margin: 0 auto;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.founder-header {
+  max-width: 850px;
+  margin-bottom: 80px;
+}
+
+.founder-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  margin-bottom: 24px;
+
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+
+  color: #9a623b;
+}
+
+.founder-eyebrow span {
+  display: block;
+  width: 42px;
+  height: 1px;
+  background: #9a623b;
+}
+
+.founder-title {
+  margin: 0;
+
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(52px, 7vw, 100px);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -3px;
+
+  color: #251b17;
+}
+
+.founder-title em {
+  color: #b86f38;
+  font-style: normal;
+}
+
+.founder-intro {
+  max-width: 700px;
+
+  margin: 30px 0 0;
+
+  font-size: 18px;
+  line-height: 1.7;
+
+  color: #827970;
+}
+
+/* =========================================================
+   FOUNDERS LIST
+========================================================= */
+
+.founder-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 100px;
+}
+
+/* =========================================================
+   FOUNDER CARD
+========================================================= */
+
+.founder-card {
+  position: relative;
+
+  display: grid;
+  grid-template-columns: minmax(420px, 620px) minmax(300px, 1fr);
+
+  align-items: center;
+
+  gap: clamp(50px, 7vw, 120px);
+
+  min-height: 520px;
+
+  padding: 20px 0;
+}
+
+/* =========================================================
+   PHOTO AREA
+========================================================= */
+
+.founder-photo-area {
+  position: relative;
+
+  width: min(100%, 620px);
+  aspect-ratio: 1 / 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.founder-photo-circle {
+  position: relative;
+
+  width: 78%;
+  aspect-ratio: 1 / 1;
+
+  border-radius: 50%;
+
+  overflow: hidden;
+
+  background: #ded8cf;
+
+  isolation: isolate;
+}
+
+.founder-photo-ring {
+  position: absolute;
+  inset: -12px;
+
+  border: 1px solid rgba(184, 111, 56, 0.55);
+
+  border-radius: 50%;
+
+  pointer-events: none;
+
+  z-index: 3;
+}
+
+.founder-photo {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+  object-position: center;
+
+  transition:
+    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.5s ease;
+}
+
+.founder-card:hover .founder-photo {
+  transform: scale(1.045);
+}
+
+/* =========================================================
+   DECORATIVE CIRCLE
+========================================================= */
+
+.founder-photo-area::before {
+  content: "";
+
+  position: absolute;
+
+  width: 88%;
+  aspect-ratio: 1 / 1;
+
+  border: 1px solid rgba(37, 27, 23, 0.14);
+
+  border-radius: 50%;
+
+  transform: rotate(-8deg);
+
+  pointer-events: none;
+}
+
+.founder-photo-area::after {
+  content: "";
+
+  position: absolute;
+
+  width: 11px;
+  height: 11px;
+
+  border-radius: 50%;
+
+  background: #b86f38;
+
+  right: 7%;
+  top: 16%;
+
+  box-shadow:
+    0 0 0 8px rgba(184, 111, 56, 0.08);
+}
+
+/* =========================================================
+   NUMBER
+========================================================= */
+
+.founder-number {
+  position: absolute;
+
+  left: 5%;
+  bottom: 12%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 58px;
+  height: 58px;
+
+  border-radius: 50%;
+
+  background: #b86f38;
+
+  color: #ffffff;
+
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+
+  z-index: 5;
+}
+
+/* =========================================================
+   FOUNDER INFORMATION
+========================================================= */
+
+.founder-info {
+  max-width: 480px;
+
+  padding-right: 20px;
+}
+
+.founder-role {
+  display: inline-flex;
+  align-items: center;
+
+  margin-bottom: 22px;
+
+  padding: 9px 14px;
+
+  border: 1px solid rgba(184, 111, 56, 0.35);
+
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+
+  color: #9a623b;
+}
+
+.founder-info h3 {
+  margin: 0;
+
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(42px, 5vw, 72px);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -2px;
+
+  color: #251b17;
+}
+
+.founder-position {
+  margin: 18px 0 0;
+
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  color: #b86f38;
+}
+
+.founder-description {
+  max-width: 430px;
+
+  margin: 28px 0 0;
+
+  font-size: 17px;
+  line-height: 1.75;
+
+  color: #756d66;
+}
+
+/* =========================================================
+   BOTTOM LINE
+========================================================= */
+
+.founder-line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  margin-top: 40px;
+
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+
+  color: #9a623b;
+}
+
+.founder-line span:first-child {
+  width: 45px;
+  height: 1px;
+
+  background: #b86f38;
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 900px) {
+  .founder-section {
+    padding: 90px 0;
+  }
+
+  .founder-header {
+    margin-bottom: 60px;
+  }
+
+  .founder-card {
+    grid-template-columns: minmax(300px, 1fr) minmax(250px, 0.9fr);
+
+    gap: 40px;
+
+    min-height: 400px;
+  }
+
+  .founder-photo-circle {
+    width: 82%;
+  }
+
+  .founder-info h3 {
+    font-size: 48px;
+  }
+
+  .founder-description {
+    font-size: 15px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 650px) {
+  .founder-section {
+    padding: 80px 0;
+  }
+
+  .founder-container {
+    width: min(100% - 36px, 560px);
+  }
+
+  .founder-header {
+    margin-bottom: 55px;
+  }
+
+  .founder-eyebrow {
+    margin-bottom: 20px;
+
+    font-size: 10px;
+    letter-spacing: 2.5px;
+  }
+
+  .founder-eyebrow span {
+    width: 32px;
+  }
+
+  .founder-title {
+    font-size: clamp(48px, 14vw, 68px);
+    line-height: 0.92;
+    letter-spacing: -2px;
+  }
+
+  .founder-intro {
+    margin-top: 24px;
+
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .founder-list {
+    gap: 70px;
+  }
+
+  /*
+   * MOBILE:
+   * Image and text stay side-by-side.
+   */
+  .founder-card {
+    display: grid;
+
+    grid-template-columns: 46% 54%;
+
+    gap: 0;
+
+    min-height: 0;
+
+    align-items: center;
+
+    padding: 10px 0;
+  }
+
+  .founder-photo-area {
+    width: 100%;
+
+    aspect-ratio: 1 / 1;
+
+    transform: translateX(-3%);
+  }
+
+  .founder-photo-circle {
+    width: 88%;
+  }
+
+  .founder-photo-ring {
+    inset: -7px;
+  }
+
+  .founder-photo-area::before {
+    width: 98%;
+  }
+
+  .founder-photo-area::after {
+    width: 7px;
+    height: 7px;
+
+    right: 2%;
+    top: 15%;
+  }
+
+  .founder-number {
+    width: 38px;
+    height: 38px;
+
+    left: 0;
+    bottom: 8%;
+
+    font-size: 10px;
+  }
+
+  .founder-info {
+    padding-left: 18px;
+    padding-right: 0;
+
+    max-width: none;
+  }
+
+  .founder-role {
+    margin-bottom: 13px;
+
+    padding: 6px 9px;
+
+    font-size: 7px;
+    letter-spacing: 1.4px;
+  }
+
+  .founder-info h3 {
+    font-size: clamp(28px, 8vw, 40px);
+
+    line-height: 0.95;
+
+    letter-spacing: -1px;
+  }
+
+  .founder-position {
+    margin-top: 10px;
+
+    font-size: 9px;
+    letter-spacing: 1.3px;
+  }
+
+  .founder-description {
+    margin-top: 14px;
+
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .founder-line {
+    margin-top: 18px;
+
+    gap: 8px;
+
+    font-size: 7px;
+    letter-spacing: 2px;
+  }
+
+  .founder-line span:first-child {
+    width: 25px;
+  }
+}
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 400px) {
+  .founder-container {
+    width: calc(100% - 28px);
+  }
+
+  .founder-card {
+    grid-template-columns: 45% 55%;
+  }
+
+  .founder-info {
+    padding-left: 12px;
+  }
+
+  .founder-info h3 {
+    font-size: 27px;
+  }
+
+  .founder-description {
+    font-size: 11px;
+  }
+
+  .founder-role {
+    font-size: 6.5px;
+    padding: 5px 7px;
+  }
+
+  .founder-number {
+    width: 32px;
+    height: 32px;
+    font-size: 8px;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .founder-photo {
+    transition: none;
+  }
+}

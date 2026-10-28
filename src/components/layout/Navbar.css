@@ -1,0 +1,558 @@
+/* =================================
+   RUDRAKSH NAVBAR
+================================= */
+
+.navbar,
+.navbar * {
+  box-sizing: border-box;
+}
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 82px;
+
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 5%;
+
+  z-index: 99999;
+
+  background: transparent;
+
+  transition:
+    background 0.35s ease,
+    box-shadow 0.35s ease,
+    height 0.35s ease;
+}
+
+.navbar-scrolled {
+  height: 72px;
+
+  background: rgba(255, 255, 255, 0.96);
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* =================================
+   LOGO
+================================= */
+
+.navbar-brand {
+  position: relative;
+  z-index: 100004;
+
+  border: 0;
+  background: transparent;
+
+  padding: 0;
+
+  display: flex !important;
+  align-items: center;
+
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.navbar-brand img {
+  display: block;
+
+  width: 58px;
+  height: 58px;
+
+  object-fit: contain;
+
+  transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover img {
+  transform: scale(1.06);
+}
+
+/* =================================
+   DESKTOP NAVIGATION
+================================= */
+
+.navbar-links {
+  display: flex !important;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 28px;
+
+  position: relative;
+  z-index: 100003;
+}
+
+.navbar-link {
+  position: relative;
+
+  border: 0;
+  background: transparent;
+
+  padding: 8px 0;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  color: #171717;
+
+  cursor: pointer;
+
+  transition:
+    color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.navbar-link::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: 0;
+
+  width: 0;
+  height: 2px;
+
+  background: #e87917;
+
+  transition: width 0.3s ease;
+}
+
+.navbar-link:hover {
+  color: #e87917;
+}
+
+.navbar-link:hover::after,
+.navbar-link.active::after {
+  width: 100%;
+}
+
+.navbar-link.active {
+  color: #e87917;
+}
+
+/* =================================
+   ACTIONS
+================================= */
+
+.navbar-actions {
+  position: relative;
+  z-index: 100005;
+
+  display: flex !important;
+  align-items: center;
+
+  gap: 14px;
+
+  flex-shrink: 0;
+}
+
+/* =================================
+   DONATE
+================================= */
+
+.navbar-donate {
+  border: none;
+
+  padding: 13px 22px;
+
+  background: #e87917;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.navbar-donate:hover {
+  background: #c95f08;
+
+  transform: translateY(-2px);
+
+  box-shadow: 0 8px 20px rgba(232, 121, 23, 0.25);
+}
+
+/* =================================
+   HAMBURGER
+================================= */
+
+.navbar .navbar-menu {
+  display: none !important;
+
+  width: 46px;
+  height: 46px;
+
+  min-width: 46px;
+  min-height: 46px;
+
+  padding: 8px;
+
+  border: 0;
+  outline: none;
+
+  background: transparent;
+
+  cursor: pointer;
+
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  gap: 2px;
+
+  flex-shrink: 0;
+
+  position: relative;
+  z-index: 100006;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+.navbar .navbar-menu span {
+  display: block !important;
+
+  width: 26px;
+  height: 3px;
+
+  min-height: 3px;
+
+  border-radius: 3px;
+
+  background: #171717 !important;
+
+  opacity: 1 !important;
+
+  visibility: visible !important;
+
+  flex-shrink: 0;
+
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+/* =================================
+   HAMBURGER ACTIVE
+================================= */
+
+.navbar .navbar-menu.active span:nth-child(1) {
+  transform: translateY(5px) rotate(45deg);
+}
+
+.navbar .navbar-menu.active span:nth-child(2) {
+  opacity: 0 !important;
+}
+
+.navbar .navbar-menu.active span:nth-child(3) {
+  transform: translateY(-5px) rotate(-45deg);
+}
+
+/* =================================
+   OVERLAY
+================================= */
+
+.navbar-overlay {
+  display: none;
+}
+
+/* =================================
+   TABLET
+================================= */
+
+@media (max-width: 1100px) {
+
+  .navbar {
+    padding: 0 4%;
+  }
+
+  .navbar-links {
+    gap: 16px;
+  }
+
+  .navbar-link {
+    font-size: 13px;
+  }
+
+  .navbar-donate {
+    padding: 12px 17px;
+  }
+}
+
+/* =================================
+   MOBILE
+================================= */
+
+@media screen and (max-width: 850px) {
+
+  .navbar {
+    height: 72px;
+
+    padding: 0 18px;
+
+    z-index: 99999;
+  }
+
+  .navbar-brand img {
+    width: 50px;
+    height: 50px;
+  }
+
+  /* ---------------------------------
+     MOBILE NAVIGATION
+  --------------------------------- */
+
+  .navbar .navbar-links {
+    position: fixed;
+
+    top: 0;
+    right: 0;
+
+    width: min(360px, 88vw);
+
+    height: 100vh;
+    height: 100dvh;
+
+    padding: 100px 30px 40px;
+
+    display: flex !important;
+
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 0;
+
+    background: #ffffff;
+
+    box-shadow: -15px 0 50px rgba(0, 0, 0, 0.15);
+
+    transform: translateX(100%);
+
+    visibility: hidden;
+
+    overflow-y: auto;
+
+    transition:
+      transform 0.35s ease,
+      visibility 0.35s ease;
+
+    z-index: 100002;
+  }
+
+  .navbar .navbar-links-open {
+    transform: translateX(0);
+
+    visibility: visible !important;
+  }
+
+  /* ---------------------------------
+     OVERLAY
+  --------------------------------- */
+
+  .navbar .navbar-overlay {
+    display: block;
+
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.35);
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    pointer-events: none;
+
+    transition:
+      opacity 0.3s ease,
+      visibility 0.3s ease;
+
+    z-index: 100001;
+  }
+
+  .navbar .navbar-overlay-visible {
+    opacity: 1;
+
+    visibility: visible;
+
+    pointer-events: auto;
+  }
+
+  /* ---------------------------------
+     HIDE DESKTOP DONATE
+  --------------------------------- */
+
+  .navbar .navbar-donate {
+    display: none !important;
+  }
+
+  /* ---------------------------------
+     SHOW HAMBURGER
+  --------------------------------- */
+
+  .navbar .navbar-actions {
+    display: flex !important;
+
+    align-items: center !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    position: relative;
+
+    z-index: 100005;
+  }
+
+  .navbar .navbar-menu {
+    display: flex !important;
+
+    align-items: center !important;
+    justify-content: center !important;
+
+    flex-direction: column !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    width: 46px !important;
+    height: 46px !important;
+
+    min-width: 46px !important;
+    min-height: 46px !important;
+
+    gap: 2px !important;
+
+    position: relative !important;
+
+    z-index: 100006 !important;
+  }
+
+  .navbar .navbar-menu span {
+    display: block !important;
+
+    visibility: visible !important;
+
+    opacity: 1 !important;
+
+    width: 26px !important;
+    height: 3px !important;
+
+    min-height: 3px !important;
+
+    background: #171717 !important;
+  }
+
+  /* ---------------------------------
+     MOBILE LINKS
+  --------------------------------- */
+
+  .navbar .navbar-link {
+    width: 100%;
+
+    padding: 17px 0;
+
+    text-align: left;
+
+    font-size: 16px;
+
+    border-bottom: 1px solid #eeeeee;
+  }
+
+  .navbar .navbar-link:last-child {
+    border-bottom: none;
+  }
+
+  .navbar .navbar-link::after {
+    bottom: -1px;
+  }
+}
+
+/* =================================
+   SMALL PHONES
+================================= */
+
+@media screen and (max-width: 480px) {
+
+  .navbar {
+    padding: 0 14px;
+  }
+
+  .navbar-brand img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .navbar .navbar-menu {
+    width: 46px !important;
+    height: 46px !important;
+
+    gap: 2px !important;
+  }
+
+  .navbar .navbar-links {
+    width: 90vw;
+
+    padding-left: 26px;
+    padding-right: 26px;
+  }
+}
+
+/* =================================
+   VERY SMALL PHONES
+================================= */
+
+@media screen and (max-width: 360px) {
+
+  .navbar {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .navbar .navbar-links {
+    width: 94vw;
+
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .navbar .navbar-link {
+    font-size: 15px;
+  }
+}
+
+/* =================================
+   REDUCE MOTION
+================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .navbar,
+  .navbar-link,
+  .navbar-link::after,
+  .navbar-menu span,
+  .navbar-links,
+  .navbar-overlay {
+    transition: none;
+  }
+}

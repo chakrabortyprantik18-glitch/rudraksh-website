@@ -1,0 +1,339 @@
+/* =========================================
+   RUDRAKSH — FOOTER
+========================================= */
+
+.footer {
+  position: relative;
+  width: 100%;
+
+  padding: 85px 5% 25px;
+
+  background: #25130d;
+  color: #ffffff;
+
+  overflow: hidden;
+}
+
+.footer-container {
+  width: min(1250px, 100%);
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: 1fr 220px;
+
+  gap: 100px;
+}
+
+/* =========================================
+   BRAND
+========================================= */
+
+.footer-brand {
+  max-width: 620px;
+}
+
+.footer-logo {
+  display: block;
+
+  width: 86px;
+  height: 86px;
+
+  object-fit: contain;
+
+  margin-bottom: 30px;
+
+  border-radius: 50%;
+}
+
+.footer-description {
+  max-width: 470px;
+
+  margin: 0 0 30px;
+
+  color: rgba(255, 255, 255, 0.68);
+
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* =========================================
+   SOCIAL MEDIA ICONS
+========================================= */
+
+.footer-socials {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+}
+
+.footer-social {
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+
+  color: #ffffff;
+
+  text-decoration: none;
+
+  transition:
+    color 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.footer-social svg {
+  display: block;
+
+  width: 19px;
+  height: 19px;
+}
+
+.footer-social:hover {
+  background: #e87917;
+
+  border-color: #e87917;
+
+  color: #ffffff;
+
+  transform: translateY(-4px);
+}
+
+/* =========================================
+   EXPLORE
+========================================= */
+
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.footer-links h3 {
+  margin: 0 0 24px;
+
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 0.15em;
+}
+
+.footer-links a {
+  margin-bottom: 14px;
+
+  color: rgba(255, 255, 255, 0.62);
+
+  text-decoration: none;
+
+  font-size: 13px;
+
+  transition:
+    color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.footer-links a:hover {
+  color: #e87917;
+
+  transform: translateX(5px);
+}
+
+/* =========================================
+   BOTTOM
+========================================= */
+
+.footer-bottom {
+  width: min(1250px, 100%);
+
+  margin: 70px auto 0;
+
+  padding-top: 22px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.footer-bottom p {
+  margin: 0;
+
+  color: rgba(255, 255, 255, 0.42);
+
+  font-size: 10px;
+}
+
+.footer-bottom span {
+  color: rgba(255, 255, 255, 0.25);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 0.15em;
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 750px) {
+  .footer {
+    padding: 70px 6% 25px;
+  }
+
+  .footer-container {
+    grid-template-columns: 1fr 170px;
+
+    gap: 55px;
+  }
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+  .footer {
+    padding: 65px 6% 22px;
+  }
+
+  .footer-container {
+    grid-template-columns: 1fr;
+
+    gap: 55px;
+  }
+
+  .footer-logo {
+    width: 78px;
+    height: 78px;
+
+    margin-bottom: 25px;
+  }
+
+  .footer-description {
+    font-size: 13px;
+  }
+
+  .footer-social {
+    width: 44px;
+    height: 44px;
+  }
+
+  .footer-links {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    column-gap: 30px;
+  }
+
+  .footer-links h3 {
+    grid-column: 1 / -1;
+  }
+
+  .footer-bottom {
+    margin-top: 55px;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 12px;
+  }
+}
+
+/* =========================================
+   SMALL PHONES
+========================================= */
+
+@media (max-width: 390px) {
+  .footer-links {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .footer-description {
+    max-width: 100%;
+  }
+}
+/* =========================================
+   CONTACT STRIP
+========================================= */
+
+.footer-contact-strip {
+  width: min(1250px, 100%);
+
+  margin: 65px auto 0;
+
+  padding: 20px 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.footer-contact-strip a {
+  color: rgba(255, 255, 255, 0.48);
+
+  text-decoration: none;
+
+  font-size: 10px;
+  font-weight: 600;
+
+  transition:
+    color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.footer-contact-strip a:hover {
+  color: #e87917;
+
+  transform: translateY(-2px);
+}
+
+
+/* =========================================
+   MOBILE CONTACT STRIP
+========================================= */
+
+@media (max-width: 750px) {
+  .footer-contact-strip {
+    flex-wrap: wrap;
+
+    justify-content: flex-start;
+
+    gap: 15px 30px;
+  }
+}
+
+@media (max-width: 600px) {
+  .footer-contact-strip {
+    margin-top: 50px;
+
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 14px;
+  }
+
+  .footer-contact-strip a {
+    font-size: 10px;
+
+    overflow-wrap: anywhere;
+  }
+}
