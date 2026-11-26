@@ -1,0 +1,1487 @@
+
+/* =========================================================
+   RUDRAKSH UTSAV 2026
+   Participant Registration Portal
+   Design system: Royal Ivory / Burgundy / Antique Gold
+========================================================= */
+
+/* 01. DESIGN TOKENS
+========================================================= */
+
+:root {
+  --reg-bg: #faf7f0;
+  --reg-surface: #fffdf9;
+  --reg-surface-alt: #f5efe5;
+
+  --reg-primary: #762c3b;
+  --reg-primary-dark: #58202c;
+  --reg-primary-light: #f5e9e9;
+
+  --reg-gold: #b38a48;
+  --reg-gold-light: #e8d7b5;
+
+  --reg-text: #292421;
+  --reg-muted: #796e66;
+  --reg-border: #e7ded1;
+
+  --reg-success: #327653;
+  --reg-danger: #b42318;
+
+  --reg-shadow:
+    0 12px 36px rgba(63, 42, 31, 0.055);
+
+  --reg-radius: 12px;
+  --reg-transition: 180ms ease;
+}
+
+/* 02. PAGE FOUNDATION
+========================================================= */
+
+.participant-registration {
+  min-height: 100vh;
+  background: var(--reg-bg);
+  color: var(--reg-text);
+  font-family:
+    "Inter",
+    "Segoe UI",
+    Arial,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.participant-registration *,
+.participant-registration *::before,
+.participant-registration *::after {
+  box-sizing: border-box;
+}
+
+.participant-registration button,
+.participant-registration input,
+.participant-registration textarea {
+  font: inherit;
+}
+
+.participant-registration button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 03. HEADER
+========================================================= */
+
+.registration-header {
+  min-height: 76px;
+  padding: 0 6%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 253, 249, 0.96);
+  border-bottom: 1px solid var(--reg-border);
+}
+
+.registration-header > span {
+  color: var(--reg-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2.4px;
+}
+
+.back-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--reg-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color var(--reg-transition);
+}
+
+.back-home:hover {
+  color: var(--reg-primary);
+}
+
+/* 04. MAIN CONTAINER
+========================================================= */
+
+.registration-container {
+  width: min(100% - 40px, 1040px);
+  margin: 0 auto;
+  padding: 58px 0 90px;
+}
+
+/* 05. PAGE TITLE
+========================================================= */
+
+.registration-title {
+  max-width: 760px;
+  margin-bottom: 38px;
+}
+
+.registration-title > span {
+  display: inline-block;
+  color: var(--reg-gold);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+}
+
+.registration-title h1 {
+  margin: 11px 0 10px;
+  color: var(--reg-primary);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(32px, 5vw, 49px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -1.2px;
+}
+
+.registration-title p {
+  max-width: 600px;
+  margin: 0;
+  color: var(--reg-muted);
+  font-size: 15px;
+}
+
+/* 06. THREE STEP PROGRESS INDICATOR
+========================================================= */
+
+.wizard-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 25px 30px;
+  margin-bottom: 28px;
+  background: var(--reg-surface);
+  border: 1px solid var(--reg-border);
+  border-radius: var(--reg-radius);
+  box-shadow: var(--reg-shadow);
+}
+
+.wizard-step {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.55;
+  transition: opacity var(--reg-transition);
+}
+
+.wizard-step.active,
+.wizard-step.completed {
+  opacity: 1;
+}
+
+.wizard-circle {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--reg-border);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--reg-muted);
+  font-size: 14px;
+  font-weight: 800;
+  transition:
+    background var(--reg-transition),
+    border-color var(--reg-transition),
+    color var(--reg-transition);
+}
+
+.wizard-step.active .wizard-circle {
+  color: #fff;
+  background: var(--reg-primary);
+  border-color: var(--reg-primary);
+  box-shadow: 0 0 0 5px var(--reg-primary-light);
+}
+
+.wizard-step.completed .wizard-circle {
+  color: #fff;
+  background: var(--reg-success);
+  border-color: var(--reg-success);
+  box-shadow: none;
+}
+
+.wizard-step-label {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.wizard-step-label strong {
+  color: var(--reg-text);
+  font-size: 13px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.wizard-step-label small {
+  color: var(--reg-muted);
+  font-size: 11px;
+}
+
+.wizard-connector {
+  height: 2px;
+  min-width: 18px;
+  flex: 1;
+  margin: 0 18px;
+  background: var(--reg-border);
+  transition: background var(--reg-transition);
+}
+
+.wizard-connector.active {
+  background: var(--reg-gold);
+}
+
+/* 07. REGISTRATION CARD
+========================================================= */
+
+.registration-card {
+  padding: 38px 40px;
+  margin-bottom: 25px;
+  background: var(--reg-surface);
+  border: 1px solid var(--reg-border);
+  border-radius: 14px;
+  box-shadow: var(--reg-shadow);
+}
+
+.wizard-card {
+  animation: registration-enter 280ms ease both;
+}
+
+@keyframes registration-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 08. CARD HEADING
+========================================================= */
+
+.registration-card-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 19px;
+  padding-bottom: 27px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--reg-border);
+}
+
+.registration-card-heading > span {
+  width: 49px;
+  height: 49px;
+  flex: 0 0 49px;
+  display: grid;
+  place-items: center;
+  background: var(--reg-primary-light);
+  border: 1px solid #ead2d4;
+  border-radius: 9px;
+  color: var(--reg-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.registration-card-heading h2 {
+  margin: 0 0 5px;
+  color: var(--reg-primary);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.registration-card-heading p {
+  margin: 0;
+  color: var(--reg-muted);
+  font-size: 13px;
+}
+
+/* 09. PARTICIPANT FIELD GRID
+========================================================= */
+
+.participant-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 25px;
+  row-gap: 22px;
+}
+
+.registration-field {
+  min-width: 0;
+  margin-bottom: 25px;
+}
+
+.participant-fields .registration-field {
+  margin-bottom: 0;
+}
+
+.registration-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.registration-field label {
+  display: block;
+  margin-bottom: 9px;
+  color: #514740;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.75px;
+}
+
+.registration-field input,
+.registration-field textarea {
+  width: 100%;
+  min-height: 51px;
+  padding: 13px 15px;
+  outline: none;
+  color: var(--reg-text);
+  background: #fff;
+  border: 1px solid #ded5c9;
+  border-radius: 7px;
+  font-size: 14px;
+  transition:
+    border-color var(--reg-transition),
+    box-shadow var(--reg-transition),
+    background var(--reg-transition);
+}
+
+.registration-field textarea {
+  min-height: 105px;
+  resize: vertical;
+}
+
+.registration-field input::placeholder,
+.registration-field textarea::placeholder {
+  color: #aaa098;
+}
+
+.registration-field input:hover,
+.registration-field textarea:hover {
+  border-color: #c5ae91;
+}
+
+.registration-field input:focus,
+.registration-field textarea:focus {
+  border-color: var(--reg-gold);
+  box-shadow: 0 0 0 3px rgba(179, 138, 72, 0.12);
+  background: #fffefa;
+}
+
+/* DATE INPUT */
+
+.registration-field input[type="date"] {
+  color: var(--reg-text);
+  color-scheme: light;
+}
+
+/* 10. PHOTOGRAPH UPLOAD
+========================================================= */
+
+.registration-photo-section {
+  margin-top: 34px;
+  padding-top: 29px;
+  border-top: 1px solid var(--reg-border);
+}
+
+.registration-photo-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 5px;
+  color: var(--reg-primary);
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.registration-photo-section h3 svg {
+  color: var(--reg-gold);
+}
+
+.registration-photo-section > p {
+  margin: 0 0 17px;
+  color: var(--reg-muted);
+  font-size: 13px;
+}
+
+.photo-upload {
+  width: 100%;
+  min-height: 155px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 20px;
+  overflow: hidden;
+  background: #fcfaf5;
+  border: 1px dashed #cbb58f;
+  border-radius: 9px;
+  color: var(--reg-primary);
+  cursor: pointer;
+  transition:
+    background var(--reg-transition),
+    border-color var(--reg-transition);
+}
+
+.photo-upload:hover {
+  background: var(--reg-primary-light);
+  border-color: var(--reg-primary);
+}
+
+.photo-upload > svg {
+  color: var(--reg-gold);
+}
+
+.photo-upload strong {
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.photo-upload span {
+  color: var(--reg-muted);
+  font-size: 12px;
+}
+
+.participant-photo-preview {
+  width: 112px;
+  height: 125px;
+  object-fit: cover;
+  border: 3px solid #fff;
+  border-radius: 7px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.13);
+}
+
+.photo-selected {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 12px 0 0;
+  color: var(--reg-success);
+  font-size: 12px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+/* 11. COMPETITION SELECTION
+========================================================= */
+
+.competition-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.competition-choice {
+  min-height: 61px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  padding: 13px 16px;
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--reg-border);
+  border-radius: 8px;
+  color: var(--reg-text);
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    background var(--reg-transition),
+    border-color var(--reg-transition),
+    color var(--reg-transition),
+    box-shadow var(--reg-transition);
+}
+
+.competition-choice:hover {
+  border-color: var(--reg-gold);
+  background: #fffdf8;
+}
+
+.competition-choice.selected {
+  background: var(--reg-primary-light);
+  border-color: var(--reg-primary);
+  color: var(--reg-primary);
+  box-shadow: inset 0 0 0 1px var(--reg-primary);
+}
+
+.competition-choice small {
+  color: var(--reg-muted);
+  font-size: 11px;
+  font-weight: 450;
+}
+
+/* 12. PERFORMANCE SUMMARY
+========================================================= */
+
+.performance-summary {
+  margin-top: 30px;
+  padding: 23px 25px;
+  background: var(--reg-surface-alt);
+  border: 1px solid var(--reg-gold-light);
+  border-left: 3px solid var(--reg-gold);
+  border-radius: 7px;
+}
+
+.performance-summary h3 {
+  margin: 0 0 13px;
+  color: var(--reg-primary);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px;
+}
+
+.performance-summary p {
+  margin: 7px 0;
+  color: var(--reg-muted);
+  font-size: 13px;
+}
+
+.performance-summary strong {
+  color: var(--reg-text);
+}
+
+/* 13. PAYMENT REVIEW
+========================================================= */
+
+.payment-review {
+  padding: 25px;
+  background: #fff;
+  border: 1px solid var(--reg-border);
+  border-radius: 9px;
+}
+
+.payment-review h3 {
+  margin: 0 0 19px;
+  color: var(--reg-primary);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+}
+
+.payment-review-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0eae1;
+}
+
+.payment-review-row:last-child {
+  border-bottom: 0;
+}
+
+.payment-review-row span {
+  color: var(--reg-muted);
+  font-size: 13px;
+}
+
+.payment-review-row strong {
+  max-width: 60%;
+  color: var(--reg-text);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* 14. PAYMENT TOTAL
+========================================================= */
+
+.payment-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-top: 22px;
+  padding: 24px;
+  background: var(--reg-primary);
+  border-radius: 9px;
+  color: #fff;
+}
+
+.payment-total span {
+  color: #ead8bd;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.payment-total p {
+  margin: 4px 0 0;
+  color: #e9dfe0;
+  font-size: 12px;
+}
+
+.payment-total > strong {
+  color: #f6dfad;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 31px;
+  white-space: nowrap;
+}
+
+/* 15. PAYMENT SECURITY NOTICE
+========================================================= */
+
+.payment-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  margin-top: 22px;
+  padding: 18px;
+  background: #eff6f0;
+  border: 1px solid #d5e7d8;
+  border-radius: 8px;
+  color: var(--reg-success);
+}
+
+.payment-notice > svg {
+  flex: 0 0 auto;
+}
+
+.payment-notice strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 13px;
+}
+
+.payment-notice p {
+  margin: 0;
+  color: #58745f;
+  font-size: 12px;
+}
+
+/* 16. PAYMENT PLACEHOLDER
+========================================================= */
+
+.payment-placeholder {
+  margin-top: 22px;
+  padding: 32px 25px;
+  text-align: center;
+  background: #fcfaf6;
+  border: 1px dashed var(--reg-gold-light);
+  border-radius: 9px;
+}
+
+.payment-placeholder > svg {
+  color: var(--reg-gold);
+}
+
+.payment-placeholder h3 {
+  margin: 12px 0 7px;
+  color: var(--reg-primary);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+}
+
+.payment-placeholder p {
+  max-width: 490px;
+  margin: 0 auto;
+  color: var(--reg-muted);
+  font-size: 13px;
+}
+
+/* 17. VALIDATION MESSAGE
+========================================================= */
+
+.registration-validation-error {
+  margin: 18px 0;
+  padding: 14px 17px;
+  color: var(--reg-danger);
+  background: #fff2f0;
+  border: 1px solid #f0c9c3;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  animation: registration-enter 180ms ease both;
+}
+
+/* 18. NAVIGATION
+========================================================= */
+
+.wizard-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 26px;
+}
+
+.wizard-back-button,
+.wizard-next-button {
+  min-height: 51px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 23px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--reg-transition),
+    border-color var(--reg-transition),
+    color var(--reg-transition),
+    transform var(--reg-transition);
+}
+
+.wizard-back-button {
+  color: var(--reg-primary);
+  background: transparent;
+  border: 1px solid var(--reg-border);
+}
+
+.wizard-back-button:hover {
+  background: var(--reg-primary-light);
+  border-color: var(--reg-primary);
+}
+
+.wizard-next-button {
+  color: #fff;
+  background: var(--reg-primary);
+  border: 1px solid var(--reg-primary);
+}
+
+.wizard-next-button:hover:not(:disabled) {
+  background: var(--reg-primary-dark);
+  border-color: var(--reg-primary-dark);
+  transform: translateY(-1px);
+}
+
+.wizard-next-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* 19. SECURITY FOOTER
+========================================================= */
+
+.registration-security-note {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 27px 0 0;
+  color: var(--reg-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.registration-security-note svg {
+  color: var(--reg-success);
+  flex: 0 0 auto;
+}
+
+/* 20. LOADING STATE
+========================================================= */
+
+.registration-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: var(--reg-bg);
+  color: var(--reg-muted);
+}
+
+.registration-spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid var(--reg-gold-light);
+  border-top-color: var(--reg-primary);
+  border-radius: 50%;
+  animation: registration-spin 750ms linear infinite;
+}
+
+@keyframes registration-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.registration-loading p {
+  font-size: 13px;
+}
+
+/* 21. ERROR STATE
+========================================================= */
+
+.registration-error {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 25px;
+  background: var(--reg-bg);
+  text-align: center;
+}
+
+.registration-error h1 {
+  color: var(--reg-primary);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 32px;
+}
+
+.registration-error p {
+  max-width: 500px;
+  color: var(--reg-muted);
+}
+
+.registration-error a {
+  margin-top: 15px;
+  color: var(--reg-primary);
+  font-weight: 700;
+}
+
+/* 22. CLOSED REGISTRATION
+========================================================= */
+
+.registration-closed {
+  padding: 65px 30px;
+  text-align: center;
+  background: var(--reg-surface);
+  border: 1px solid var(--reg-border);
+  border-radius: 12px;
+  box-shadow: var(--reg-shadow);
+}
+
+.registration-closed > svg {
+  color: var(--reg-gold);
+}
+
+.registration-closed h1 {
+  margin: 15px 0 10px;
+  color: var(--reg-primary);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 36px;
+}
+
+.registration-closed p {
+  color: var(--reg-muted);
+}
+
+.registration-closed a {
+  display: inline-block;
+  margin-top: 15px;
+  color: var(--reg-primary);
+  font-weight: 750;
+}
+
+/* 23. ACCESSIBILITY
+========================================================= */
+
+.participant-registration button:focus-visible,
+.participant-registration a:focus-visible,
+.photo-upload:focus-within {
+  outline: 3px solid rgba(179, 138, 72, 0.65);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .participant-registration *,
+  .participant-registration *::before,
+  .participant-registration *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 24. TABLET RESPONSIVENESS
+========================================================= */
+
+@media (max-width: 760px) {
+  .registration-header {
+    min-height: 67px;
+    padding: 0 22px;
+  }
+
+  .registration-container {
+    width: min(100% - 32px, 650px);
+    padding-top: 40px;
+  }
+
+  .registration-card {
+    padding: 29px 25px;
+  }
+
+  .wizard-progress {
+    padding: 20px;
+  }
+
+  .wizard-step {
+    gap: 8px;
+  }
+
+  .wizard-circle {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+
+  .wizard-step-label strong {
+    font-size: 11px;
+  }
+
+  .wizard-step-label small {
+    font-size: 10px;
+  }
+
+  .wizard-connector {
+    margin: 0 9px;
+  }
+}
+
+/* 25. MOBILE RESPONSIVENESS
+========================================================= */
+
+@media (max-width: 540px) {
+  .registration-header {
+    min-height: 62px;
+    padding: 0 16px;
+  }
+
+  .registration-header > span {
+    font-size: 9px;
+    letter-spacing: 1.3px;
+  }
+
+  .back-home {
+    font-size: 11px;
+  }
+
+  .registration-container {
+    width: calc(100% - 28px);
+    padding-top: 32px;
+    padding-bottom: 55px;
+  }
+
+  .registration-title {
+    margin-bottom: 25px;
+  }
+
+  .registration-title > span {
+    font-size: 9px;
+    letter-spacing: 1.6px;
+  }
+
+  .registration-title h1 {
+    font-size: 33px;
+    letter-spacing: -0.6px;
+  }
+
+  .registration-title p {
+    font-size: 13px;
+  }
+
+  /* Compact three-step indicator */
+
+  .wizard-progress {
+    padding: 17px 11px;
+    margin-bottom: 19px;
+    border-radius: 9px;
+  }
+
+  .wizard-step {
+    flex-direction: column;
+    justify-content: center;
+    gap: 7px;
+    text-align: center;
+  }
+
+  .wizard-circle {
+    width: 35px;
+    height: 35px;
+    flex-basis: 35px;
+    font-size: 12px;
+  }
+
+  .wizard-step-label strong {
+    max-width: 90px;
+    font-size: 9px;
+    line-height: 1.3;
+    white-space: normal;
+  }
+
+  .wizard-step-label small {
+    display: none;
+  }
+
+  .wizard-connector {
+    min-width: 12px;
+    margin: 0 5px;
+    align-self: center;
+    transform: translateY(-12px);
+  }
+
+  /* Form card */
+
+  .registration-card {
+    padding: 23px 17px;
+    margin-bottom: 17px;
+    border-radius: 10px;
+  }
+
+  .registration-card-heading {
+    gap: 12px;
+    padding-bottom: 20px;
+    margin-bottom: 23px;
+  }
+
+  .registration-card-heading > span {
+    width: 41px;
+    height: 41px;
+    flex-basis: 41px;
+    font-size: 10px;
+  }
+
+  .registration-card-heading h2 {
+    font-size: 22px;
+  }
+
+  .registration-card-heading p {
+    font-size: 12px;
+  }
+
+  /* Single-column participant fields */
+
+  .participant-fields {
+    grid-template-columns: 1fr;
+    row-gap: 19px;
+  }
+
+  .registration-field label {
+    font-size: 10px;
+  }
+
+  .registration-field input,
+  .registration-field textarea {
+    min-height: 49px;
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .registration-photo-section {
+    margin-top: 27px;
+    padding-top: 23px;
+  }
+
+  .photo-upload {
+    min-height: 140px;
+  }
+
+  /* Competition choices */
+
+  .competition-options {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .competition-choice {
+    min-height: 55px;
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .performance-summary {
+    padding: 18px;
+  }
+
+  /* Payment */
+
+  .payment-review {
+    padding: 17px;
+  }
+
+  .payment-review-row {
+    gap: 12px;
+  }
+
+  .payment-review-row span,
+  .payment-review-row strong {
+    font-size: 11px;
+  }
+
+  .payment-total {
+    padding: 19px;
+  }
+
+  .payment-total > strong {
+    font-size: 27px;
+  }
+
+  .payment-placeholder {
+    padding: 25px 16px;
+  }
+
+  .payment-placeholder h3 {
+    font-size: 18px;
+  }
+
+  /* Navigation */
+
+  .wizard-navigation {
+    gap: 10px;
+  }
+
+  .wizard-back-button,
+  .wizard-next-button {
+    min-height: 48px;
+    padding: 0 15px;
+    font-size: 10px;
+  }
+
+  .registration-security-note {
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  .registration-closed {
+    padding: 45px 20px;
+  }
+
+  .registration-closed h1 {
+    font-size: 29px;
+  }
+}
+
+/* 26. VERY SMALL SCREENS
+========================================================= */
+
+@media (max-width: 360px) {
+  .wizard-step-label strong {
+    max-width: 76px;
+    font-size: 8px;
+  }
+
+  .wizard-progress {
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+
+  .wizard-connector {
+    margin: 0 3px;
+  }
+
+  .registration-card {
+    padding: 19px 14px;
+  }
+
+  .wizard-back-button,
+  .wizard-next-button {
+    padding: 0 11px;
+    font-size: 9px;
+  }
+}
+
+/* =========================================================
+   REGISTRATION PORTAL - BRAND & SIDEBAR LAYOUT
+========================================================= */
+
+.registration-header {
+  min-height: 78px;
+  padding: 0 5%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fffdf9;
+  border-bottom: 1px solid var(--reg-border);
+}
+
+.registration-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--reg-primary);
+  text-decoration: none;
+}
+
+.registration-brand img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+.registration-brand div {
+  display: flex;
+  flex-direction: column;
+}
+
+.registration-brand strong {
+  font-size: 16px;
+  letter-spacing: 2px;
+  font-weight: 850;
+}
+
+.registration-brand small {
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--reg-muted);
+}
+
+/* MAIN TWO-COLUMN LAYOUT */
+
+.registration-layout {
+  width: min(100% - 48px, 1440px);
+  margin: 0 auto;
+  padding: 42px 0 70px;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.5fr);
+  align-items: start;
+  gap: 38px;
+}
+
+/* LEFT SIDEBAR */
+
+.registration-sidebar {
+  position: sticky;
+  top: 25px;
+  overflow: hidden;
+  background: #fffdf9;
+  border: 1px solid var(--reg-border);
+  border-radius: 12px;
+  box-shadow: var(--reg-shadow);
+}
+
+.registration-poster {
+  overflow: hidden;
+  background: var(--reg-primary);
+}
+
+.registration-poster img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.registration-event-details {
+  padding: 25px 24px;
+}
+
+.event-overline {
+  color: var(--reg-gold);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 1.8px;
+}
+
+.registration-event-details h2 {
+  margin: 12px 0;
+  color: var(--reg-primary);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  line-height: 1.25;
+}
+
+.registration-event-details h2 span {
+  display: block;
+  color: var(--reg-gold);
+}
+
+.registration-event-details > p {
+  color: var(--reg-muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.event-information {
+  display: grid;
+  gap: 15px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--reg-border);
+}
+
+.event-information > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  color: var(--reg-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.event-information svg {
+  flex: 0 0 auto;
+  color: var(--reg-gold);
+}
+
+.sidebar-fee {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 23px;
+  padding: 17px;
+  background: var(--reg-primary);
+  border-radius: 7px;
+  color: white;
+}
+
+.sidebar-fee > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-fee small {
+  color: #e8d7b5;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 1px;
+}
+
+.sidebar-fee strong {
+  color: #f4dfb5;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 27px;
+}
+
+.sidebar-fee > span {
+  color: #f1e6e4;
+  font-size: 10px;
+}
+
+.sidebar-footer {
+  padding: 14px 20px;
+  background: #f5efe5;
+  color: var(--reg-muted);
+  font-size: 9px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* RIGHT CONTENT */
+
+.registration-content {
+  min-width: 0;
+}
+
+.registration-content .registration-title {
+  margin-bottom: 27px;
+}
+
+.registration-content .wizard-progress {
+  margin-bottom: 23px;
+}
+
+/* FOOTER */
+
+.registration-footer {
+  min-height: 75px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  background: #fffdf9;
+  border-top: 1px solid var(--reg-border);
+  color: var(--reg-muted);
+  font-size: 10px;
+  text-align: center;
+}
+
+.registration-footer img {
+  width: 29px;
+  height: 29px;
+  object-fit: contain;
+}
+
+/* CLOSED PAGE BRAND */
+
+.registration-closed {
+  max-width: 650px;
+  margin: 70px auto;
+}
+
+/* TABLET AND MOBILE */
+
+@media (max-width: 760px) {
+  .registration-header {
+    min-height: 68px;
+    padding: 0 18px;
+  }
+
+  .registration-layout {
+    width: min(100% - 30px, 620px);
+    grid-template-columns: 1fr;
+    gap: 25px;
+    padding-top: 24px;
+  }
+
+  .registration-sidebar {
+    position: static;
+  }
+
+  .registration-poster img {
+    max-height: 260px;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .registration-event-details {
+    padding: 20px;
+  }
+
+  .registration-event-details h2 {
+    font-size: 24px;
+  }
+
+  .registration-content .registration-title {
+    margin-bottom: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .registration-brand img {
+    width: 38px;
+    height: 38px;
+  }
+
+  .registration-brand strong {
+    font-size: 13px;
+  }
+
+  .registration-brand small {
+    font-size: 7px;
+  }
+
+  .back-home {
+    font-size: 10px;
+  }
+
+  .registration-layout {
+    width: calc(100% - 24px);
+    padding-top: 17px;
+  }
+
+  .registration-poster img {
+    max-height: 190px;
+  }
+
+  .registration-event-details {
+    padding: 17px;
+  }
+
+  .registration-footer {
+    flex-wrap: wrap;
+    font-size: 9px;
+  }
+}

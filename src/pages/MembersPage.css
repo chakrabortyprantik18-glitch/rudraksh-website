@@ -1,0 +1,439 @@
+.members-page {
+  min-height: 100vh;
+  background: var(--cream);
+  color: var(--brown);
+}
+
+/* =========================================================
+   CONTAINER
+========================================================= */
+
+.members-page-container {
+  width: min(1250px, calc(100% - 70px));
+  margin: 0 auto;
+}
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.members-page-hero {
+  padding: 55px 0 85px;
+  border-bottom: 1px solid rgba(75, 54, 40, 0.15);
+}
+
+.members-page-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 75px;
+  color: var(--brown);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    color 0.25s ease,
+    gap 0.25s ease;
+}
+
+.members-page-back:hover {
+  color: var(--orange);
+  gap: 13px;
+}
+
+.members-page-heading {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: end;
+  gap: 80px;
+}
+
+.members-page-kicker {
+  display: block;
+  margin-bottom: 20px;
+  color: var(--orange);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.members-page-heading h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(65px, 9vw, 125px);
+  font-weight: 500;
+  line-height: 0.85;
+  letter-spacing: -0.065em;
+}
+
+.members-page-heading h1 em {
+  color: var(--orange);
+  font-style: normal;
+}
+
+.members-page-heading > p {
+  max-width: 430px;
+  margin: 0 0 5px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.85;
+}
+
+/* =========================================================
+   GALLERY
+========================================================= */
+
+.members-page-gallery {
+  padding: 80px 0 120px;
+}
+
+.members-page-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 55px 18px;
+}
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.members-page-card {
+  min-width: 0;
+}
+
+.members-page-image-wrap {
+  position: relative;
+  height: 450px;
+  overflow: hidden;
+  background: #d8cdc2;
+}
+
+.members-page-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition:
+    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.members-page-card:hover .members-page-image {
+  transform: scale(1.06);
+}
+
+.members-page-image-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #756c64;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   OVERLAY
+========================================================= */
+
+.members-page-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to top,
+      rgba(25, 18, 14, 0.75) 0%,
+      rgba(25, 18, 14, 0.18) 40%,
+      rgba(25, 18, 14, 0) 68%
+    );
+}
+
+/* =========================================================
+   INDEX
+========================================================= */
+
+.members-page-index {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+
+  background: rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   LABEL
+========================================================= */
+
+.members-page-label {
+  position: absolute;
+  left: 22px;
+  bottom: 22px;
+
+  max-width: calc(100% - 75px);
+
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+/* =========================================================
+   PLUS
+========================================================= */
+
+.members-page-plus {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+
+  width: 40px;
+  height: 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+
+  background: rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+
+  color: #fff;
+  font-size: 22px;
+  font-weight: 300;
+
+  transition:
+    transform 0.35s ease,
+    background 0.35s ease;
+}
+
+.members-page-card:hover .members-page-plus {
+  transform: rotate(90deg);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* =========================================================
+   CARD CONTENT
+========================================================= */
+
+.members-page-card-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+
+  padding: 20px 2px 0;
+}
+
+.members-page-card-content h2 {
+  margin: 0 0 7px;
+
+  color: var(--brown);
+  font-family: var(--font-display);
+  font-size: 23px;
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.members-page-card-content p {
+  margin: 0;
+
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.members-page-arrow {
+  flex-shrink: 0;
+
+  color: var(--brown);
+  font-size: 21px;
+
+  transition:
+    color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.members-page-card:hover .members-page-arrow {
+  color: var(--orange);
+  transform: translate(4px, -4px);
+}
+
+/* =========================================================
+   EMPTY / ERROR / LOADING
+========================================================= */
+
+.members-page-state {
+  min-height: 350px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+
+  border: 1px dashed rgba(75, 54, 40, 0.25);
+
+  text-align: center;
+}
+
+.members-page-state strong {
+  color: var(--brown);
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 500;
+}
+
+.members-page-state span {
+  max-width: 450px;
+
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.members-page-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-top: 70px;
+  padding-top: 28px;
+
+  border-top: 1px solid rgba(75, 54, 40, 0.18);
+}
+
+.members-page-footer > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+.members-page-footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+
+  color: var(--brown);
+  border-bottom: 1px solid var(--brown);
+
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+
+  transition:
+    color 0.25s ease,
+    border-color 0.25s ease,
+    gap 0.25s ease;
+}
+
+.members-page-footer a:hover {
+  gap: 14px;
+  color: var(--orange);
+  border-color: var(--orange);
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 950px) {
+  .members-page-heading {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .members-page-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .members-page-image-wrap {
+    height: 420px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 680px) {
+  .members-page-container {
+    width: calc(100% - 28px);
+  }
+
+  .members-page-hero {
+    padding: 35px 0 65px;
+  }
+
+  .members-page-back {
+    margin-bottom: 55px;
+  }
+
+  .members-page-heading h1 {
+    font-size: clamp(58px, 17vw, 90px);
+  }
+
+  .members-page-heading > p {
+    font-size: 13px;
+    line-height: 1.75;
+  }
+
+  .members-page-gallery {
+    padding: 55px 0 85px;
+  }
+
+  .members-page-grid {
+    grid-template-columns: 1fr;
+    gap: 45px;
+  }
+
+  .members-page-image-wrap {
+    height: 440px;
+  }
+
+  .members-page-card-content h2 {
+    font-size: 21px;
+  }
+
+  .members-page-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 20px;
+  }
+}
