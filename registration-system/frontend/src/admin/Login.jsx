@@ -23,7 +23,9 @@ function Login() {
       }
 
       saveAuthSession(data);
-      window.location.href = "/admin/dashboard";
+
+      // Redirect to the Utsav registration admin dashboard
+      window.location.href = "/forms/admin/dashboard";
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -61,6 +63,7 @@ function Login() {
           />
 
           <label htmlFor="password">Password</label>
+
           <div className="password-field">
             <input
               id="password"
@@ -71,19 +74,30 @@ function Login() {
               autoComplete="current-password"
               required
             />
+
             <button
               type="button"
               className="password-toggle"
               onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-label={
+                showPassword ? "Hide password" : "Show password"
+              }
             >
-              {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+              {showPassword ? (
+                <EyeOff size={19} />
+              ) : (
+                <Eye size={19} />
+              )}
             </button>
           </div>
 
           {error && <p className="login-error">{error}</p>}
 
-          <button className="login-submit" type="submit" disabled={loading}>
+          <button
+            className="login-submit"
+            type="submit"
+            disabled={loading}
+          >
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
