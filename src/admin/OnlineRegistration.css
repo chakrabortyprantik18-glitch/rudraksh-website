@@ -1,0 +1,39 @@
+.online-registration {
+  padding: 25px;
+  color: #0cc91c;
+}
+
+.online-registration-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.online-registration-heading svg {
+  color: #0e38e1;
+}
+
+.online-registration-heading h1 {
+  font-size: 24px;
+}
+
+.online-registration p {
+  color: #aaa;
+  margin: 15px 0 25px;
+}
+
+.registration-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 20px;
+  background: hsl(0, 70%, 63%);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.registration-button:hover {
+  background: #610250;
+}

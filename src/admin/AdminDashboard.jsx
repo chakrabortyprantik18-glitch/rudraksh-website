@@ -28,6 +28,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import "./AdminDashboard.css";
 import "./AdminDashboardStats.css";
 import { BACKEND_URL } from "../config/api";
+import OnlineRegistration from "./OnlineRegistration";
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -122,7 +123,7 @@ function AdminDashboard() {
     {
       label: "Online Registration",
       icon: ClipboardList,
-      url: "https://www.rudrakshsocialculturalorganization.online/forms/admin",
+      path: "/admin/online-registration",
     },
   ];
 
@@ -235,20 +236,19 @@ function AdminDashboard() {
   // MENU CLICK
   const handleMenuClick = (item) => {
     setSidebarOpen(false);
+    setActiveItem(item.label);
 
-    // Open the separate Utsav registration admin panel
-    if (item.url) {
-      window.location.href = item.url;
+    if (item.label === "Online Registration") {
       return;
     }
 
-    setActiveItem(item.label);
     navigate(item.path);
   };
 
   // RENDER
   return (
     <div className="admin-dashboard">
+
       {/* MOBILE OVERLAY */}
       {sidebarOpen && (
         <div
@@ -334,6 +334,7 @@ function AdminDashboard() {
 
       {/* MAIN */}
       <main className="admin-main">
+
         {/* HEADER */}
         <header className="admin-header">
           <div className="admin-header-left">
@@ -397,165 +398,175 @@ function AdminDashboard() {
 
         {/* CONTENT */}
         <div className="admin-content">
-          {/* PROTECTION NOTICE */}
-          <section className="admin-protection">
-            <div className="admin-protection-icon">
-              <ShieldCheck size={23} />
-            </div>
 
-            <div className="admin-protection-content">
-              <div className="admin-protection-title">
-                <h2>
-                  Backend & Database Protection Notice
-                </h2>
+          {activeItem === "Online Registration" ? (
+            <OnlineRegistration />
+          ) : (
+            <>
 
-                <span>PROTECTED</span>
-              </div>
+              {/* PROTECTION NOTICE */}
+              <section className="admin-protection">
+                <div className="admin-protection-icon">
+                  <ShieldCheck size={23} />
+                </div>
 
-              <p>
-                This backend server and database are the sole
-                property of{" "}
-                <strong>Prantik Chakrabarty</strong>.
-              </p>
+                <div className="admin-protection-content">
+                  <div className="admin-protection-title">
+                    <h2>
+                      Backend & Database Protection Notice
+                    </h2>
 
-              <p>
-                Do not modify, delete, replace, or restructure
-                backend files, database tables, API configurations,
-                or system settings without proper prior notice
-                and authorization.
-              </p>
-
-              <p className="admin-protection-warning">
-                Unauthorized changes may cause API failures,
-                data loss, authentication problems, or other
-                system-wide errors.
-              </p>
-            </div>
-          </section>
-
-          {/* WELCOME */}
-          <section className="admin-welcome">
-            <div>
-              <p>CONTROL CENTER</p>
-
-              <h2>
-                Welcome back,{" "}
-                {admin?.name || "Administrator"}
-              </h2>
-
-              <span>
-                Manage the Rudraksh organization website
-                from one place.
-              </span>
-            </div>
-          </section>
-
-          {/* STATISTICS */}
-          <section className="admin-section">
-            <div className="admin-section-heading">
-              <div>
-                <span>OVERVIEW</span>
-                <h2>Website Statistics</h2>
-              </div>
-
-              <button
-                className="admin-refresh-button"
-                onClick={loadStatistics}
-                disabled={loadingStats}
-              >
-                <RefreshCw
-                  size={14}
-                  className={
-                    loadingStats ? "admin-refresh-spin" : ""
-                  }
-                />
-
-                <span>Refresh</span>
-              </button>
-            </div>
-
-            {/* API ERROR */}
-            {statsError && (
-              <div className="admin-stats-error">
-                <span>{statsError}</span>
-
-                <button onClick={loadStatistics}>
-                  Try again
-                </button>
-              </div>
-            )}
-
-            {/* STATISTIC CARDS */}
-            <div className="admin-stat-grid">
-              {statisticCards.map((stat) => {
-                const Icon = stat.icon;
-
-                return (
-                  <div
-                    className="admin-stat-card"
-                    key={stat.title}
-                  >
-                    <div className="admin-stat-top">
-                      <div className="admin-stat-icon">
-                        <Icon size={20} />
-                      </div>
-
-                      <span>LIVE</span>
-                    </div>
-
-                    <h3>
-                      {loadingStats ? "..." : stat.value}
-                    </h3>
-
-                    <strong>{stat.title}</strong>
-
-                    <p>{stat.description}</p>
+                    <span>PROTECTED</span>
                   </div>
-                );
-              })}
-            </div>
-          </section>
 
-          {/* QUICK ACCESS */}
-          <section className="admin-section">
-            <div className="admin-section-heading">
-              <div>
-                <span>QUICK ACCESS</span>
-                <h2>Management</h2>
-              </div>
-            </div>
+                  <p>
+                    This backend server and database are the sole
+                    property of{" "}
+                    <strong>Prantik Chakrabarty</strong>.
+                  </p>
 
-            <div className="admin-quick-grid">
-              {menuItems
-                .filter((item) => item.label !== "Dashboard")
-                .slice(0, 6)
-                .map((item) => {
-                  const Icon = item.icon;
+                  <p>
+                    Do not modify, delete, replace, or restructure
+                    backend files, database tables, API configurations,
+                    or system settings without proper prior notice
+                    and authorization.
+                  </p>
 
-                  return (
-                    <button
-                      key={item.label}
-                      className="admin-quick-card"
-                      onClick={() => handleMenuClick(item)}
-                    >
-                      <div className="admin-quick-icon">
-                        <Icon size={20} />
-                      </div>
+                  <p className="admin-protection-warning">
+                    Unauthorized changes may cause API failures,
+                    data loss, authentication problems, or other
+                    system-wide errors.
+                  </p>
+                </div>
+              </section>
 
-                      <div>
-                        <strong>{item.label}</strong>
+              {/* WELCOME */}
+              <section className="admin-welcome">
+                <div>
+                  <p>CONTROL CENTER</p>
 
-                        <span>
-                          Manage {item.label.toLowerCase()}
-                        </span>
-                      </div>
+                  <h2>
+                    Welcome back,{" "}
+                    {admin?.name || "Administrator"}
+                  </h2>
 
-                      <ChevronRight size={17} />
+                  <span>
+                    Manage the Rudraksh organization website
+                    from one place.
+                  </span>
+                </div>
+              </section>
+
+              {/* STATISTICS */}
+              <section className="admin-section">
+                <div className="admin-section-heading">
+                  <div>
+                    <span>OVERVIEW</span>
+                    <h2>Website Statistics</h2>
+                  </div>
+
+                  <button
+                    className="admin-refresh-button"
+                    onClick={loadStatistics}
+                    disabled={loadingStats}
+                  >
+                    <RefreshCw
+                      size={14}
+                      className={
+                        loadingStats ? "admin-refresh-spin" : ""
+                      }
+                    />
+
+                    <span>Refresh</span>
+                  </button>
+                </div>
+
+                {/* API ERROR */}
+                {statsError && (
+                  <div className="admin-stats-error">
+                    <span>{statsError}</span>
+
+                    <button onClick={loadStatistics}>
+                      Try again
                     </button>
-                  );
-                })}
-            </div>
-          </section>
+                  </div>
+                )}
+
+                {/* STATISTIC CARDS */}
+                <div className="admin-stat-grid">
+                  {statisticCards.map((stat) => {
+                    const Icon = stat.icon;
+
+                    return (
+                      <div
+                        className="admin-stat-card"
+                        key={stat.title}
+                      >
+                        <div className="admin-stat-top">
+                          <div className="admin-stat-icon">
+                            <Icon size={20} />
+                          </div>
+
+                          <span>LIVE</span>
+                        </div>
+
+                        <h3>
+                          {loadingStats ? "..." : stat.value}
+                        </h3>
+
+                        <strong>{stat.title}</strong>
+
+                        <p>{stat.description}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+
+              {/* QUICK ACCESS */}
+              <section className="admin-section">
+                <div className="admin-section-heading">
+                  <div>
+                    <span>QUICK ACCESS</span>
+                    <h2>Management</h2>
+                  </div>
+                </div>
+
+                <div className="admin-quick-grid">
+                  {menuItems
+                    .filter((item) => item.label !== "Dashboard")
+                    .slice(0, 6)
+                    .map((item) => {
+                      const Icon = item.icon;
+
+                      return (
+                        <button
+                          key={item.label}
+                          className="admin-quick-card"
+                          onClick={() => handleMenuClick(item)}
+                        >
+                          <div className="admin-quick-icon">
+                            <Icon size={20} />
+                          </div>
+
+                          <div>
+                            <strong>{item.label}</strong>
+
+                            <span>
+                              Manage {item.label.toLowerCase()}
+                            </span>
+                          </div>
+
+                          <ChevronRight size={17} />
+                        </button>
+                      );
+                    })}
+                </div>
+              </section>
+
+            </>
+          )}
+
         </div>
       </main>
     </div>
