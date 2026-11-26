@@ -27,7 +27,10 @@ import Applications from "./admin/Applications";
 import Payments from "./admin/Payments";
 import RegistrationPage from "./RegistrationPage";
 
-const API_URL = "http://localhost:5001/api";
+// IMPORTANT:
+// Replace this localhost URL with your deployed registration
+// backend URL before accepting public registrations.
+const API_URL = "https://forms-api.rudrakshsocialculturalorganization.online/api";
 
 function PublicPage() {
   const [forms, setForms] = useState([]);
@@ -35,6 +38,8 @@ function PublicPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadForms() {
       try {
         const response = await fetch(`${API_URL}/forms/public`);
@@ -44,15 +49,26 @@ function PublicPage() {
         }
 
         const data = await response.json();
-        setForms(data.forms || []);
+
+        if (!cancelled) {
+          setForms(data.forms || []);
+        }
       } catch (err) {
-        setError(err.message);
+        if (!cancelled) {
+          setError(err.message);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     loadForms();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -134,6 +150,7 @@ function PublicPage() {
       <section className="public-registration">
         <div className="public-section-heading">
           <span>BE PART OF THE CELEBRATION</span>
+
           <h2>Registrations</h2>
 
           <p>
@@ -237,7 +254,7 @@ function PublicPage() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/forms">
       <Routes>
         {/* Public homepage */}
         <Route path="/" element={<PublicPage />} />

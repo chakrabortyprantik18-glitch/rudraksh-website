@@ -122,7 +122,7 @@ function AdminDashboard() {
     {
       label: "Online Registration",
       icon: ClipboardList,
-      path: "/admin/online-registration",
+      url: "https://www.rudrakshsocialculturalorganization.online/forms/admin",
     },
   ];
 
@@ -234,8 +234,15 @@ function AdminDashboard() {
 
   // MENU CLICK
   const handleMenuClick = (item) => {
-    setActiveItem(item.label);
     setSidebarOpen(false);
+
+    // Open the separate Utsav registration admin panel
+    if (item.url) {
+      window.location.href = item.url;
+      return;
+    }
+
+    setActiveItem(item.label);
     navigate(item.path);
   };
 

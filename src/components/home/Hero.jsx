@@ -147,7 +147,7 @@ function Hero() {
       Number.isFinite(configuredInterval) &&
       configuredInterval >= 2500
         ? configuredInterval
-        : 3000;
+        : 6000;
 
     const timer = window.setInterval(
       goToNext,

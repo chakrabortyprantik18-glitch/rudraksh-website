@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5001/api",
+  baseURL: "https://forms-api.rudrakshsocialculturalorganization.online/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -41,4 +41,25 @@ export function getAdminUser() {
 export function logoutAdmin() {
   sessionStorage.removeItem("adminToken");
   sessionStorage.removeItem("adminUser");
+}
+
+// Verify the stored token with the backend.
+// This requires a protected GET /api/auth/me endpoint.
+export async function verifyAdminSession() {
+  const token = getAuthToken();
+
+  if (!token) return false;
+
+  try {
+    const response = await api.get("/auth/me", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data?.success === true;
+  } catch {
+    logoutAdmin();
+    return false;
+  }
 }

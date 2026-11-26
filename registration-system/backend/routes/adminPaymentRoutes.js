@@ -1,4 +1,3 @@
-
 const express = require("express");
 const { pool } = require("../db");
 const { verifyAdmin } = require("../middleware/authMiddleware");
