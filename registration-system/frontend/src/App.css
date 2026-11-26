@@ -1417,3 +1417,339 @@ body {
   font-weight: bold;
   margin: 15px 0;
 }
+
+/* ==========================================
+   RUDRAKSH UTSAV 2026
+   ABOUT & COMPETITION SCHEDULE
+========================================== */
+
+/* ABOUT SECTION */
+
+.utsav-about {
+  position: relative;
+  padding: 85px 25px 75px;
+  background: #fffdf8;
+  border-top: 1px solid #eee2d0;
+  border-bottom: 1px solid #eee2d0;
+}
+
+.utsav-about-content {
+  max-width: 950px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.utsav-label {
+  display: inline-block;
+  margin-bottom: 18px;
+  color: #b38a48;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+.utsav-about h2 {
+  max-width: 750px;
+  margin: 0 auto 22px;
+  color: #762c3b;
+  font-size: clamp(30px, 4vw, 45px);
+  line-height: 1.2;
+}
+
+.utsav-about-content > p {
+  max-width: 800px;
+  margin: 0 auto;
+  color: #786b60;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  line-height: 2;
+}
+
+.utsav-info-grid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 25px 55px;
+  margin-top: 38px;
+}
+
+.utsav-info-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  text-align: left;
+  color: #b38a48;
+}
+
+.utsav-info-item div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.utsav-info-item strong {
+  color: #762c3b;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+.utsav-info-item span {
+  color: #88796c;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+
+/* COMPETITION SCHEDULE */
+
+.utsav-schedule {
+  max-width: 1250px;
+  margin: 0 auto;
+  padding: 90px 25px 85px;
+}
+
+.schedule-heading {
+  margin-bottom: 48px;
+  text-align: center;
+}
+
+.schedule-heading h2 {
+  margin: 12px 0;
+  color: #762c3b;
+  font-size: clamp(32px, 5vw, 48px);
+}
+
+.schedule-heading p {
+  color: #786b60;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 23px;
+}
+
+.schedule-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 300px;
+  padding: 32px 27px;
+  background: #fffdf8;
+  border: 1px solid #e5d4b8;
+  box-shadow: 0 10px 35px rgba(70, 40, 20, 0.035);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.schedule-card:hover {
+  transform: translateY(-6px);
+  border-color: #b38a48;
+  box-shadow: 0 18px 40px rgba(70, 40, 20, 0.09);
+}
+
+.schedule-card-top {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 25px;
+  color: #b38a48;
+}
+
+.schedule-date {
+  color: #b38a48;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+}
+
+.schedule-card h3 {
+  margin-bottom: 18px;
+  color: #762c3b;
+  font-size: 23px;
+  line-height: 1.35;
+}
+
+.schedule-card ul {
+  flex: 1;
+  padding-left: 19px;
+  margin-bottom: 25px;
+  color: #786b60;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  line-height: 2.1;
+}
+
+.schedule-card li::marker {
+  color: #b38a48;
+}
+
+.schedule-note {
+  display: block;
+  padding-top: 17px;
+  border-top: 1px solid #eadfce;
+  color: #a77c3c;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.6;
+  letter-spacing: 0.3px;
+}
+
+
+/* IMPORTANT NOTICE */
+
+.schedule-notice {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  max-width: 850px;
+  margin: 35px auto 0;
+  padding: 20px 25px;
+  background: #f3ecdf;
+  border: 1px solid #e8d8bd;
+  color: #762c3b;
+}
+
+.schedule-notice svg {
+  flex-shrink: 0;
+  color: #b38a48;
+}
+
+.schedule-notice p {
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+
+/* SECTION SPACING */
+
+.utsav-schedule + .public-registration {
+  padding-top: 75px;
+}
+
+
+/* TABLET RESPONSIVENESS */
+
+@media (max-width: 900px) {
+
+  .schedule-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .schedule-card:last-child {
+    grid-column: 1 / -1;
+    min-height: auto;
+  }
+
+}
+
+
+/* MOBILE RESPONSIVENESS */
+
+@media (max-width: 600px) {
+
+  .utsav-about {
+    padding: 60px 22px;
+  }
+
+  .utsav-about h2 {
+    font-size: 30px;
+  }
+
+  .utsav-about-content > p {
+    font-size: 13px;
+    line-height: 1.9;
+    text-align: center;
+  }
+
+  .utsav-info-grid {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 22px;
+    width: fit-content;
+    margin: 30px auto 0;
+  }
+
+  .utsav-info-item strong {
+    font-size: 13px;
+  }
+
+  .utsav-schedule {
+    padding: 65px 18px;
+  }
+
+  .schedule-heading {
+    margin-bottom: 30px;
+  }
+
+  .schedule-heading h2 {
+    font-size: 32px;
+  }
+
+  .schedule-heading p {
+    font-size: 13px;
+  }
+
+  .schedule-grid {
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+
+  .schedule-card,
+  .schedule-card:last-child {
+    grid-column: auto;
+    min-height: 260px;
+    padding: 27px 23px;
+  }
+
+  .schedule-card h3 {
+    font-size: 22px;
+  }
+
+  .schedule-notice {
+    align-items: flex-start;
+    padding: 17px;
+    margin-top: 25px;
+  }
+
+  .schedule-notice p {
+    font-size: 12px;
+  }
+
+  .utsav-schedule + .public-registration {
+    padding-top: 55px;
+  }
+
+}
+
+
+/* SMALL MOBILE */
+
+@media (max-width: 380px) {
+
+  .schedule-date {
+    font-size: 10px;
+    letter-spacing: 0.8px;
+  }
+
+  .schedule-card {
+    padding: 23px 18px;
+  }
+
+  .utsav-about h2 {
+    font-size: 27px;
+  }
+
+}
+

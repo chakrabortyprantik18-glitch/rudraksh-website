@@ -10,7 +10,7 @@ import {
 import {
   ArrowRight,
   CalendarDays,
-  Clock,
+  MapPin,
   ShieldCheck,
 } from "lucide-react";
 
@@ -27,10 +27,14 @@ import Applications from "./admin/Applications";
 import Payments from "./admin/Payments";
 import RegistrationPage from "./RegistrationPage";
 
-// IMPORTANT:
-// Replace this localhost URL with your deployed registration
-// backend URL before accepting public registrations.
-const API_URL = "https://forms-api.rudrakshsocialculturalorganization.online/api";
+// Production registration API
+const API_URL =
+  "https://forms-api.rudrakshsocialculturalorganization.online/api";
+
+
+/* =========================================
+   PUBLIC HOMEPAGE
+========================================= */
 
 function PublicPage() {
   const [forms, setForms] = useState([]);
@@ -73,8 +77,15 @@ function PublicPage() {
 
   return (
     <main className="utsav-public">
+
+      {/* =================================
+          TOP NAVIGATION
+      ================================= */}
+
       <header className="public-topbar">
+
         <div className="public-brand">
+
           <img
             src={rudrakshLogo}
             alt="Rudraksh Social & Cultural Organization"
@@ -85,6 +96,7 @@ function PublicPage() {
             <strong>RUDRAKSH</strong>
             <small>SOCIAL & CULTURAL ORGANIZATION</small>
           </div>
+
         </div>
 
         <a
@@ -95,13 +107,21 @@ function PublicPage() {
         >
           Official Website <ArrowRight size={15} />
         </a>
+
       </header>
 
+
+      {/* =================================
+          HERO SECTION
+      ================================= */}
+
       <section className="utsav-hero">
+
         <div className="hero-decoration hero-decoration-one" />
         <div className="hero-decoration hero-decoration-two" />
 
         <div className="hero-heading">
+
           <span className="hero-eyebrow">
             CELEBRATING CULTURE • CREATIVITY • COMMUNITY
           </span>
@@ -115,9 +135,12 @@ function PublicPage() {
             A celebration of talent, tradition, music and
             togetherness.
           </p>
+
         </div>
 
+
         <picture className="hero-poster">
+
           <source
             media="(max-width: 600px)"
             srcSet={portraitPoster}
@@ -127,16 +150,21 @@ function PublicPage() {
             src={landscapePoster}
             alt="Rudraksh Utsav 2026 festival poster"
           />
+
         </picture>
 
+
+        {/* EVENT INFORMATION */}
+
         <div className="hero-details">
+
           <div>
             <CalendarDays size={19} />
             <span>29–31 December 2026</span>
           </div>
 
           <div>
-            <Clock size={19} />
+            <MapPin size={19} />
             <span>Nilambazar, Sribhumi</span>
           </div>
 
@@ -144,94 +172,366 @@ function PublicPage() {
             <ShieldCheck size={19} />
             <span>Organised by Rudraksh</span>
           </div>
+
         </div>
+
       </section>
 
-      <section className="public-registration">
-        <div className="public-section-heading">
-          <span>BE PART OF THE CELEBRATION</span>
 
-          <h2>Registrations</h2>
+      {/* =================================
+          ABOUT UTSAV 2026
+      ================================= */}
+
+      <section className="utsav-about">
+
+        <div className="utsav-about-content">
+
+          <span className="utsav-label">
+            ABOUT THE FESTIVAL
+          </span>
+
+          <h2>
+            Three Days of Art, Music & Culture.
+          </h2>
+
+          <p>
+            Rudraksh Utsav 2026 is a three-day cultural festival
+            organized by Rudraksh Social & Cultural Organization,
+            celebrating the richness of art, music, creativity
+            and tradition.
+
+            Featuring cultural competitions, live music,
+            performances and prize distribution, Utsav brings
+            together talented participants from across the
+            Barak Valley.
+          </p>
+
+
+          <div className="utsav-info-grid">
+
+            <div className="utsav-info-item">
+
+              <CalendarDays size={23} />
+
+              <div>
+                <strong>29–31 December 2026</strong>
+                <span>Three-day cultural celebration</span>
+              </div>
+
+            </div>
+
+
+            <div className="utsav-info-item">
+
+              <MapPin size={23} />
+
+              <div>
+                <strong>P.W.D Field, Nilambazar</strong>
+                <span>Sribhumi, Assam</span>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* =================================
+          COMPETITION SCHEDULE
+      ================================= */}
+
+      <section className="utsav-schedule">
+
+        <div className="schedule-heading">
+
+          <span className="utsav-label">
+            MARK YOUR CALENDAR
+          </span>
+
+          <h2>
+            Competition Schedule
+          </h2>
+
+          <p>
+            Check your competition date before registering.
+          </p>
+
+          <div className="heading-decoration" />
+
+        </div>
+
+
+        <div className="schedule-grid">
+
+
+          {/* DAY 1 - DANCE */}
+
+          <article className="schedule-card">
+
+            <div className="schedule-card-top">
+              <CalendarDays size={23} />
+
+              <span className="schedule-date">
+                29 DECEMBER 2026
+              </span>
+            </div>
+
+            <h3>
+              Dance Competitions
+            </h3>
+
+            <ul>
+              <li>Rabindra Nritya</li>
+              <li>Srijonshil Nritya</li>
+            </ul>
+
+            <div className="schedule-note">
+              All Dance Participants
+            </div>
+
+          </article>
+
+
+          {/* DAY 2 - MUSIC AND FANCY DRESS */}
+
+          <article className="schedule-card">
+
+            <div className="schedule-card-top">
+              <CalendarDays size={23} />
+
+              <span className="schedule-date">
+                30 DECEMBER 2026
+              </span>
+            </div>
+
+            <h3>
+              Music & Cultural Competitions
+            </h3>
+
+            <ul>
+              <li>Rabindra Sangeet</li>
+              <li>Adhunik Sangeet (Bengali/Hindi)</li>
+              <li>Jemon Khushi Temon Shajo</li>
+            </ul>
+
+            <div className="schedule-note">
+              All Music & Fancy Dress Participants
+            </div>
+
+          </article>
+
+
+          {/* DAY 3 - PRIZE DISTRIBUTION */}
+
+          <article className="schedule-card">
+
+            <div className="schedule-card-top">
+              <CalendarDays size={23} />
+
+              <span className="schedule-date">
+                31 DECEMBER 2026
+              </span>
+            </div>
+
+            <h3>
+              Grand Finale
+            </h3>
+
+            <ul>
+              <li>Prize Distribution Ceremony</li>
+            </ul>
+
+            <div className="schedule-note">
+              Celebrating Our Winners
+            </div>
+
+          </article>
+
+        </div>
+
+
+        {/* IMPORTANT NOTICE */}
+
+        <div className="schedule-notice">
+
+          <ShieldCheck size={20} />
+
+          <p>
+            Participants must report to the venue at least
+            30 minutes before their respective competition.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      {/* =================================
+          REGISTRATION SECTION
+      ================================= */}
+
+      <section className="public-registration">
+
+        <div className="public-section-heading">
+
+          <span>
+            BE PART OF THE CELEBRATION
+          </span>
+
+          <h2>
+            Registrations
+          </h2>
 
           <p>
             Choose an available event and begin your registration.
           </p>
 
           <div className="heading-decoration" />
+
         </div>
 
-        {loading ? (
-          <div className="public-state">
-            <div className="loading-spinner" />
-            <h3>Loading registrations...</h3>
-            <p>Please wait a moment.</p>
-          </div>
-        ) : error ? (
-          <div className="public-state">
-            <h3>Unable to load registrations</h3>
-            <p>{error}</p>
-          </div>
-        ) : forms.length === 0 ? (
-          <div className="public-state">
-            <div className="empty-state-icon">✦</div>
 
-            <h3>Registrations opening soon</h3>
+        {/* LOADING STATE */}
+
+        {loading ? (
+
+          <div className="public-state">
+
+            <div className="loading-spinner" />
+
+            <h3>
+              Loading registrations...
+            </h3>
+
+            <p>
+              Please wait a moment.
+            </p>
+
+          </div>
+
+
+        ) : error ? (
+
+          /* ERROR STATE */
+
+          <div className="public-state">
+
+            <h3>
+              Unable to load registrations
+            </h3>
+
+            <p>
+              {error}
+            </p>
+
+          </div>
+
+
+        ) : forms.length === 0 ? (
+
+          /* EMPTY STATE */
+
+          <div className="public-state">
+
+            <div className="empty-state-icon">
+              ✦
+            </div>
+
+            <h3>
+              Registrations opening soon
+            </h3>
 
             <p>
               There are currently no published registration forms.
               Please check again soon.
             </p>
+
           </div>
+
+
         ) : (
+
+          /* DYNAMIC REGISTRATION CARDS */
+
           <div className="public-form-grid">
+
             {forms.map((form) => (
+
               <article
                 className="public-form-card"
                 key={form.id}
               >
+
                 <span className="form-card-label">
                   RUDRAKSH UTSAV 2026
                 </span>
 
-                <h3>{form.title}</h3>
+                <h3>
+                  {form.title}
+                </h3>
 
                 <p>
                   {form.description ||
                     "Join us for this celebration of talent and culture."}
                 </p>
 
+
                 <div className="form-card-fee">
-                  <small>REGISTRATION FEE</small>
+
+                  <small>
+                    REGISTRATION FEE
+                  </small>
 
                   <strong>
                     {Number(form.fee) === 0
                       ? "FREE"
                       : `₹${form.fee}`}
                   </strong>
+
                 </div>
+
 
                 <Link
                   to={`/register/${form.slug}`}
                   className="public-register-button"
                 >
-                  REGISTER NOW <ArrowRight size={17} />
+                  REGISTER NOW
+                  <ArrowRight size={17} />
                 </Link>
+
               </article>
+
             ))}
+
           </div>
+
         )}
+
       </section>
 
+
+      {/* =================================
+          FOOTER
+      ================================= */}
+
       <footer className="public-footer">
+
         <img
           src={rudrakshLogo}
           alt="Rudraksh Social & Cultural Organization"
           className="footer-logo"
         />
 
-        <h3>RUDRAKSH</h3>
+        <h3>
+          RUDRAKSH
+        </h3>
 
-        <p>Social & Cultural Organization</p>
+        <p>
+          Social & Cultural Organization
+        </p>
 
         <div className="footer-line" />
 
@@ -247,51 +547,87 @@ function PublicPage() {
         >
           www.rudrakshsocialculturalorganization.online
         </a>
+
       </footer>
+
     </main>
   );
 }
 
-function App() {
-  return (
-    <BrowserRouter basename="/forms">
-      <Routes>
-        {/* Public homepage */}
-        <Route path="/" element={<PublicPage />} />
 
-        {/* Participant registration */}
+/* =========================================
+   APPLICATION ROUTES
+========================================= */
+
+function App() {
+
+  return (
+
+    <BrowserRouter basename="/forms">
+
+      <Routes>
+
+        {/* PUBLIC HOMEPAGE */}
+
+        <Route
+          path="/"
+          element={<PublicPage />}
+        />
+
+
+        {/* PARTICIPANT REGISTRATION */}
+
         <Route
           path="/register/:slug"
           element={<RegistrationPage />}
         />
 
-        {/* Admin panel */}
-        <Route path="/admin" element={<Login />} />
+
+        {/* ADMIN LOGIN */}
+
+        <Route
+          path="/admin"
+          element={<Login />}
+        />
+
+
+        {/* ADMIN DASHBOARD */}
 
         <Route
           path="/admin/dashboard"
           element={<Dashboard />}
         />
 
+
+        {/* CREATE REGISTRATION FORM */}
+
         <Route
           path="/admin/forms/new"
           element={<CreateForm />}
         />
 
-        {/* Admin applications */}
+
+        {/* ADMIN APPLICATIONS */}
+
         <Route
           path="/admin/applications"
           element={<Applications />}
         />
 
-        {/* Admin payments */}
+
+        {/* ADMIN PAYMENTS */}
+
         <Route
           path="/admin/payments"
           element={<Payments />}
         />
+
       </Routes>
+
     </BrowserRouter>
+
   );
+
 }
 
 export default App;
