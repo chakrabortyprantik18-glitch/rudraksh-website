@@ -1229,5 +1229,4 @@ function RegistrationPage() {
     </main>
   );
 }
-
 export default RegistrationPage;
