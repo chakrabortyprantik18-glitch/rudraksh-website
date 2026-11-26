@@ -17,7 +17,7 @@ import {
 import { getAuthToken } from "../api/auth";
 import "./Payments.css";
 
-const API_URL = "http://localhost:5001/api";
+const API_URL = "https://forms-api.rudrakshsocialculturalorganization.online/api";
 
 const money = (amount, currency = "INR") =>
   new Intl.NumberFormat("en-IN", {

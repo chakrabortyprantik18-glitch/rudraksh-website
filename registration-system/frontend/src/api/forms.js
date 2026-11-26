@@ -2,7 +2,7 @@
 import axios from "axios";
 import { getAuthToken } from "./auth";
 
-const API_URL = "http://localhost:5001/api";
+const API_URL = "https://forms-api.rudrakshsocialculturalorganization.online/api";
 
 // Admin API
 const formsApi = axios.create({
