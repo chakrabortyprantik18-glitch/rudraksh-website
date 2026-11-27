@@ -308,7 +308,7 @@ function PublicPage() {
             </div>
 
             <h3>
-              Music & Cultural Competitions
+              Musical Contest
             </h3>
 
             <ul>
@@ -337,11 +337,12 @@ function PublicPage() {
             </div>
 
             <h3>
-              Grand Finale
+              Prize Distribution & Orchestra Night
             </h3>
 
             <ul>
               <li>Prize Distribution Ceremony</li>
+              <li>Orchestra Night</li>
             </ul>
 
             <div className="schedule-note">
@@ -534,6 +535,17 @@ function PublicPage() {
         </p>
 
         <div className="footer-line" />
+
+        <div className="footer-contact-details">
+          <p>
+            <strong>General Enquiries:</strong>{" "}
+            <a href="tel:+918811863845">+91 88118 63845</a>
+          </p>
+          <p>
+            <strong>Registration Support:</strong>{" "}
+            <a href="tel:+919365716039">+91 9365716039</a>
+          </p>
+        </div>
 
         <p>
           © 2026 Rudraksh Social & Cultural Organization.

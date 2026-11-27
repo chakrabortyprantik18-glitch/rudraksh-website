@@ -1485,6 +1485,8 @@
     font-size: 9px;
   }
 }
+/* EMAIL NOTICE — editorial, event-branded treatment */
+
 .email-notice-backdrop {
   position: fixed;
   inset: 0;
@@ -1492,99 +1494,181 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: rgba(12, 10, 10, 0.78);
-  backdrop-filter: blur(7px);
+  padding: 22px;
+  background: rgba(35, 27, 24, 0.58);
+  backdrop-filter: blur(3px);
 }
 
 .email-notice-modal {
-  width: 100%;
-  max-width: 480px;
-  padding: 34px;
-  border: 1px solid rgba(123, 30, 43, 0.2);
-  border-radius: 16px;
-  background: #fff;
-  color: #242020;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
-  text-align: center;
-  animation: emailNoticeAppear 0.25s ease-out;
+  position: relative;
+  width: min(100%, 510px);
+  padding: 36px 38px 32px;
+  overflow: hidden;
+  border: 1px solid #e6d8c4;
+  border-radius: 10px;
+  background: #fffdf8;
+  color: var(--reg-text);
+  box-shadow: 0 22px 65px rgba(33, 23, 19, 0.24);
+  text-align: left;
+  animation: emailNoticeAppear 220ms ease-out;
+}
+
+.email-notice-modal::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: var(--reg-primary);
 }
 
 .email-notice-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 58px;
-  height: 58px;
-  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 20px;
+  border: 1px solid var(--reg-gold-light);
   border-radius: 50%;
-  background: #f8e9eb;
-  color: #7b1e2b;
+  background: #f8f1e5;
+  color: var(--reg-primary);
 }
 
 .email-notice-eyebrow {
-  color: #7b1e2b;
-  font-size: 11px;
+  color: var(--reg-gold);
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 2px;
+  letter-spacing: 1.8px;
 }
 
 .email-notice-modal h2 {
-  margin: 12px 0;
-  font-size: 24px;
+  margin: 9px 0 12px;
+  color: var(--reg-primary);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .email-notice-modal p {
-  color: #625b5b;
-  font-size: 14px;
-  line-height: 1.7;
+  margin: 0 0 12px;
+  color: #655b53;
+  font-size: 13px;
+  line-height: 1.75;
 }
 
 .email-notice-modal .email-notice-emphasis {
-  color: #7b1e2b;
+  margin-top: 15px;
+  padding-left: 13px;
+  border-left: 2px solid var(--reg-gold);
+  color: var(--reg-primary);
   font-weight: 700;
 }
 
-.email-notice-continue {
+.email-notice-contacts {
+  display: grid;
+  gap: 10px;
+  margin: 21px 0 4px;
+  padding: 16px 17px;
+  border: 1px solid var(--reg-border);
+  border-radius: 7px;
+  background: #faf6ee;
+}
+
+.email-notice-contacts div {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+
+.email-notice-contacts span {
+  color: var(--reg-muted);
+  font-size: 12px;
+}
+
+.email-notice-contacts a {
+  color: var(--reg-primary);
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.email-notice-contacts a:hover {
+  text-decoration: underline;
+}
+
+.email-notice-continue {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   width: 100%;
+  min-height: 49px;
   margin-top: 22px;
-  padding: 15px 18px;
-  border: none;
-  border-radius: 7px;
-  background: #7b1e2b;
-  color: white;
-  font-size: 13px;
+  padding: 12px 18px;
+  border: 1px solid var(--reg-primary);
+  border-radius: 6px;
+  background: var(--reg-primary);
+  color: #fff;
+  font-size: 11px;
   font-weight: 800;
+  letter-spacing: 0.7px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background var(--reg-transition), border-color var(--reg-transition);
 }
 
 .email-notice-continue:hover {
-  background: #5e1420;
+  background: var(--reg-primary-dark);
+  border-color: var(--reg-primary-dark);
 }
 
 @keyframes emailNoticeAppear {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translateY(8px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
+}
+
+.registration-footer-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.registration-footer-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 18px;
+  color: var(--reg-muted);
+  font-size: 10px;
+}
+
+.registration-footer-contacts a {
+  color: var(--reg-primary);
+  font-weight: 700;
+  text-decoration: none;
 }
 
 @media (max-width: 520px) {
   .email-notice-modal {
-    padding: 26px 20px;
+    padding: 29px 22px 23px;
   }
 
   .email-notice-modal h2 {
-    font-size: 21px;
+    font-size: 23px;
+  }
+
+  .email-notice-contacts div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
   }
 }

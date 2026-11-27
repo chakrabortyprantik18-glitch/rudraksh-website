@@ -1753,3 +1753,48 @@ body {
 
 }
 
+
+/* FOOTER CONTACT DETAILS */
+.footer-contact-details {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px 32px;
+  margin: 0 auto 8px;
+  font-family: Arial, sans-serif;
+}
+
+.footer-contact-details p {
+  margin: 0;
+  color: #d8c8b8;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.footer-contact-details strong {
+  color: #e7c987;
+  font-weight: 700;
+}
+
+.public-footer .footer-contact-details a {
+  display: inline;
+  margin: 0;
+  color: #f3dfb5;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.public-footer .footer-contact-details a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .footer-contact-details {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

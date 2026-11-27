@@ -158,7 +158,9 @@ function RegistrationPage() {
       !participant.schoolName.trim() ||
       !participant.guardianName.trim() ||
       !participant.phone.trim() ||
-      !participant.email.trim()
+      !participant.email.trim() ||
+      !participant.dateOfBirth ||
+      !participant.address.trim()
     ) {
       setValidationError(
         "Please complete all mandatory personal details."
@@ -579,6 +581,17 @@ function RegistrationPage() {
               proceeding.
             </p>
 
+            <div className="email-notice-contacts">
+              <div>
+                <span>General enquiries</span>
+                <a href="tel:+918811863845">+91 88118 63845</a>
+              </div>
+              <div>
+                <span>Registration-related issues</span>
+                <a href="tel:+919365716039">+91 9365716039</a>
+              </div>
+            </div>
+
             <button
               type="button"
               className="email-notice-continue"
@@ -663,7 +676,7 @@ function RegistrationPage() {
 
               <div>
                 <Music2 size={19} />
-                <span>Dance, Song & Cultural Competitions</span>
+                <span>Dance, Musical Contest & Fancy Dress</span>
               </div>
             </div>
 
@@ -779,6 +792,7 @@ function RegistrationPage() {
                     onChange={updateParticipant}
                     placeholder="Enter full name"
                     autoComplete="name"
+                    required
                   />
                 </div>
 
@@ -789,6 +803,7 @@ function RegistrationPage() {
                     value={participant.schoolName}
                     onChange={updateParticipant}
                     placeholder="Enter school name"
+                    required
                   />
                 </div>
 
@@ -799,6 +814,7 @@ function RegistrationPage() {
                     value={participant.guardianName}
                     onChange={updateParticipant}
                     placeholder="Enter parent or guardian name"
+                    required
                   />
                 </div>
 
@@ -813,6 +829,7 @@ function RegistrationPage() {
                     onChange={updateParticipant}
                     placeholder="10-digit mobile number"
                     autoComplete="tel"
+                    required
                   />
                 </div>
 
@@ -825,27 +842,30 @@ function RegistrationPage() {
                     onChange={updateParticipant}
                     placeholder="Enter email address"
                     autoComplete="email"
+                    required
                   />
                 </div>
 
                 <div className="registration-field">
-                  <label>DATE OF BIRTH</label>
+                  <label>DATE OF BIRTH *</label>
                   <input
                     name="dateOfBirth"
                     type="date"
                     value={participant.dateOfBirth}
                     onChange={updateParticipant}
+                    required
                   />
                 </div>
 
                 <div className="registration-field full-width">
-                  <label>RESIDENTIAL ADDRESS</label>
+                  <label>RESIDENTIAL ADDRESS *</label>
                   <textarea
                     name="address"
                     value={participant.address}
                     onChange={updateParticipant}
                     placeholder="Enter residential address"
                     rows="3"
+                    required
                   />
                 </div>
               </div>
@@ -882,6 +902,7 @@ function RegistrationPage() {
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     onChange={handlePhotoChange}
+                    required
                     hidden
                   />
                 </label>
@@ -1222,9 +1243,19 @@ function RegistrationPage() {
       <footer className="registration-footer">
         <img src={rudrakshLogo} alt="Rudraksh logo" />
 
-        <span>
-          © 2026 Rudraksh Social & Cultural Organization
-        </span>
+        <div className="registration-footer-copy">
+          <span>
+            © 2026 Rudraksh Social & Cultural Organization
+          </span>
+          <div className="registration-footer-contacts">
+            <span>
+              General enquiries: <a href="tel:+918811863845">+91 88118 63845</a>
+            </span>
+            <span>
+              Registration support: <a href="tel:+919365716039">+91 9365716039</a>
+            </span>
+          </div>
+        </div>
       </footer>
     </main>
   );
